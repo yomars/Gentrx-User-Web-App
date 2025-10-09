@@ -1,0 +1,15 @@
+﻿{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES2016",
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "checkJs": true,
+    "allowUmdGlobalAccess": true,
+    "skipLibCheck": true, // Skip type checking of all declaration files
+    "noEmit": true // Do not emit outputs
+  },
+  "exclude": ["node_modules", "**/node_modules/*"]
+}

@@ -1,0 +1,288 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap");
+body {
+  scroll-behavior: smooth;
+  box-sizing: border-box;
+  font-family: "Figtree", sans-serif !important;
+}
+.react-daterange-picker,
+.react-daterange-picker__wrapper {
+  border: none !important;
+}
+.react-daterange-picker__wrapper input {
+  appearance: none;
+}
+
+/* Apply full width for all screens */
+.container {
+  width: 100%; /* Take full width */
+  max-width: 1300px; /* Maximum width for larger screens */
+  margin-left: auto; /* Align container to center horizontally */
+  margin-right: auto; /* Align container to center horizontally */
+  padding-left: 20px; /* Optional: Adjust padding for content inside container */
+  padding-right: 20px;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+  .container {
+    max-width: 100%;
+    padding-left: 5px; /* Optional: Adjust padding for content inside container */
+    padding-right: 5px;
+  }
+}
+.slick-dots {
+  bottom: 5px;
+  width: 100%;
+  margin: 0;
+  list-style: none;
+  text-align: center;
+}
+.slick-dots li button:before {
+  font-size: 10px;
+  line-height: 20px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 20px;
+  content: "•";
+  text-align: center;
+  opacity: 0.5;
+  color: #000;
+  transition: font-size 0.2s ease;
+}
+.slick-dots li.slick-active button:before {
+  opacity: 0.75;
+  color: #000;
+  font-size: 14px;
+  transition: font-size oapcity 0.2s ease;
+}
+
+.swiper-pagination {
+  position: absolute;
+  bottom: -2px !important;
+  display: flex;
+  bottom: 2px;
+  justify-content: center;
+}
+
+.reviewSwiper .swiper-pagination {
+  position: absolute;
+  bottom: -2px !important;
+  display: flex;
+  bottom: 0px;
+  justify-content: center;
+}
+.productSwiper .swiper-pagination {
+  bottom: 0px !important;
+}
+.productSwiper {
+  padding-bottom: 20px;
+}
+.swiper-horizontal > .swiper-pagination-bullets .swiper-pagination-bullet,
+.swiper-pagination-horizontal.swiper-pagination-bullets
+  .swiper-pagination-bullet {
+  display: block;
+  width: 12px;
+  height: 4px;
+  border-radius: 5px;
+}
+
+.hlText {
+  color: #485ec4 !important;
+}
+
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 140px !important;
+}
+.loading {
+  --speed-of-animation: 0.9s;
+  --gap: 6px;
+  --first-color: #4c86f9;
+  --second-color: #49a84c;
+  --third-color: #f6bb02;
+  --fourth-color: #f6bb02;
+  --fifth-color: #2196f3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100px;
+  gap: 6px;
+  height: 100px;
+}
+
+.loading span {
+  width: 4px;
+  height: 50px;
+  background: var(--first-color);
+  animation: scale var(--speed-of-animation) ease-in-out infinite;
+}
+
+.loading span:nth-child(2) {
+  background: var(--second-color);
+  animation-delay: -0.8s;
+}
+
+.loading span:nth-child(3) {
+  background: var(--third-color);
+  animation-delay: -0.7s;
+}
+
+.loading span:nth-child(4) {
+  background: var(--fourth-color);
+  animation-delay: -0.6s;
+}
+
+.loading span:nth-child(5) {
+  background: var(--fifth-color);
+  animation-delay: -0.5s;
+}
+
+@keyframes scale {
+  0%,
+  40%,
+  100% {
+    transform: scaleY(0.05);
+  }
+
+  20% {
+    transform: scaleY(1);
+  }
+}
+.slick-next {
+  right: 0;
+  z-index: 99;
+  background-color: #041150;
+  border-radius: 50%;
+  padding: 8px;
+  width: 30px;
+  height: 30px;
+  transition: 0.3s ease;
+}
+.slick-prev {
+  width: 30px;
+  height: 30px;
+  padding: 8px;
+  background-color: #041150;
+  border-radius: 50%;
+  left: 0;
+  z-index: 99;
+  transition: 0.3s ease;
+}
+.slick-prev:hover,
+.slick-next:hover {
+  background-color: #485ec4;
+  transition: 0.3s ease;
+}
+.react-daterange-picker__calendar {
+  z-index: 1111 !important;
+}
+
+/* FullCalendar custom styles */
+.fc-past-date {
+  background-color: #faf5f5 !important;
+  cursor: not-allowed;
+}
+
+.fc-highlighted {
+  background-color: #005bb5bb !important;
+  color: #fff;
+}
+
+.fc .fc-toolbar {
+  border: 1px solid #ddd;
+  margin-bottom: 0 !important;
+  padding: 5px;
+  border-bottom: 0;
+}
+.fc .fc-toolbar-title {
+  color: #333333; /* Custom title color */
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.fc .fc-button,
+.fc .fc-button:hover {
+  background-color: #086dd800 !important; /* Custom button background color */
+  border-color: #086dd800 !important; /* Custom button border color */
+  color: #000000 !important; /* Custom button text color */
+}
+
+.fc .fc-button:hover {
+  background-color: #005bb5; /* Custom button hover background color */
+  border-color: #004494; /* Custom button hover border color */
+}
+
+.fc-daygrid-day {
+  background-color: #fafafa;
+  cursor: pointer; /* Custom background color for days */
+}
+
+.fc-daygrid-day:hover {
+  background-color: #e6f7ff; /* Custom hover background color for days */
+}
+
+.fc .fc-daygrid-event {
+  background-color: #ffcccc; /* Custom event background color */
+  border-color: #ff9999; /* Custom event border color */
+  color: #990000; /* Custom event text color */
+}
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  select,
+  textarea,
+  input {
+    font-size: 16px;
+  }
+}
+
+.root {
+  padding-top: rem(80px);
+  padding-bottom: rem(80px);
+}
+
+.title {
+  font-weight: 900;
+  font-size: rem(34px);
+  margin-bottom: var(--mantine-spacing-md);
+  font-family: Greycliff CF, var(--mantine-font-family);
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    font-size: rem(32px);
+  }
+}
+
+.control {
+  @media (max-width: $mantine-breakpoint-sm) {
+    width: 100%;
+  }
+}
+
+.mobileImage {
+  @media (min-width: 48em) {
+    display: none;
+  }
+}
+
+.desktopImage {
+  @media (max-width: 47.99em) {
+    display: none;
+  }
+}
+
+.messages {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New";
+  display: none; /* hide initially, then show once the first message arrives */
+  background-color: #0a253c;
+  color: #00d924;
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: var(--radius);
+  font-size: 0.7em;
+}
+
+.no-chakra {
+  all: unset;
+}
