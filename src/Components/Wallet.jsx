@@ -34,6 +34,7 @@ import user from "../Controllers/user";
 import Loading from "./Loading";
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import AddMoney from "./AddMoney";
+import BalanceTransfer from "./BalanceTransfer";
 import moment from "moment";
 
 const getTransaction = async () => {
@@ -49,6 +50,11 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
   const toast = useToast();
   const token = user?.token;
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { 
+    isOpen: isTransferOpen, 
+    onOpen: onTransferOpen, 
+    onClose: onTransferClose 
+  } = useDisclosure();
   const cancelRef = useRef();
   const [isMobile] = useMediaQuery("(max-width: 600px)");
 
@@ -164,25 +170,44 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
                         ? userData?.wallet_amount
                         : 0}
                     </Text>
-                    <Button
-                      size={"sm"}
-                      bg={"#54B435"}
-                      fontSize={12}
-                      color={"#fff"}
-                      width={"200px"}
-                      borderRadius={"10"}
-                      _hover={{
-                        transform: "translateY(-2px)",
-                        boxShadow: "lg",
-                        background: "#54B435",
-                        fontSize: "12px",
-                        color: "#fff",
-                      }}
-                      onClick={onOpen}
-                      mt={5}
-                    >
-                      Add Money
-                    </Button>
+                    <Flex gap={4} >
+                        <Button
+                          size={"sm"}
+                          bg={"#54B435"}
+                          fontSize={12}
+                          color={"#fff"}
+                          width={"200px"}
+                          borderRadius={"10"}
+                          _hover={{
+                            transform: "translateY(-2px)",
+                            boxShadow: "lg",
+                            background: "#54B435",
+                            fontSize: "12px",
+                            color: "#fff",
+                          }}
+                          onClick={onOpen}
+                          mt={5}
+                        >
+                          Add Money
+                        </Button>
+                        <Button
+                          size={"sm"}
+                          bg={"#54B435"}
+                          fontSize={12}
+                          color={"#fff"}
+                          width={"200px"}
+                          borderRadius={"10"}
+                          _hover={{
+                            transform: "translateY(-2px)",
+                            boxShadow: "lg",
+                            background: "#54B435",
+                          }}
+                          onClick={onTransferOpen}
+                          mt={5}
+                        >
+                          Balance Transfer
+                        </Button>
+                    </Flex>
                   </Box>
                 </Box>
               )}
@@ -216,6 +241,11 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
         token={token}
         closeModal={closeModal}
         openModal={openModal}
+      />
+      <BalanceTransfer
+        isOpen={isTransferOpen}
+        onClose={onTransferClose}
+        cancelRef={cancelRef}
       />
     </>
   );
