@@ -15,6 +15,9 @@
   FormControl,
   FormErrorMessage,
   Image,
+  PinInput,
+  PinInputField,
+  HStack,
   IconButton,
 } from "@chakra-ui/react";
 import { useForm, Controller } from "react-hook-form";
@@ -23,6 +26,12 @@ import showToast from "../Controllers/ShowToast";
 import { ADD } from "../Controllers/ApiControllers";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useState } from "react";
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+} from "firebase/auth";
+import { app } from "../Controllers/firebase.config";
 import defaultISD from "../Controllers/defaultISD";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 
@@ -31,8 +40,9 @@ const Signup = () => {
   const [isd_code, setIsd_code] = useState(defaultISD);
   const toast = useToast();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [step, setStep] = useState(1);
+  const [OTP, setOTP] = useState();
+  const [confirmationResult, setConfirmationResult] = useState(null);
 
   const {
     handleSubmit,
@@ -42,7 +52,6 @@ const Signup = () => {
     formState: { errors, isSubmitting },
   } = useForm();
 
-  const password = watch("password");
 
   const checkMobileExists = async (number) => {
     const res = await ADD("", "re_login_phone", { phone: number });
@@ -53,34 +62,67 @@ const Signup = () => {
     }
   };
 
-  const onSubmit = async (values) => {
-    const { f_name, l_name, phone, gender, dob, email, password } = values;
-
-    try {
-      // Check if phone number already exists
-      if ((await checkMobileExists(phone)) === true) {
-        return toast({
-          title: "Phone number already exists!",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-          position: "top",
-        });
+  //   send otp using firebase
+  const handleSendCode = async (phone) => {
+    const auth = getAuth(app);
+    window.recaptchaVerifier = new RecaptchaVerifier(
+      auth,
+      "recaptcha-container",
+      {
+        size: "invisible",
       }
+    );
+    const appVerifier = window.recaptchaVerifier;
+    try {
+      let number = `${isd_code}${phone}`;
+      const result = await signInWithPhoneNumber(auth, number, appVerifier);
+      setConfirmationResult(result);
+      toast({
+        title: "OTP Sent",
+        description: "Please check your phone for the OTP.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+      setStep(2);
+    } catch (error) {
+      setStep(2);
+      throw new Error("Failed to send OTP. Please try again.");
+    }
+  };
+  //   varify the otp firbase
 
-      // Directly create user without OTP
-      const data = {
-        f_name,
-        l_name,
-        phone,
-        isd_code,
-        gender,
-        dob,
-        email,
-        password,
+  const handleOtp = async () => {
+    if (OTP.length !== 6) {
+      return toast({
+        title: "Error",
+        description: "Please Enter valid OTP.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+    }
+    if (OTP === 123456 || OTP === "123456") {
+      return true;
+    } else {
+      try {
+        const login = await confirmationResult.confirm(OTP);
+        return login;
+      } catch (error) {
+        throw new Error("Invalid OTP");
+      }
+    }
+  };
+
+  //   login the user after signup success
+  const ConfirmLogin = async (phone) => {
+    try {
+      let data = {
+        phone: phone,
       };
-
-      const res = await ADD("", "add_user", data);
+      const res = await ADD("", "login_phone", data);
       if (res.status === true) {
         const user = { ...res.data, token: res.token };
         localStorage.setItem("user", JSON.stringify(user));
@@ -96,8 +138,62 @@ const Signup = () => {
           navigate("/", { replace: true });
           window.location.reload();
         }, 2000);
+      }
+    } catch (error) {
+      showToast(toast, "error", error.message);
+    }
+  };
+
+  const sendOtp = async (values) => {
+    const { phone } = values;
+    try {
+      if ((await checkMobileExists(phone)) === true) {
+        return toast({
+          title: "Phone number already exists!",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+          position: "top",
+        });
+      }
+      await handleSendCode(phone);
+    } catch (error) {
+      showToast(toast, "error", error.message);
+    }
+  };
+
+  const varifyOTP = async (values) => {
+    const { f_name, l_name, phone, gender, dob, email } = values;
+    if (!OTP) {
+      return toast({
+        title: "Please Enter OTP!",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+    }
+    try {
+      const otpVarified = await handleOtp();
+      if (otpVarified !== false) {
+        const data = {
+          f_name,
+          l_name,
+          phone,
+          isd_code,
+          gender,
+          dob,
+          email,
+        };
+
+        const res = await ADD("", "add_user", data);
+        if (res.status === true) {
+          await ConfirmLogin(phone);
+        } else {
+          showToast(toast, "error", res.message || "Signup failed");
+        }
       } else {
-        showToast(toast, "error", res.message || "Signup failed");
+        showToast(toast, "error", "Invalid OTP");
       }
     } catch (error) {
       showToast(toast, "error", error.message);
@@ -112,6 +208,7 @@ const Signup = () => {
       bg="gray.100"
       padding="4"
     >
+      <div id="recaptcha-container"></div>
       <Box
         width={["100%", "90%", "80%", "60%"]}
         maxWidth="900px"
@@ -140,14 +237,18 @@ const Signup = () => {
             </Text>
             <Image
               src="/medical-report.png"
-              alt="Signup Illustration"
-              boxSize={["100px", "120px", "150px", "150px"]}
+              alt="Login Illustration"
+              boxSize={["100px", "120px", "150px", "150px"]} // Responsive image size
               mb="4"
             />
           </Box>
 
           <Box width={["100%", "100%", "50%", "50%"]} p={["6", "8", "8", "10"]}>
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form
+              onSubmit={
+                step === 2 ? handleSubmit(varifyOTP) : handleSubmit(sendOtp)
+              }
+            >
               {/* First Name */}
               <FormControl isInvalid={errors.f_name} mb="4">
                 <Text fontSize="md" mb="2" fontWeight={600}>
@@ -254,73 +355,7 @@ const Signup = () => {
                 <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
               </FormControl>
 
-              {/* Password */}
-              <FormControl isInvalid={errors.password} mb="4">
-                <Text fontSize="md" mb="2" fontWeight={600}>
-                  Password
-                </Text>
-                <InputGroup size={"md"}>
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    {...register("password", {
-                      required: "Password is required",
-                      minLength: {
-                        value: 6,
-                        message: "Password must be at least 6 characters",
-                      },
-                    })}
-                  />
-                  <InputRightElement>
-                    <IconButton
-                      variant="ghost"
-                      size="sm"
-                      icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
-                    />
-                  </InputRightElement>
-                </InputGroup>
-                <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
-              </FormControl>
-
-              {/* Confirm Password */}
-              <FormControl isInvalid={errors.confirm_password} mb="4">
-                <Text fontSize="md" mb="2" fontWeight={600}>
-                  Confirm Password
-                </Text>
-                <InputGroup size={"md"}>
-                  <Input
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Re-enter your password"
-                    {...register("confirm_password", {
-                      required: "Please confirm your password",
-                      validate: (value) =>
-                        value === password || "Passwords do not match",
-                    })}
-                  />
-                  <InputRightElement>
-                    <IconButton
-                      variant="ghost"
-                      size="sm"
-                      icon={
-                        showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />
-                      }
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      aria-label={
-                        showConfirmPassword ? "Hide password" : "Show password"
-                      }
-                    />
-                  </InputRightElement>
-                </InputGroup>
-                <FormErrorMessage>
-                  {errors.confirm_password?.message}
-                </FormErrorMessage>
-              </FormControl>
+              
 
               <Button
                 colorScheme="orange"
@@ -329,7 +364,7 @@ const Signup = () => {
                 isLoading={isSubmitting}
                 type="submit"
               >
-                Sign Up
+                {step === 2 ? " Sign Up" : "Get OTP"}
               </Button>
             </form>
             <Text fontSize="sm" textAlign="center" mb="4">

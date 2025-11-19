@@ -1,5 +1,6 @@
 ﻿import { FaHospitalAlt } from "react-icons/fa";
 import { BsPrescription } from "react-icons/bs";
+import { MdBiotech } from "react-icons/md";
 import { CgFileDocument } from "react-icons/cg";
 import { MdFamilyRestroom } from "react-icons/md";
 /* eslint-disable react/prop-types */
@@ -88,6 +89,11 @@ const SideBarLinks = [
   {
     name: "Prescriptions",
     icon: <BsPrescription />,
+    auth: user ? true : false,
+  },
+  {
+    name: "Laboratory-Requests",
+    icon: <MdBiotech />,
     auth: user ? true : false,
   },
   {
@@ -290,23 +296,6 @@ export default function TopbarNew() {
                         fontWeight={500}
                         color="gray.800"
                         icon={
-                          <CgFileDocument
-                            fontSize={16}
-                            fontWeight={600}
-                            color="gray.500"
-                          />
-                        }
-                        onClick={() => {
-                          onClose();
-                          navigate("/files");
-                        }}
-                      >
-                        Files
-                      </MenuItem>
-                      <MenuItem
-                        fontWeight={500}
-                        color="gray.800"
-                        icon={
                           <BsPrescription
                             fontSize={16}
                             fontWeight={600}
@@ -319,6 +308,40 @@ export default function TopbarNew() {
                         }}
                       >
                         Prescriptions
+                      </MenuItem>
+                      <MenuItem
+                        fontWeight={500}
+                        color="gray.800"
+                        icon={
+                          <MdBiotech
+                            fontSize={16}
+                            fontWeight={600}
+                            color="gray.500"
+                          />
+                        }
+                        onClick={() => {
+                          onClose();
+                          navigate("/laboratory-requests");
+                        }}
+                      >
+                        Laboratory Requests
+                      </MenuItem>
+                      <MenuItem
+                        fontWeight={500}
+                        color="gray.800"
+                        icon={
+                          <CgFileDocument
+                            fontSize={16}
+                            fontWeight={600}
+                            color="gray.500"
+                          />
+                        }
+                        onClick={() => {
+                          onClose();
+                          navigate("/files");
+                        }}
+                      >
+                        Files
                       </MenuItem>
                       <MenuItem
                         fontWeight={500}

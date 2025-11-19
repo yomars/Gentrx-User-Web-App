@@ -34,6 +34,7 @@ const Login = lazy(() => import("../Pages/Login"));
 const Vitals = lazy(() => import("../Pages/Vitals"));
 const Files = lazy(() => import("../Pages/Files"));
 const Prescriptions = lazy(() => import("../Pages/Prescriptions"));
+const LaboratoryRequests = lazy(() => import("../Pages/LaboratoryRequests"));
 const Webpage = lazy(() => import("../Pages/WebPages/Webpage"));
 const FamilyMember = lazy(() => import("../Pages/FamilyMember/FamilyMember"));
 const Signup = lazy(() => import("../Pages/Signup"));
@@ -152,6 +153,7 @@ export default function Main() {
                 <Route path="/contact-us" element={<ContactUs />} />
                 <Route path="/files" element={<Files />} />
                 <Route path="/prescriptions" element={<Prescriptions />} />
+                <Route path="/laboratory-requests" element={<LaboratoryRequests />} />
                 {/* stripe payment wallet */}
                 <Route
                   path="/stripe-payment"

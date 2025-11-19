@@ -1,5 +1,6 @@
 ﻿import { Box, Flex, Text, Image } from "@chakra-ui/react";
 import UserProfile from "../Components/UserProfile";
+import ChangePassword from "../Components/ChangePassword.jsx";
 import user from "../Controllers/user";
 import moment from "moment";
 
@@ -65,10 +66,13 @@ function Profile() {
         </Box>
       </Box>
 
-      <Box className="container" maxW={"700px"}>
+      <Box className="container" maxW={"1000px"}>
         <Flex gap={5} flexDir={{ base: "column", md: "row" }}>
           <Box flex={1}>
             <UserProfile />
+          </Box>
+          <Box flex={1}>
+            <ChangePassword />
           </Box>
         </Flex>
       </Box>

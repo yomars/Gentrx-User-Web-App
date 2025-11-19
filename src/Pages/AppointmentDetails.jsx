@@ -123,23 +123,35 @@ const AppointmentDetails = () => {
     queryKey: ["prescription", id],
     queryFn: getPrescription,
   });
-  const {
-    isFetching: queueIsFetching, // This is true even during refetching
-    data: queueData,
-    refetch,
+
+  // Add the missing queries:
+  const { 
+    data: queueData, 
+    isFetching: queueIsFetching,
+    refetch 
   } = useQuery({
     queryKey: ["queue", appointmentData?.doct_id, appointmentData?.date],
     queryFn: getQueueNumber,
-    enabled: !!appointmentData,
+    enabled: !!appointmentData?.doct_id && !!appointmentData?.date && appointmentData?.type === "OPD" && appointmentData?.status === "Confirmed",
   });
 
   const { isLoading: patientFilesLoading, data: patientFilesData } = useQuery({
     queryKey: ["patient-files", appointmentData?.patient_id],
     queryFn: getPatientFiles,
-    enabled: !!appointmentData,
+    enabled: !!appointmentData?.patient_id,
   });
 
-  // get request history
+  const getLaboratoryRequests = async () => {
+    const res = await GET(
+      `get_laboratory_requests_by_appointment/${id}`
+    );
+    return res.data;
+  };
+
+  const { isLoading: labRequestsLoading, data: labRequestsData } = useQuery({
+    queryKey: ["laboratory-requests", id],
+    queryFn: getLaboratoryRequests,
+  });
 
   const { month, date, year } = formatDate(appointmentData?.date);
   const queueNumb = queueData?.findIndex((queue) => {
@@ -379,6 +391,54 @@ const AppointmentDetails = () => {
                 </Button>
               </Flex>
             )}
+            <Divider my={2} mt={5} />
+            <Box mt={5}>
+              <Flex align={"center"} justify={"space-between"} mb={3}>
+                <Text fontWeight="bold">Laboratory Requests - </Text>
+              </Flex>
+
+              {labRequestsLoading ? (
+                <Loading />
+              ) : labRequestsData && labRequestsData.length ? (
+                labRequestsData?.map((request, index) => (
+                  <Box key={request.id} mb={3}>
+                    <Button
+                      variant="link"
+                      colorScheme="green"
+                      rightIcon={<AiOutlineDownload fontSize={18} />}
+                      onClick={() => {
+                        printPDF(`${api}/laboratory_request/generatePDF/${request.id}`);
+                      }}
+                    >
+                      Download Laboratory Request #{index + 1}
+                    </Button>
+                    <Flex gap={2} mt={1} flexWrap={"wrap"} ml={4}>
+                      {request.items?.map((item) => (
+                        <Badge
+                          key={item.id}
+                          colorScheme={item.is_urgent ? "red" : "blue"}
+                          fontSize={"10px"}
+                        >
+                          {item.test_name}
+                        </Badge>
+                      ))}
+                    </Flex>
+                  </Box>
+                ))
+              ) : (
+                <Alert
+                  status="error"
+                  size={"sm"}
+                  fontSize={"sm"}
+                  py={1}
+                  fontWeight={600}
+                  borderRadius={4}
+                >
+                  <AlertIcon />
+                  Laboratory Requests Not Found!
+                </Alert>
+              )}
+            </Box>
             <Divider my={2} mt={5} />
             <Box mt={5}>
               <Flex align={"center"} justify={"space-between"}>
