@@ -45,6 +45,10 @@ const Signup = () => {
   const password = watch("password");
 
   const checkMobileExists = async (number) => {
+    // Ensure we have a valid phone number
+    if (!number || number.trim() === "") {
+      throw new Error("Phone number is required");
+    }
     const res = await ADD("", "re_login_phone", { phone: number });
     if (res.response === 200) {
       return res.status;
@@ -257,19 +261,23 @@ const Signup = () => {
               {/* Password */}
               <FormControl isInvalid={errors.password} mb="4">
                 <Text fontSize="md" mb="2" fontWeight={600}>
-                  Password
+                  PIN
                 </Text>
                 <InputGroup size={"md"}>
                   <Input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
+                    placeholder="Enter your 6-digit PIN"
+                    maxLength={6}
                     {...register("password", {
-                      required: "Password is required",
-                      minLength: {
-                        value: 6,
-                        message: "Password must be at least 6 characters",
+                      required: "PIN is required",
+                      pattern: {
+                        value: /^[0-9]{6}$/,
+                        message: "PIN must be exactly 6 digits",
                       },
                     })}
+                    onInput={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    }}
                   />
                   <InputRightElement>
                     <IconButton
@@ -278,7 +286,7 @@ const Signup = () => {
                       icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={
-                        showPassword ? "Hide password" : "Show password"
+                        showPassword ? "Hide PIN" : "Show PIN"
                       }
                     />
                   </InputRightElement>
@@ -289,17 +297,25 @@ const Signup = () => {
               {/* Confirm Password */}
               <FormControl isInvalid={errors.confirm_password} mb="4">
                 <Text fontSize="md" mb="2" fontWeight={600}>
-                  Confirm Password
+                  Confirm PIN
                 </Text>
                 <InputGroup size={"md"}>
                   <Input
                     type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Re-enter your password"
+                    placeholder="Re-enter your 6-digit PIN"
+                    maxLength={6}
                     {...register("confirm_password", {
-                      required: "Please confirm your password",
+                      required: "Please confirm your PIN",
+                      pattern: {
+                        value: /^[0-9]{6}$/,
+                        message: "PIN must be exactly 6 digits",
+                      },
                       validate: (value) =>
-                        value === password || "Passwords do not match",
+                        value === password || "PINs do not match",
                     })}
+                    onInput={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    }}
                   />
                   <InputRightElement>
                     <IconButton
@@ -312,7 +328,7 @@ const Signup = () => {
                         setShowConfirmPassword(!showConfirmPassword)
                       }
                       aria-label={
-                        showConfirmPassword ? "Hide password" : "Show password"
+                        showConfirmPassword ? "Hide PIN" : "Show PIN"
                       }
                     />
                   </InputRightElement>

@@ -85,7 +85,7 @@ const ChangePassword = () => {
         bg={"primary.main"}
         color={"#fff"}
       >
-        Change Password
+        Change PIN
       </Heading>
       <Divider />
       <VStack
@@ -97,14 +97,22 @@ const ChangePassword = () => {
       >
         {/* Old Password */}
         <FormControl isInvalid={errors.old_password}>
-          <FormLabel>Old Password</FormLabel>
+          <FormLabel>Old PIN</FormLabel>
           <InputGroup size={"md"}>
             <Input
               type={showOldPassword ? "text" : "password"}
-              placeholder="Enter your old password"
+              placeholder="Enter your old 6-digit PIN"
+              maxLength={6}
               {...register("old_password", {
-                required: "Old password is required",
+                required: "Old PIN is required",
+                pattern: {
+                  value: /^[0-9]{6}$/,
+                  message: "PIN must be exactly 6 digits",
+                },
               })}
+              onInput={(e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+              }}
             />
             <InputRightElement>
               <IconButton
@@ -113,7 +121,7 @@ const ChangePassword = () => {
                 icon={showOldPassword ? <ViewOffIcon /> : <ViewIcon />}
                 onClick={() => setShowOldPassword(!showOldPassword)}
                 aria-label={
-                  showOldPassword ? "Hide password" : "Show password"
+                  showOldPassword ? "Hide PIN" : "Show PIN"
                 }
               />
             </InputRightElement>
@@ -123,18 +131,22 @@ const ChangePassword = () => {
 
         {/* New Password */}
         <FormControl isInvalid={errors.new_password}>
-          <FormLabel>New Password</FormLabel>
+          <FormLabel>New PIN</FormLabel>
           <InputGroup size={"md"}>
             <Input
               type={showNewPassword ? "text" : "password"}
-              placeholder="Enter your new password"
+              placeholder="Enter your new 6-digit PIN"
+              maxLength={6}
               {...register("new_password", {
-                required: "New password is required",
-                minLength: {
-                  value: 6,
-                  message: "Password must be at least 6 characters",
+                required: "New PIN is required",
+                pattern: {
+                  value: /^[0-9]{6}$/,
+                  message: "PIN must be exactly 6 digits",
                 },
               })}
+              onInput={(e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+              }}
             />
             <InputRightElement>
               <IconButton
@@ -143,7 +155,7 @@ const ChangePassword = () => {
                 icon={showNewPassword ? <ViewOffIcon /> : <ViewIcon />}
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 aria-label={
-                  showNewPassword ? "Hide password" : "Show password"
+                  showNewPassword ? "Hide PIN" : "Show PIN"
                 }
               />
             </InputRightElement>
@@ -153,16 +165,24 @@ const ChangePassword = () => {
 
         {/* Confirm New Password */}
         <FormControl isInvalid={errors.confirm_password}>
-          <FormLabel>Re-Enter New Password</FormLabel>
+          <FormLabel>Re-Enter New PIN</FormLabel>
           <InputGroup size={"md"}>
             <Input
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="Re-enter your new password"
+              placeholder="Re-enter your new 6-digit PIN"
+              maxLength={6}
               {...register("confirm_password", {
-                required: "Please confirm your new password",
+                required: "Please confirm your new PIN",
+                pattern: {
+                  value: /^[0-9]{6}$/,
+                  message: "PIN must be exactly 6 digits",
+                },
                 validate: (value) =>
-                  value === newPassword || "Passwords do not match",
+                  value === newPassword || "PINs do not match",
               })}
+              onInput={(e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+              }}
             />
             <InputRightElement>
               <IconButton
@@ -171,7 +191,7 @@ const ChangePassword = () => {
                 icon={showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 aria-label={
-                  showConfirmPassword ? "Hide password" : "Show password"
+                  showConfirmPassword ? "Hide PIN" : "Show PIN"
                 }
               />
             </InputRightElement>

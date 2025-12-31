@@ -1,3 +1,3 @@
 ﻿import apiAddress from "./apiAddress";
-const imageBaseURL = `${apiAddress}/public/storage`;
+const imageBaseURL = `${apiAddress}/storage`;
 export default imageBaseURL;
