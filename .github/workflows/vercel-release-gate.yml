@@ -155,7 +155,11 @@ jobs:
           echo "production_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
 
   smoke-check:
-    if: ${{ github.event.inputs.dry_run_only == 'false' }}
+    if: >-
+      ${{ always() &&
+          github.event.inputs.dry_run_only == 'false' &&
+          ((github.event.inputs.target_environment == 'preview' && needs.deploy-preview.result == 'success') ||
+           (github.event.inputs.target_environment == 'production' && needs.deploy-production.result == 'success')) }}
     needs:
       - deploy-preview
       - deploy-production
