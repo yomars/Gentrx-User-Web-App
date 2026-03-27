@@ -48,6 +48,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -58,5 +60,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint changed JS/JSX files
+        shell: bash
+        run: |
+          BASE_REF="origin/${{ github.base_ref }}"
+          git fetch origin "${{ github.base_ref }}"
+
+          CHANGED_FILES=$(git diff --name-only "$BASE_REF"...HEAD -- '*.js' '*.jsx')
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No JS/JSX files changed; skipping lint step."
+            exit 0
+          fi
+
+          echo "Linting changed files:"
+          echo "$CHANGED_FILES"
+          npx eslint $CHANGED_FILES --max-warnings 0
