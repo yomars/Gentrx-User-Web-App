@@ -166,7 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SMOKE_TARGET_ENV: ${{ github.event.inputs.target_environment }}
-      SMOKE_TARGET_URL: ${{ github.event.inputs.target_environment == 'preview' && needs.deploy-preview.outputs.preview_url || needs.deploy-production.outputs.production_url }}
+      SMOKE_TARGET_URL: ${{ github.event.inputs.target_environment == 'production' && secrets.VITE_API_ADDRESS || needs.deploy-preview.outputs.preview_url }}
       API_HEALTHCHECK_URL: ${{ secrets.API_HEALTHCHECK_URL }}
       SMOKE_TIMEOUT_MS: "20000"
 
