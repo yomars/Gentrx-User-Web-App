@@ -32,8 +32,14 @@ async function fetchWithTimeout(url, timeoutMs) {
   }
 }
 
-async function checkFrontend(targetUrl, timeoutMs) {
+async function checkFrontend(targetUrl, timeoutMs, targetEnv) {
   const response = await fetchWithTimeout(targetUrl, timeoutMs);
+
+  // Vercel previews may be access-protected and return 401 to anonymous checks.
+  if (targetEnv === "preview" && response.status === 401) {
+    return response.status;
+  }
+
   if (!response.ok) {
     throw new Error(`Frontend URL responded with status ${response.status}.`);
   }
@@ -77,7 +83,7 @@ async function main() {
 
   console.log(`Smoke check started for ${targetEnv}: ${targetUrl}`);
 
-  const frontendStatus = await checkFrontend(targetUrl.toString(), timeoutMs);
+  const frontendStatus = await checkFrontend(targetUrl.toString(), timeoutMs, targetEnv);
   console.log(`Frontend OK (${frontendStatus})`);
 
   if (apiHealthUrlRaw) {
