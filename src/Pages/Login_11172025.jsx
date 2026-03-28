@@ -46,6 +46,7 @@ const FirebaseLogin = ({ redirectLocation }) => {
   const [isLoading, setisLoading] = useState(false);
   const toast = useToast();
   const [OTP, setOTP] = useState();
+  const [confirmationResult] = useState(null);
   const navigate = useNavigate();
   const [timer, setTimer] = useState(60);
   const [isResendDisabled, setIsResendDisabled] = useState(true);
@@ -108,12 +109,7 @@ const FirebaseLogin = ({ redirectLocation }) => {
         showToast(toast, "error", "Phone Number Not Exist! , Please Signup");
         setisLoading(false);
       } else if (res.status === true) {
-        await initiate(phoneNumber);
-        showToast(toast, "success", "OTP sent successfully.");
-        setStep(2);
-        setTimer(60);
-        setIsResendDisabled(true);
-        setisLoading(false);
+        ConfirmLogin();
       }
     } catch (error) {
       showToast(toast, "error", error.message);
@@ -138,19 +134,8 @@ const FirebaseLogin = ({ redirectLocation }) => {
       ConfirmLogin();
     } else {
       try {
-        const verificationResponse = await verify(phoneNumber, OTP);
-        if (!verificationResponse.success) {
-          setisLoading(false);
-          showToast(
-            toast,
-            "error",
-            verificationResponse.response?.errorMessage ||
-              "Invalid OTP. Please try again."
-          );
-          return;
-        }
-
-        ConfirmLogin();
+        const login = await confirmationResult.confirm(OTP);
+        ConfirmLogin(login);
       } catch (error) {
         setisLoading(false);
         toast({

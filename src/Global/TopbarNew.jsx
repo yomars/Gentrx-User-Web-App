@@ -125,14 +125,12 @@ export default function TopbarNew() {
     onClose: onWalletClose,
   } = useDisclosure();
   const logo = settingsData?.find((value) => value.id_name === "logo");
-  const name = settingsData?.find((value) => value.id_name === "clinic_name");
   const play_store_link = settingsData?.find(
     (value) => value.id_name === "play_store_link"
   );
   const app_store_link = settingsData?.find(
     (value) => value.id_name === "app_store_link"
   );
-  const clinicName = name?.value || "GentRx";
   const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
   const playStoreHref = play_store_link?.value || "#";
   const appStoreHref = app_store_link?.value || "#";
@@ -175,20 +173,12 @@ export default function TopbarNew() {
             />
           </Flex>
           <Flex justify={{ base: "center", md: "start" }}>
-            <Flex gap={2} align={"center"} as={Link} to={"/"}>
+            <Flex align={"center"} as={Link} to={"/"}>
               <Image
                 w={32}
                 src={logoSrc}
                 fallbackSrc={"/favicon.png"}
               />
-              <Text
-                fontFamily={"Quicksand, sans-serif"}
-                fontWeight={800}
-                fontSize={[16, 18, 20]}
-                display={{ base: "none", md: "block" }}
-              >
-                {clinicName}
-              </Text>
             </Flex>
 
             <Flex display={{ base: "none", md: "flex" }} ml={10}>
