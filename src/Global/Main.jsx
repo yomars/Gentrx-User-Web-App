@@ -96,8 +96,8 @@ export default function Main() {
         </Suspense>
       ) : (
         <>
-          <ContactMarqee settingsData={resolvedSettingsData} />
-          <TopbarNew settingsData={resolvedSettingsData} />
+          <ContactMarqee />
+          <TopbarNew />
           <Box pb={20}>
             {" "}
             <Suspense fallback={<Loading />}>
@@ -180,7 +180,7 @@ export default function Main() {
             </Suspense>
           </Box>
           <Box>
-            <Footer settingsData={resolvedSettingsData} />
+            <Footer />
           </Box>
         </>
       )}
