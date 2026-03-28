@@ -141,7 +141,7 @@ export default function TopbarNew({ settingsData: externalSettingsData }) {
 
   // Compute logo source with fallback chain
   const baseLogoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : null;
-  const logoSrc = logoError ? "/favicon.png" : baseLogoSrc || "/favicon.png";
+  const logoSrc = logoError ? "/favicon.png" : baseLogoSrc;
   
   const playStoreHref = play_store_link?.value || "#";
   const appStoreHref = app_store_link?.value || "#";
@@ -185,25 +185,27 @@ export default function TopbarNew({ settingsData: externalSettingsData }) {
           </Flex>
           <Flex justify={{ base: "center", md: "start" }}>
             <Flex align={"center"} as={Link} to={"/"}>
-              <Image
-                w={32}
-                src={logoSrc}
-                fallbackSrc={"/favicon.png"}
-                onError={(e) => {
-                  console.error("[TopbarNew] Logo image failed to load:", {
-                    attemptedSrc: baseLogoSrc || "none",
-                    currentSrc: logoSrc,
-                    error: e?.type || e?.message || "Unknown error",
-                    usingFallback: logoError || !baseLogoSrc ? true : false,
-                  });
-                  if (!logoError && baseLogoSrc) {
-                    setLogoError(true);
-                  }
-                }}
-                onLoad={() => {
-                  if (logoError) setLogoError(false);
-                }}
-              />
+              {logoSrc ? (
+                <Image
+                  w={32}
+                  src={logoSrc}
+                  fallbackSrc={"/favicon.png"}
+                  onError={(e) => {
+                    console.error("[TopbarNew] Logo image failed to load:", {
+                      attemptedSrc: baseLogoSrc || "none",
+                      currentSrc: logoSrc,
+                      error: e?.type || e?.message || "Unknown error",
+                      usingFallback: logoError || !baseLogoSrc ? true : false,
+                    });
+                    if (!logoError && baseLogoSrc) {
+                      setLogoError(true);
+                    }
+                  }}
+                  onLoad={() => {
+                    if (logoError) setLogoError(false);
+                  }}
+                />
+              ) : null}
             </Flex>
 
             <Flex display={{ base: "none", md: "flex" }} ml={10}>
