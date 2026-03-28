@@ -67,25 +67,45 @@ const getCurrentLocation = () => {
 };
 
 const getCity = async (lat, lng) => {
-  const res = await GET(`get_current_city?latitude=${lat}&longitude=${lng}`);
-  // Backend may return different response formats; check both cases
-  const isSuccess = res?.response === 200 || res?.status === true || res?.data;
-  if (!isSuccess) {
-    console.error("API returned invalid response:", res);
-    throw new Error(`Failed to get city - Invalid response: ${JSON.stringify(res)}`);
+  try {
+    const res = await GET(`get_current_city?latitude=${lat}&longitude=${lng}`);
+    console.debug("[LocationSelector] get_current_city response:", { type: typeof res, hasData: !!res?.data, hasStatus: !!res?.status, response: res });
+    
+    // Backend may return different response formats; check both cases
+    const isSuccess = res?.response === 200 || res?.status === true || res?.data;
+    if (!isSuccess) {
+      console.error("[LocationSelector] API returned invalid response:", res);
+      throw new Error(`Failed to get city - Invalid response: ${JSON.stringify(res)}`);
+    }
+    
+    const cityData = res.data || res;
+    console.debug("[LocationSelector] Resolved city data:", cityData);
+    return cityData;
+  } catch (err) {
+    console.error("[LocationSelector] getCity error:", err.message, { lat, lng });
+    throw err;
   }
-  return res.data || res;
 };
 
 const getCities = async () => {
-  const res = await GET("get_city?active=1");
-  // Backend may return different response formats; check both cases
-  const isSuccess = res?.response === 200 || res?.status === true || Array.isArray(res) || res?.data;
-  if (!isSuccess) {
-    console.error("API returned invalid response for cities:", res);
-    throw new Error(`Failed to get cities - Invalid response: ${JSON.stringify(res)}`);
+  try {
+    const res = await GET("get_city?active=1");
+    console.debug("[LocationSelector] get_city response:", { type: typeof res, isArray: Array.isArray(res), hasData: !!res?.data, response: res });
+    
+    // Backend may return different response formats; check both cases
+    const isSuccess = res?.response === 200 || res?.status === true || Array.isArray(res) || res?.data;
+    if (!isSuccess) {
+      console.error("[LocationSelector] API returned invalid response for cities:", res);
+      throw new Error(`Failed to get cities - Invalid response: ${JSON.stringify(res)}`);
+    }
+    
+    const citiesData = Array.isArray(res) ? res : (res.data || res);
+    console.debug("[LocationSelector] Resolved cities count:", Array.isArray(citiesData) ? citiesData.length : 0);
+    return citiesData;
+  } catch (err) {
+    console.error("[LocationSelector] getCities error:", err.message);
+    throw err;
   }
-  return Array.isArray(res) ? res : (res.data || res);
 };
 
 const LocationSeletor = ({ type }) => {
@@ -131,13 +151,26 @@ const LocationSeletor = ({ type }) => {
       const location = await getCurrentLocation();
       try {
         const city = await getCity(location.latitude, location.longitude);
+        console.debug("[LocationSelector] Processing city response fields:", Object.keys(city));
+        
+        // Handle multiple possible field names for city ID and name
+        const cityId = city.city_id || city.id || city.cityId;
+        const cityName = city.city || city.name || city.title;
+        
+        if (!cityId || !cityName) {
+          console.error("[LocationSelector] Missing required city fields. Response:", city);
+          throw new Error(`Missing city ID (${cityId}) or name (${cityName}) in response`);
+        }
+        
         const formattedCity = {
-          id: city.city_id,
-          city: city.city,
+          id: cityId,
+          city: cityName,
         };
+        console.debug("[LocationSelector] Setting formatted city:", formattedCity);
         setStorageItem("currentCity", JSON.stringify(formattedCity));
         setSelectedCity(formattedCity);
       } catch (error) {
+        console.error("[LocationSelector] City fetch error:", error.message);
         const hasFallback = applyFallbackCity();
         toast({
           title: "Failed to get city",
@@ -151,6 +184,7 @@ const LocationSeletor = ({ type }) => {
         console.error("Error fetching city:", error);
       }
     } catch (error) {
+      console.error("[LocationSelector] Geolocation error:", error);
       const hasFallback = applyFallbackCity();
       toast({
         title: "Failed to get city",

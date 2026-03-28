@@ -133,6 +133,17 @@ export default function TopbarNew() {
     (value) => value.id_name === "app_store_link"
   );
   const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
+  
+  // Debug logging for logo resolution
+  if (logo?.value) {
+    console.debug("[TopbarNew] Logo configuration:", {
+      imageBaseURL,
+      logoValue: logo.value,
+      resolvedSrc: logoSrc,
+      windowLocation: typeof window !== "undefined" ? window.location.href : "N/A",
+    });
+  }
+  
   const playStoreHref = play_store_link?.value || "#";
   const appStoreHref = app_store_link?.value || "#";
 
@@ -179,6 +190,16 @@ export default function TopbarNew() {
                 w={32}
                 src={logoSrc}
                 fallbackSrc={"/favicon.png"}
+                onError={(e) => {
+                  console.error("[TopbarNew] Logo image failed to load:", {
+                    src: logoSrc,
+                    error: e,
+                    altSrc: "/favicon.png",
+                  });
+                }}
+                onLoad={() => {
+                  console.debug("[TopbarNew] Logo image loaded successfully:", logoSrc);
+                }}
               />
             </Flex>
 
