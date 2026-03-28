@@ -43,6 +43,10 @@ export default function ContactUs() {
   );
   const email = settingsData?.find((value) => value.id_name === "email");
   const address = settingsData?.find((value) => value.id_name === "address");
+  const addressValue = address?.value || "Address not specified";
+  const phone1Value = phone1?.value || "N/A";
+  const phone2Value = phone2?.value || "";
+  const emailValue = email?.value || "N/A";
 
   const toast = useToast();
   const [showMsg, setshowMsg] = useState(false);
@@ -122,7 +126,7 @@ export default function ContactUs() {
             <Heading as="h3" size="md" mb={2}>
               Address
             </Heading>
-            <Text>{address.value}</Text>
+            <Text>{addressValue}</Text>
           </Box>
 
           <Box
@@ -136,8 +140,8 @@ export default function ContactUs() {
             <Heading as="h3" size="md" mb={2}>
               Call Us
             </Heading>
-            <Text>{phone1.value}</Text>
-            <Text>{phone2.value}</Text>
+            <Text>{phone1Value}</Text>
+            <Text>{phone2Value}</Text>
           </Box>
 
           <Box
@@ -151,7 +155,7 @@ export default function ContactUs() {
             <Heading as="h3" size="md" mb={2}>
               Email Us
             </Heading>
-            <Text>{email.value}</Text>
+            <Text>{emailValue}</Text>
           </Box>
         </SimpleGrid>
 
@@ -159,7 +163,7 @@ export default function ContactUs() {
           <GridItem>
             <Box
               as="iframe"
-              src={`https://www.google.com/maps?q=${address.value}&hl=es;z=14&output=embed`}
+              src={`https://www.google.com/maps?q=${encodeURIComponent(addressValue)}&hl=es;z=14&output=embed`}
               width="100%"
               height="400"
               frameBorder="0"

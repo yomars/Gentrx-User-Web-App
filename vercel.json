@@ -9,7 +9,7 @@
       "destination": "https://gentrx.com.ph/storage/:path*"
     },
     {
-      "source": "/:path*((?!\\.\\w+$)(?!__next)[^\\.]+)$",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]

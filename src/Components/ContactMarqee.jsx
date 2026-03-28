@@ -8,6 +8,8 @@ function ContactMarqee() {
 
   const phone1 = settingsData?.find((value) => value.id_name === "phone");
   const address = settingsData?.find((value) => value.id_name === "address");
+  const phoneValue = phone1?.value || "N/A";
+  const addressValue = address?.value || "Address not specified";
 
   return (
     <>
@@ -32,18 +34,18 @@ function ContactMarqee() {
                   <Flex gap={7} justifyContent={"flex-end"}>
                     {" "}
                     <a
-                      href={`tel:${phone1.value}`}
+                      href={`tel:${phoneValue}`}
                       display="flex"
                       color="green.500"
                       fontWeight="bold"
                     >
                       <HStack spacing={1}>
                         <PhoneIcon boxSize={3} />
-                        <Text fontSize="sm">{phone1.value}</Text>
+                        <Text fontSize="sm">{phoneValue}</Text>
                       </HStack>
                     </a>
                     <Link
-                      href={`https://www.google.com/maps?q=${address.value}`}
+                      href={`https://www.google.com/maps?q=${encodeURIComponent(addressValue)}`}
                       display="flex"
                       color="#fff"
                       fontWeight="semi-bold"
@@ -52,7 +54,7 @@ function ContactMarqee() {
                     >
                       <HStack spacing={2}>
                         <ImLocation />
-                        <Text fontSize="sm">Address: {address.value}</Text>
+                        <Text fontSize="sm">Address: {addressValue}</Text>
                       </HStack>
                     </Link>
                   </Flex>
