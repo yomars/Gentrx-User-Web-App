@@ -11,24 +11,21 @@ import {
   Divider,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
-import React from "react";
 import useSettingsData from "../Hooks/SettingData";
 import imageBaseURL from "../Controllers/image";
 
 const Logo = (props) => {
   const { settingsData } = useSettingsData();
-  const [logoError, setLogoError] = React.useState(false);
-  
   const logo = settingsData?.find((value) => value.id_name === "logo");
-  const baseLogoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : null;
-  const logoSrc = logoError || !baseLogoSrc ? "/favicon.png" : baseLogoSrc;
+  const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
   
-  if (baseLogoSrc && !logoError) {
-    console.debug("[Footer] Logo source resolved:", {
+  // Debug logging for logo resolution
+  if (logo?.value) {
+    console.debug("[Footer] Logo configuration:", {
       imageBaseURL,
       logoValue: logo.value,
-      resolvedSrc: baseLogoSrc,
-      fallback: "/favicon.png",
+      resolvedSrc: logoSrc,
+      windowLocation: typeof window !== "undefined" ? window.location.href : "N/A",
     });
   }
   
@@ -43,18 +40,13 @@ const Logo = (props) => {
       p={1}
       onError={(e) => {
         console.error("[Footer] Logo image failed to load:", {
-          attemptedSrc: baseLogoSrc || "none",
-          currentSrc: logoSrc,
-          error: e?.type || e?.message || "Unknown error",
-          usingFallback: logoError || !baseLogoSrc ? true : false,
+          src: logoSrc,
+          error: e,
+          altSrc: "/favicon.png",
         });
-        if (!logoError && baseLogoSrc) {
-          setLogoError(true);
-        }
       }}
       onLoad={() => {
-        if (logoError) setLogoError(false);
-        console.debug("[Footer] Logo loaded successfully:", logoSrc);
+        console.debug("[Footer] Logo image loaded successfully:", logoSrc);
       }}
       {...props}
     />
