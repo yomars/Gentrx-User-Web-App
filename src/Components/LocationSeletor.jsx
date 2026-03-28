@@ -137,6 +137,19 @@ const getCities = async () => {
   }
 };
 
+const formatCityRecord = (city) => {
+  if (!city) {
+    return null;
+  }
+
+  return {
+    id: city.city_id ?? city.id,
+    city: city.city ?? city.name ?? city.title,
+    latitude: city.latitude ?? null,
+    longitude: city.longitude ?? null,
+  };
+};
+
 const LocationSeletor = ({ type }) => {
   const [searchValue, setSearchValue] = useState("");
   const { selectedCity, setSelectedCity } = useCity();
@@ -165,16 +178,11 @@ const LocationSeletor = ({ type }) => {
     const defaultCity = cityList.find((city) => city.default_city === 1);
     const cachedCity = getStorageJSON("currentCity");
     const fallback = defaultCity || (cachedCity && cityList.find(c => c.id === cachedCity.id)) || cityList[0];
-    
-    const cityId = fallback.city_id ?? fallback.id;
-    const cityName = fallback.city ?? fallback.name ?? fallback.title;
-    
-    const formattedCity = {
-      id: cityId,
-      city: cityName,
-      latitude: fallback.latitude,
-      longitude: fallback.longitude,
-    };
+
+    const formattedCity = formatCityRecord(fallback);
+    if (!formattedCity?.id || !formattedCity?.city) {
+      return false;
+    }
 
     setSelectedCity(formattedCity);
     setStorageItem("currentCity", JSON.stringify(formattedCity));
@@ -224,11 +232,22 @@ const LocationSeletor = ({ type }) => {
   }, [applyFallbackCity, setSelectedCity, toast]);
 
   useEffect(() => {
+    if (!selectedCity && cityList.length === 1) {
+      const onlyCity = formatCityRecord(cityList[0]);
+      if (onlyCity?.id && onlyCity?.city) {
+        hasAppliedInitialCityFallback = true;
+        hasAttemptedInitialLocationFetch = true;
+        setSelectedCity(onlyCity);
+        setStorageItem("currentCity", JSON.stringify(onlyCity));
+      }
+      return;
+    }
+
     if (!selectedCity && !hasAttemptedInitialLocationFetch) {
       hasAttemptedInitialLocationFetch = true;
       fetchLocation();
     }
-  }, [selectedCity, fetchLocation]);
+  }, [selectedCity, cityList, fetchLocation, setSelectedCity]);
 
   useEffect(() => {
     if (!selectedCity && cityList.length > 0 && !hasAppliedInitialCityFallback) {
@@ -236,6 +255,17 @@ const LocationSeletor = ({ type }) => {
       applyFallbackCity();
     }
   }, [applyFallbackCity, cityList.length, selectedCity]);
+
+  useEffect(() => {
+    if (!selectedCity?.id || !cityList.length) {
+      return;
+    }
+
+    const matchedCity = cityList.find((city) => String(city.id ?? city.city_id) === String(selectedCity.id));
+    if (!matchedCity) {
+      applyFallbackCity();
+    }
+  }, [applyFallbackCity, cityList, selectedCity]);
 
   const filterCities = () => {
     if (searchValue.length > 0) {
