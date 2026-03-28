@@ -21,7 +21,7 @@ import {
 import LocationSeletor from "./LocationSeletor";
 import { useState } from "react";
 import { useCity } from "../Context/SelectedCity";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { GET } from "../Controllers/ApiControllers";
 import { useQuery } from "@tanstack/react-query";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -39,7 +39,6 @@ const getDept = async () => {
 function Search({ isOpen, onClose }) {
   const [serchQuery, setserchQuery] = useState();
   const { selectedCity } = useCity();
-  const navigate = useNavigate();
   const [selectedDept, setselectedDept] = useState();
 
   const { isLoading: deptLoading, data: deptData } = useQuery({
@@ -56,7 +55,7 @@ function Search({ isOpen, onClose }) {
     return res.data;
   };
 
-  const { isLoading, data, error } = useQuery({
+  const { data } = useQuery({
     queryKey: ["Doctors", selectedCity, selectedDept],
     queryFn: getDoctors,
   });

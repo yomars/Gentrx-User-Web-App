@@ -20,6 +20,7 @@ import moment from "moment";
 import { useNavigate } from "react-router-dom";
 import imageBaseURL from "../Controllers/image";
 import currency from "../Controllers/currency";
+import ErrorPage from "./ErrorPage";
 
 const steps = [
   {

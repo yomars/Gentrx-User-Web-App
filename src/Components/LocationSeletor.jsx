@@ -1,7 +1,7 @@
 ﻿import { MdLocationCity } from "react-icons/md";
 /* eslint-disable react/prop-types */
 import { BiChevronDown } from "react-icons/bi";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -92,7 +92,7 @@ const LocationSeletor = ({ type }) => {
     queryFn: getCities,
   });
 
-  const fetchLocation = async () => {
+  const fetchLocation = useCallback(async () => {
     setisLoading(true); // Start loading
     try {
       const location = await getCurrentLocation();
@@ -126,13 +126,13 @@ const LocationSeletor = ({ type }) => {
     } finally {
       setisLoading(false); // End loading
     }
-  };
+  }, [setSelectedCity, toast]);
 
   useEffect(() => {
     if (!selectedCity) {
       fetchLocation();
     }
-  }, []);
+  }, [selectedCity, fetchLocation]);
 
   const filterCities = () => {
     if (searchValue.length > 0) {

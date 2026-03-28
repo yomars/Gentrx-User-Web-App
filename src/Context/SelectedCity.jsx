@@ -1,4 +1,6 @@
-﻿import { createContext, useState, useContext } from "react";
+﻿/* eslint-disable react-refresh/only-export-components */
+import { createContext, useState, useContext } from "react";
+import PropTypes from "prop-types";
 import currentCity from "../Controllers/currentCity";
 
 // Create the context for selectedCity
@@ -13,6 +15,10 @@ export const CityProvider = ({ children }) => {
       {children}
     </CityContext.Provider>
   );
+};
+
+CityProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 //Custom hook to use the selectedCity context

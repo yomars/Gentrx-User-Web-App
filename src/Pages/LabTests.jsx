@@ -4,7 +4,6 @@ import { ADD, GET } from "../Controllers/ApiControllers";
 import {
   Box,
   Image,
-  Skeleton,
   Text,
   Grid,
   GridItem,

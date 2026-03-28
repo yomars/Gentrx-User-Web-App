@@ -1,5 +1,4 @@
-﻿/* eslint-disable react-hooks/rules-of-hooks */
-import { useQuery } from "@tanstack/react-query";
+﻿import { useQuery } from "@tanstack/react-query";
 import { GET } from "../Controllers/ApiControllers";
 import {
   Box,

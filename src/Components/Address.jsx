@@ -61,7 +61,7 @@ export default function Address({ setAddress, setStep }) {
       {" "}
       <Flex gap={5} mt={2} align={"center"} justify={"center"}>
         {newAddress ? (
-          <AddressForm setAddress={setAddress} setnewAddress={setnewAddress} />
+          <AddressForm setnewAddress={setnewAddress} />
         ) : (
           <Box
             w={"900px"}
@@ -137,16 +137,14 @@ export default function Address({ setAddress, setStep }) {
   );
 }
 
-const AddressForm = ({ setAddress, setnewAddress }) => {
+const AddressForm = ({ setnewAddress }) => {
   const apiKey = "AIzaSyDnoksQQHzBiosL0DacQrW_FzFNXSqVxG8"; // Replace with your actual API key
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isd_code, setisd_code] = useState(defaultISD);
   const { register, handleSubmit } = useForm();
   const [mapData, setmapData] = useState();
 
-  const onSubmit = (data) => {
-    
-  };
+  const onSubmit = () => {};
 
   
 

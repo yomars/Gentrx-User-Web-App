@@ -13,6 +13,35 @@ const MapComponent = ({ apiKey, setmapData }) => {
   const mapRef = useRef(null);
   const searchBoxRef = useRef(null);
 
+  const geocodeLatLng = useCallback(
+    (lat, lng) => {
+      const geocoder = new window.google.maps.Geocoder();
+      const latlng = { lat, lng };
+      let address = { latlng };
+
+      geocoder.geocode({ location: latlng }, (results, status) => {
+        if (status === "OK") {
+          if (results[0]) {
+            results[0].address_components.forEach((component) => {
+              if (component.types.includes("locality")) {
+                address = { ...address, city: component.long_name };
+              }
+              if (component.types.includes("postal_code")) {
+                address = { ...address, pin: component.long_name };
+              }
+            });
+            setmapData(address);
+          } else {
+            return;
+          }
+        } else {
+          return;
+        }
+      });
+    },
+    [setmapData]
+  );
+
   useEffect(() => {
     const scriptId = "google-maps-script";
     const existingScript = document.getElementById(scriptId);
@@ -53,7 +82,7 @@ const MapComponent = ({ apiKey, setmapData }) => {
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
-  }, []);
+  }, [geocodeLatLng]);
 
   const handleMapClick = (event) => {
     const lat = event.latLng.lat();
@@ -76,34 +105,8 @@ const MapComponent = ({ apiKey, setmapData }) => {
       mapRef.current.panTo(location);
       setZoom(10);
     } else {
-      
+      return;
     }
-  };
-
-  const geocodeLatLng = (lat, lng) => {
-    const geocoder = new window.google.maps.Geocoder();
-    const latlng = { lat, lng };
-    let address = { latlng };
-
-    geocoder.geocode({ location: latlng }, (results, status) => {
-      if (status === "OK") {
-        if (results[0]) {
-          results[0].address_components.forEach((component) => {
-            if (component.types.includes("locality")) {
-              address = { ...address, city: component.long_name };
-            }
-            if (component.types.includes("postal_code")) {
-              address = { ...address, pin: component.long_name };
-            }
-          });
-          setmapData(address);
-        } else {
-          
-        }
-      } else {
-        
-      }
-    });
   };
 
   const onMarkerDragEnd = (event) => {

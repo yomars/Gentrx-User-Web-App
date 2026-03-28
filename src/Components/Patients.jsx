@@ -65,8 +65,8 @@ function Patients() {
 
     try {
       setisUserAddLoading(true);
-      const res = await ADD(user.token, "add_patient", apiData);
-      
+      await ADD(user.token, "add_patient", apiData);
+
       showToast(toast, "success", "Success");
       QueryClient.invalidateQueries("patients");
       setaddNew(false);

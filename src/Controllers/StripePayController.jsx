@@ -157,7 +157,7 @@ const StripePaymentController = ({
   const { paymentGetwaysLoading, paymentGetwaysData } = PaymentGetwayData();
   const toast = useToast();
   const [paymentIntent, setPaymentIntent] = useState(null);
-  const [isLoading, setisLoading] = useState(false);
+  const [, setisLoading] = useState(false);
   const [addressData, setAddressData] = useState({
     name: data.name || "",
     address: "",

@@ -29,16 +29,10 @@ import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import showToast from "../Controllers/ShowToast";
 import { ADD } from "../Controllers/ApiControllers";
 import {
-  getAuth,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-} from "firebase/auth";
-import {
   useNavigate,
   Link as RouterLink,
   useSearchParams,
 } from "react-router-dom";
-import { app } from "../Controllers/firebase.config";
 import defaultISD from "../Controllers/defaultISD";
 import { initiate, verify } from "../Utils/initOtpless";
 
@@ -52,11 +46,10 @@ const FirebaseLogin = ({ redirectLocation }) => {
   const [isLoading, setisLoading] = useState(false);
   const toast = useToast();
   const [OTP, setOTP] = useState();
-  const [confirmationResult, setConfirmationResult] = useState(null);
   const navigate = useNavigate();
   const [timer, setTimer] = useState(60);
   const [isResendDisabled, setIsResendDisabled] = useState(true);
-  const [loginMethod, setLoginMethod] = useState("otp"); // "otp" or "password"
+  const [, setLoginMethod] = useState("otp"); // "otp" or "password"
 
   // Password login handler
   const handlePasswordLogin = async () => {
@@ -115,51 +108,16 @@ const FirebaseLogin = ({ redirectLocation }) => {
         showToast(toast, "error", "Phone Number Not Exist! , Please Signup");
         setisLoading(false);
       } else if (res.status === true) {
-        ConfirmLogin();
+        await initiate(phoneNumber);
+        showToast(toast, "success", "OTP sent successfully.");
+        setStep(2);
+        setTimer(60);
+        setIsResendDisabled(true);
+        setisLoading(false);
       }
     } catch (error) {
       showToast(toast, "error", error.message);
       setisLoading(false);
-    }
-  };
-
-  const handleSendCode = async () => {
-    const auth = getAuth(app);
-    window.recaptchaVerifier = new RecaptchaVerifier(
-      auth,
-      "recaptcha-container",
-      {
-        size: "invisible",
-      }
-    );
-    const appVerifier = window.recaptchaVerifier;
-    try {
-      let number = `${isd_code}${phoneNumber}`;
-      const result = await signInWithPhoneNumber(auth, number, appVerifier);
-      setisLoading(false);
-      setConfirmationResult(result);
-      toast({
-        title: "OTP Sent",
-        description: "Please check your phone for the OTP.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-      setStep(2);
-      setTimer(60);
-    } catch (error) {
-      setStep(2);
-      setTimer(60);
-      setisLoading(false);
-      toast({
-        title: "Error",
-        description: "Failed to send OTP. Please try again.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
     }
   };
 
@@ -180,8 +138,19 @@ const FirebaseLogin = ({ redirectLocation }) => {
       ConfirmLogin();
     } else {
       try {
-        const login = await confirmationResult.confirm(OTP);
-        ConfirmLogin(login);
+        const verificationResponse = await verify(phoneNumber, OTP);
+        if (!verificationResponse.success) {
+          setisLoading(false);
+          showToast(
+            toast,
+            "error",
+            verificationResponse.response?.errorMessage ||
+              "Invalid OTP. Please try again."
+          );
+          return;
+        }
+
+        ConfirmLogin();
       } catch (error) {
         setisLoading(false);
         toast({
@@ -259,7 +228,6 @@ const FirebaseLogin = ({ redirectLocation }) => {
           handlePasswordLogin,
           isLoading,
           toast,
-          loginMethod,
           setLoginMethod,
         })
       : step2({
@@ -287,7 +255,6 @@ const FirebaseLogin = ({ redirectLocation }) => {
     handleSubmit,
     handlePasswordLogin,
     isLoading,
-    loginMethod,
     setLoginMethod,
   }) => {
     return (
@@ -557,7 +524,7 @@ const FirebaseLogin = ({ redirectLocation }) => {
   );
 };
 
-const OtpLessLogin = ({ redirectLocation }) => {
+export const OtpLessLogin = ({ redirectLocation }) => {
   const [step, setStep] = useState(1);
   const [isd_code, setIsd_code] = useState(defaultISD);
   const { isOpen, onOpen, onClose } = useDisclosure();

@@ -1,5 +1,4 @@
 ﻿import { FaUsers } from "react-icons/fa";
-/* eslint-disable react-hooks/rules-of-hooks */
 import { AiFillCaretRight, AiFillCaretDown } from "react-icons/ai";
 import { SiOxygen } from "react-icons/si";
 import { MdBloodtype } from "react-icons/md";

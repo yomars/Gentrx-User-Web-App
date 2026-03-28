@@ -1,4 +1,4 @@
-﻿﻿/* eslint-disable react/no-children-prop */
+﻿/* eslint-disable react/no-children-prop */
 /* eslint-disable react/prop-types */
 import {
   AlertDialog,

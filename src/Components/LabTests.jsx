@@ -1,5 +1,4 @@
 ﻿import { BiRightArrowCircle } from "react-icons/bi";
-/* eslint-disable react-hooks/rules-of-hooks */
 import { useQuery } from "@tanstack/react-query";
 import { GET } from "../Controllers/ApiControllers";
 import { Box, Button, Flex, Image, Skeleton, Text } from "@chakra-ui/react";

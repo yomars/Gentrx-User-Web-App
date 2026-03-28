@@ -21,7 +21,7 @@ import {
 } from "@chakra-ui/react";
 import moment from "moment";
 import { useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import Loading from "../Components/Loading";
 import { GET } from "../Controllers/ApiControllers";
 import imageBaseURL from "../Controllers/image";
@@ -283,18 +283,11 @@ const OrderDetails = () => {
 
 export default OrderDetails;
 
-const DailogModal = ({
-  cancelRef,
-  isOpen,
-  onClose,
-  currentStatus,
-  appointID,
-}) => {
-  const queryClient = useQueryClient();
+const DailogModal = ({ cancelRef, isOpen, onClose }) => {
   const toast = useToast();
 
   // initate cancel
-  const handleCancellation = async (data) => {
+  const handleCancellation = async () => {
     onClose();
   };
 

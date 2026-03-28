@@ -78,9 +78,7 @@ const callback = (eventCallback) => {
     console.log({ response });
   };
 
-  const FALLBACK_TRIGGERED = () => {
-    const { response } = eventCallback;
-  };
+  const FALLBACK_TRIGGERED = () => {};
 
   const EVENTS_MAP = {
     ONETAP,

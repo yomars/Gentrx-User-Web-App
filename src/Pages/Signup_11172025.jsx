@@ -6,7 +6,6 @@
   Input,
   InputGroup,
   InputLeftAddon,
-  InputRightElement,
   Link,
   Select,
   Text,
@@ -15,10 +14,6 @@
   FormControl,
   FormErrorMessage,
   Image,
-  PinInput,
-  PinInputField,
-  HStack,
-  IconButton,
 } from "@chakra-ui/react";
 import { useForm, Controller } from "react-hook-form";
 import ISDCODEMODAL from "../Components/ISDCODEMODAL";
@@ -33,7 +28,6 @@ import {
 } from "firebase/auth";
 import { app } from "../Controllers/firebase.config";
 import defaultISD from "../Controllers/defaultISD";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 
 const Signup = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -41,14 +35,13 @@ const Signup = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [OTP, setOTP] = useState();
+  const [OTP] = useState();
   const [confirmationResult, setConfirmationResult] = useState(null);
 
   const {
     handleSubmit,
     register,
     control,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm();
 

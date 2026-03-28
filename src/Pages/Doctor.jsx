@@ -1,5 +1,4 @@
-﻿/* eslint-disable react/prop-types */
-// @ts-nocheck
+﻿// @ts-nocheck
 import {
   Alert,
   AlertIcon,
