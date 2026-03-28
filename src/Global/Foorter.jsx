@@ -25,11 +25,7 @@ const Logo = ({ settingsData: externalSettingsData, ...props }) => {
 
   const logo = settingsData?.find((value) => value.id_name === "logo");
   const baseLogoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : null;
-  const logoSrc = logoError ? "/favicon.png" : baseLogoSrc;
-
-  if (!logoSrc) {
-    return null;
-  }
+  const logoSrc = logoError ? "/favicon.png" : baseLogoSrc || "/favicon.png";
 
   return (
     <Image
