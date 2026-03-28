@@ -39,10 +39,22 @@ export default function HomePage() {
   );
 
   const name = settingsData?.find((value) => value.id_name === "clinic_name");
+  const playStoreLink = settingsData?.find(
+    (value) => value.id_name === "play_store_link"
+  );
+  const appStoreLink = settingsData?.find(
+    (value) => value.id_name === "app_store_link"
+  );
+  const appGalleryLink = settingsData?.find(
+    (value) => value.id_name === "app_gallery_link"
+  );
   const clinicName = name?.value || "GentRx";
   const doctorImageSrc = doctorImage?.value
     ? `${imageBaseURL}/${doctorImage.value}`
     : "/doctor-2.png";
+  const playStoreHref = playStoreLink?.value || "#";
+  const appStoreHref = appStoreLink?.value || "#";
+  const appGalleryHref = appGalleryLink?.value || "#";
   return (
     <Box>
       <Box bg={"primary.main"} maxW={"100vw"} minH={"60vh"}>
@@ -79,8 +91,20 @@ export default function HomePage() {
               >
                 {clinicName} connects you to licensed doctors in minutes. You
                 can book a visit, choose your specialist, and manage your
-                records in one app.
+                records in one app. Download the app and start booking today.
               </Text>
+
+              <Flex gap={4} mt={4} wrap={"wrap"}>
+                <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
+                  <Image src="/play store.png" w={120} />
+                </a>
+                <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
+                  <Image src="/app store.png" w={120} />
+                </a>
+                <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
+                  <Image src="/appgallery.png" w={120} />
+                </a>
+              </Flex>
 
               <Flex gap={5} mt={5}>
                 <Button
@@ -118,6 +142,28 @@ export default function HomePage() {
               flex={1}
             />
           </Flex>
+
+          <Grid
+            templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }}
+            gap={4}
+            pb={10}
+          >
+            {[
+              { value: "35+", label: "Years of Experience" },
+              { value: "30+", label: "Years of Experience" },
+              { value: "100+", label: "Years of Experience" },
+              { value: "500+", label: "Years of Experience" },
+            ].map((stat) => (
+              <GridItem key={stat.value} textAlign="center" color="#fff">
+                <Heading fontSize={{ base: "28px", md: "36px" }} color="primary.text">
+                  {stat.value}
+                </Heading>
+                <Text fontSize={{ base: "12px", md: "14px" }} color="#ffffffcc">
+                  {stat.label}
+                </Text>
+              </GridItem>
+            ))}
+          </Grid>
         </div>
       </Box>
       <Box>
@@ -561,10 +607,8 @@ export default function HomePage() {
                 mt={0}
                 color={"gray.600"}
               >
-                We serve as your reliable one-stop destination for all your
-                healthcare needs. Our extensive directory is crafted to offer
-                convenient access to a diverse array of healthcare services and
-                providers, guaranteeing optimal care for you and your family.
+                Follow these steps to set your appointment and complete your
+                visit with ease.
               </Text>
             </Box>
           </Flex>
@@ -622,7 +666,7 @@ export default function HomePage() {
                     fontWeight={600}
                     mt={3}
                   >
-                    Prescribe & Payment
+                    Prescribe and Payment
                   </Text>
                 </Box>
               </GridItem>
@@ -689,7 +733,7 @@ const FAQ = () => {
       answer: `The treatment process at ${clinicName} involves booking an Appointment, conducting a checkup, performing the necessary treatment, and prescribing medications or further care. Our streamlined process ensures efficient and effective care.`,
     },
     {
-      question: `How does ${name.value} ensure the quality of its medical services?`,
+      question: `How does ${clinicName} ensure the quality of its medical services?`,
       answer: `We utilize cutting-edge medical technology and state-of-the-art facilities to provide the highest quality care. Our dedicated team of healthcare professionals ensures personalized attention and expert medical guidance throughout your treatment journey.`,
     },
 
