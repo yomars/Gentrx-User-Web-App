@@ -6,8 +6,6 @@ import useSettingsData from "../Hooks/SettingData";
 import { BsPrescription } from "react-icons/bs";
 import { HiUserCircle } from "react-icons/hi";
 import { IoMdWallet } from "react-icons/io";
-import Clinics from "../Components/Clinics";
-import Doctors from "../Components/Doctors";
 import Testimonials from "../Components/Testimonials";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -144,10 +142,10 @@ export default function HomePage() {
                 borderRight={{ base: "0", md: "1px solid #e8e8e8" }}
                 _last={{ borderRight: "0" }}
               >
-                <Heading fontSize={{ base: "34px", md: "46px" }} color="#34C38F" lineHeight={1}>
+                <Heading fontSize={{ base: "28px", md: "38px" }} color="#34C38F" lineHeight={1}>
                   {stat.value}
                 </Heading>
-                <Text fontSize={{ base: "16px", md: "14px" }} color="#2f3848" mt={1}>
+                <Text fontSize={{ base: "13px", md: "12px" }} color="#2f3848" mt={1}>
                   {stat.label}
                 </Text>
               </GridItem>
@@ -156,7 +154,7 @@ export default function HomePage() {
         </div>
       </Box>
 
-      <Box id="started" bg="#fff">
+      <Box id="started" bg="#f3f3f3">
         <Box pb={16} pt={8}>
           <Departments />
         </Box>
@@ -166,7 +164,7 @@ export default function HomePage() {
         <div className="container">
           <Flex gap={8} pt={6} flexDir={{ base: "column", md: "row" }}>
             <Flex flex={1} justify={{ base: "center", md: "left" }}>
-              <Image src="/images/quality-care.png" w={{ base: 360, md: 460 }} objectFit="contain" />
+              <Image src="/mobile-promotion.png" w={{ base: 360, md: 460 }} objectFit="contain" />
             </Flex>
             <Box flex={1} pb={10}>
               <Text
@@ -241,12 +239,128 @@ export default function HomePage() {
           >
             Pay using trusted platforms available nationwide. Choose the method that fits your needs.
           </Text>
-          <Flex mt={8} gap={8} justify="center" align="center" wrap="wrap">
-            <Image src="/icons/payment-methods/gcash.svg" maxH="58px" w="auto" objectFit="contain" />
-            <Image src="/icons/payment-methods/paymaya-combined.svg" maxH="58px" w="auto" objectFit="contain" />
-            <Image src="/icons/payment-methods/dragonpay.png" maxH="58px" w="auto" objectFit="contain" />
-            <Image src="/icons/payment-methods/visa.svg" maxH="58px" w="auto" objectFit="contain" />
-            <Image src="/icons/payment-methods/mastercard.svg" maxH="58px" w="auto" objectFit="contain" />
+          <Flex
+            mt={8}
+            gap={{ base: 4, md: 6 }}
+            justify="center"
+            align="center"
+            wrap="wrap"
+            rowGap={{ base: 4, md: 5 }}
+          >
+            <Image
+              src="/icons/payment-methods/gcash.svg"
+              h={{ base: "36px", md: "50px" }}
+              maxW={{ base: "100px", md: "150px" }}
+              w="auto"
+              objectFit="contain"
+            />
+            <Image
+              src="/icons/payment-methods/paymaya-combined.svg"
+              h={{ base: "36px", md: "50px" }}
+              maxW={{ base: "110px", md: "170px" }}
+              w="auto"
+              objectFit="contain"
+            />
+            <Image
+              src="/icons/payment-methods/dragonpay.png"
+              h={{ base: "36px", md: "50px" }}
+              maxW={{ base: "105px", md: "160px" }}
+              w="auto"
+              objectFit="contain"
+            />
+            <Image
+              src="/icons/payment-methods/visa.svg"
+              h={{ base: "36px", md: "50px" }}
+              maxW={{ base: "95px", md: "140px" }}
+              w="auto"
+              objectFit="contain"
+            />
+            <Image
+              src="/icons/payment-methods/mastercard.svg"
+              h={{ base: "36px", md: "50px" }}
+              maxW={{ base: "95px", md: "140px" }}
+              w="auto"
+              objectFit="contain"
+            />
+          </Flex>
+        </div>
+      </Box>
+
+      <Box mt={4} bg="#f3f3f3" pt={5} pb={14}>
+        <div className="container">
+          <Flex p={0} align="flex-start" flexDir={{ base: "column", md: "row" }} gap={{ base: 8, md: 12 }}>
+            {/* Left Side: Heading, Description, Steps Grid */}
+            <Box flex={1}>
+              <Heading
+                color="#34C38F"
+                fontSize={{ base: "34px", md: "48px" }}
+                lineHeight={1.1}
+                mb={4}
+              >
+                Your Step by Step Guide to Booking a Visit and Completing Your Treatment
+              </Heading>
+              <Text fontSize={{ base: "18px", md: "18px" }} fontWeight={500} color="#2f3848" mb={8}>
+                Follow these steps to set your appointment and complete your visit with ease.
+              </Text>
+              {/* Steps Grid 2x2 */}
+              <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={{ base: 5, md: 6 }} mb={8}>
+                <Box bg="#f0f7f4" p={{ base: 5, md: 6 }} borderRadius="12px">
+                  <Heading color="#34C38F" fontSize={{ base: "32px", md: "40px" }} mb={2}>
+                    1.
+                  </Heading>
+                  <Text fontSize={{ base: "16px", md: "18px" }} color="#2f3848" fontWeight={500}>
+                    Book an Appointment
+                  </Text>
+                </Box>
+                <Box bg="#f0f7f4" p={{ base: 5, md: 6 }} borderRadius="12px">
+                  <Heading color="#34C38F" fontSize={{ base: "32px", md: "40px" }} mb={2}>
+                    2.
+                  </Heading>
+                  <Text fontSize={{ base: "16px", md: "18px" }} color="#2f3848" fontWeight={500}>
+                    Conduct Checkup
+                  </Text>
+                </Box>
+                <Box bg="#f0f7f4" p={{ base: 5, md: 6 }} borderRadius="12px">
+                  <Heading color="#34C38F" fontSize={{ base: "32px", md: "40px" }} mb={2}>
+                    3.
+                  </Heading>
+                  <Text fontSize={{ base: "16px", md: "18px" }} color="#2f3848" fontWeight={500}>
+                    Perform Treatment
+                  </Text>
+                </Box>
+                <Box bg="#f0f7f4" p={{ base: 5, md: 6 }} borderRadius="12px">
+                  <Heading color="#34C38F" fontSize={{ base: "32px", md: "40px" }} mb={2}>
+                    4.
+                  </Heading>
+                  <Text fontSize={{ base: "16px", md: "18px" }} color="#2f3848" fontWeight={500}>
+                    Prescribe and Payment
+                  </Text>
+                </Box>
+              </Grid>
+              {/* CTA Button */}
+              <Button
+                bg="#005FCC"
+                color="white"
+                fontWeight={600}
+                fontSize={{ base: "16px", md: "18px" }}
+                py={{ base: 6, md: 7 }}
+                px={{ base: 8, md: 10 }}
+                borderRadius="24px"
+                _hover={{ bg: "#0047A3" }}
+              >
+                Book an Appointment
+              </Button>
+            </Box>
+            {/* Right Side: Doctor Image */}
+            <Box flex={1} display="flex" justifyContent="center" alignItems="flex-start">
+              <Image
+                src="/yourstepbystepheronew.png"
+                w={{ base: "100%", md: "100%" }}
+                maxH={{ base: "420px", md: "600px" }}
+                objectFit="contain"
+                borderRadius="16px"
+              />
+            </Box>
           </Flex>
         </div>
       </Box>
@@ -274,45 +388,6 @@ export default function HomePage() {
             </Flex>
           </Flex>
         </div>
-      </Box>
-
-      <Box mt={4} bg="#f3f3f3" pt={5} pb={14}>
-        <div className="container">
-          <Flex p={0} align="center" flexDir={{ base: "column", md: "row" }}>
-            <Box flex={1}>
-              <Heading
-                color="#34C38F"
-                fontSize={{ base: "34px", md: "48px" }}
-                w={{ base: "95%", md: "90%" }}
-                lineHeight={1.1}
-              >
-                Your Step by Step Guide to Booking a Visit and Completing Your Treatment
-              </Heading>
-            </Box>
-            <Box flex={1}>
-              <Text fontSize={{ base: "18px", md: "18px" }} fontWeight={500} mt={0} color="#2f3848">
-                Follow these steps to set your appointment and complete your visit with ease.
-              </Text>
-            </Box>
-          </Flex>
-          <Box mt={8} display="flex" justifyContent="center">
-            <Image
-              src="/yourstepbystepheronew.png"
-              w={{ base: "100%", md: "86%" }}
-              maxH={{ base: "420px", md: "460px" }}
-              objectFit="contain"
-              borderRadius="16px"
-            />
-          </Box>
-        </div>
-      </Box>
-
-      <Box bg="#fff" py={8}>
-        <Clinics />
-      </Box>
-
-      <Box bg="#fff" py={10}>
-        <Doctors />
       </Box>
 
       <Box bg="#fff" py={12}>

@@ -87,7 +87,13 @@ export default function ContactUs() {
   return (
     <Box>
       {" "}
-      <Box bg={"primary.main"} p={4} py={{ base: "4", md: "20" }}>
+      <Box
+        bg="#eafaf7"
+        p={4}
+        py={{ base: "4", md: "20" }}
+        border="1px solid"
+        borderColor="#d6f1eb"
+      >
         <Box className="container">
           <Text
             fontFamily={"Quicksand, sans-serif"}
@@ -95,7 +101,7 @@ export default function ContactUs() {
             fontWeight={700}
             textAlign={"center"}
             mt={0}
-            color={"#fff"}
+            color={"#1d8f7a"}
           >
             We Are Here to Assist You With Any Inquiry
           </Text>
@@ -106,7 +112,7 @@ export default function ContactUs() {
             fontWeight={500}
             textAlign={"center"}
             mt={0}
-            color={"#fff"}
+            color={"#4f6787"}
           >
             If you have questions about appointments, services, or patient
             care, reach out to us. Our team is ready to help and ensure you

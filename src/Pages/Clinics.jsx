@@ -1,5 +1,4 @@
-﻿/* eslint-disable react-hooks/rules-of-hooks */
-import { useQuery } from "@tanstack/react-query";
+﻿import { useQuery } from "@tanstack/react-query";
 import { GET } from "../Controllers/ApiControllers";
 import {
   Box,
@@ -46,11 +45,13 @@ export default function Clinics() {
     <Box minH="100vh" bg={bgColor}>
       {/* Header Section */}
       <Box
-        bg={"primary.main"}
+        bg="#eafaf7"
         py={{ base: 8, md: 12 }}
         position="relative"
         overflow="hidden"
         borderBottomRadius="xl"
+        border="1px solid"
+        borderColor="#d6f1eb"
       >
         <Box className="container" position="relative" zIndex={1}>
           <VStack spacing={3}>
@@ -58,7 +59,7 @@ export default function Clinics() {
               fontFamily="Quicksand, sans-serif"
               fontSize={{ base: "3xl", md: "4xl" }}
               fontWeight="extrabold"
-              color="white"
+              color="#1d8f7a"
               textAlign="center"
               letterSpacing="wide"
             >
@@ -67,7 +68,7 @@ export default function Clinics() {
             <Text
               fontFamily="Quicksand, sans-serif"
               fontSize={{ base: "lg", md: "xl" }}
-              color="gray.300"
+              color="#4f6787"
               textAlign="center"
               maxW="lg"
             >

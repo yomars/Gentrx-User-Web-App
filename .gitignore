@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated media artifacts (large binaries)
+artifacts/legacy-video-frames/
+artifacts/newsite-video-frames/

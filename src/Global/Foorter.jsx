@@ -18,11 +18,11 @@ const Logo = (props) => {
   const { settingsData } = useSettingsData();
   const logo = settingsData?.find((value) => value.id_name === "logo");
   const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
-  return <Image w={32} src={logoSrc} alt="Logo" {...props} />;
+  return <Image w={32} src={logoSrc} alt="Logo" filter="drop-shadow(0 0 12px rgba(255,255,255,0.8))" {...props} />;
 };
 
 const ListHeader = ({ children }) => (
-  <Text fontWeight={500} fontSize={{ base: "18px", md: "36px" }} mb={2} color="#fff">
+  <Text fontWeight={500} fontSize={{ base: "12px", md: "16px" }} mb={1} color="#fff">
     {children}
   </Text>
 );
@@ -42,53 +42,53 @@ export default function Footer() {
 
   return (
     <Box bg="#1f48dd" color="#fff">
-      <Container as={Stack} maxW="6xl" py={10}>
+      <Container as={Stack} maxW="6xl" py={4}>
         <SimpleGrid
           templateColumns={{ base: "1fr", md: "1fr 1fr 1fr" }}
-          spacing={6}
-          mt={4}
+          spacing={3}
+          mt={2}
         >
           <Stack align="flex-start">
             <Logo />
-            <Box as={RouterLink} to="/about-us" color="#fff" fontSize={{ base: "16px", md: "36px" }}>
+            <Box as={RouterLink} to="/about-us" color="#fff" fontSize={{ base: "11px", md: "14px" }}>
               About GentRX
             </Box>
           </Stack>
 
           <Stack align="flex-start">
             <ListHeader>Useful Links</ListHeader>
-            <Box as={RouterLink} to="/login" color="#fff" fontSize={{ base: "16px", md: "34px" }}>
+            <Box as={RouterLink} to="/login" color="#fff" fontSize={{ base: "11px", md: "14px" }}>
               Login as a Patient
             </Box>
-            <Box as={RouterLink} to="/login" color="#fff" fontSize={{ base: "16px", md: "34px" }}>
+            <Box as={RouterLink} to="/login" color="#fff" fontSize={{ base: "11px", md: "14px" }}>
               Login as a Nurse
             </Box>
-            <Box as={Link} href="https://www.gentrx.ph/admin/" isExternal color="#fff" fontSize={{ base: "16px", md: "34px" }}>
+            <Box as={Link} href="https://www.gentrx.ph/admin/" isExternal color="#fff" fontSize={{ base: "11px", md: "14px" }}>
               Login as a Doctor
             </Box>
           </Stack>
 
           <Stack align="flex-start">
             <ListHeader>Legal and Privacy</ListHeader>
-            <Box as={RouterLink} to="/terms-and-conditions" color="#fff" fontSize={{ base: "16px", md: "34px" }}>
+            <Box as={RouterLink} to="/terms-and-conditions" color="#fff" fontSize={{ base: "11px", md: "14px" }}>
               Terms and Conditions
             </Box>
-            <Box as={RouterLink} to="/data-retention-policy" color="#fff" fontSize={{ base: "16px", md: "34px" }}>
+            <Box as={RouterLink} to="/data-retention-policy" color="#fff" fontSize={{ base: "11px", md: "14px" }}>
               Data Retention Policy
             </Box>
-            <Box as={RouterLink} to="/cookie-policy" color="#fff" fontSize={{ base: "16px", md: "34px" }}>
+            <Box as={RouterLink} to="/cookie-policy" color="#fff" fontSize={{ base: "11px", md: "14px" }}>
               Cookie Policy
             </Box>
-            <Box as={RouterLink} to="/privacy-policy" color="#fff" fontSize={{ base: "16px", md: "34px" }}>
+            <Box as={RouterLink} to="/privacy-policy" color="#fff" fontSize={{ base: "11px", md: "14px" }}>
               Privacy Policy
             </Box>
           </Stack>
         </SimpleGrid>
 
-        <Divider borderColor="rgba(255,255,255,0.5)" my={8} />
+        <Divider borderColor="rgba(255,255,255,0.5)" my={4} />
 
-        <Stack spacing={5}>
-          <Text fontSize={{ base: "26px", md: "58px" }} fontWeight={600}>
+        <Stack spacing={2}>
+          <Text fontSize={{ base: "12px", md: "18px" }} fontWeight={600}>
             Download our app and register now
           </Text>
           <Flex gap={5} justifyContent="start" w="100%" wrap="wrap">
@@ -99,7 +99,7 @@ export default function Footer() {
               <Image src="/app store.png" w={180} />
             </Link>
           </Flex>
-          <Text fontSize={{ base: "28px", md: "44px" }} pt={4}>
+          <Text fontSize={{ base: "11px", md: "14px" }} pt={2}>
             © 2025. {clinicName}. Philippines. All Rights Reserved.
           </Text>
         </Stack>

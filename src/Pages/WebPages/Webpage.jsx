@@ -34,7 +34,13 @@ function Webpage({ id }) {
   return (
     <Box>
       {" "}
-      <Box bg={"primary.main"} p={4} py={{ base: "4", md: "10" }}>
+      <Box
+        bg="#eafaf7"
+        p={4}
+        py={{ base: "4", md: "10" }}
+        border="1px solid"
+        borderColor="#d6f1eb"
+      >
         <Box className="container">
           <Text
             fontFamily={"Quicksand, sans-serif"}
@@ -42,7 +48,7 @@ function Webpage({ id }) {
             fontWeight={700}
             textAlign={"center"}
             mt={0}
-            color={"#fff"}
+            color={"#1d8f7a"}
           >
             {data?.title}
           </Text>

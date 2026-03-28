@@ -1,5 +1,4 @@
 ﻿/* eslint-disable react/no-children-prop */
-/* eslint-disable react-hooks/rules-of-hooks */
 import { useQuery } from "@tanstack/react-query";
 import { GET } from "../Controllers/ApiControllers";
 import {
@@ -64,7 +63,13 @@ export default function Doctors() {
 
   return (
     <Box>
-      <Box bg={"primary.main"} p={4} py={{ base: "4", md: "20" }}>
+      <Box
+        bg="#eafaf7"
+        p={4}
+        py={{ base: "4", md: "20" }}
+        border="1px solid"
+        borderColor="#d6f1eb"
+      >
         <Box className="container">
           <Text
             fontFamily={"Quicksand, sans-serif"}
@@ -72,7 +77,7 @@ export default function Doctors() {
             fontWeight={700}
             textAlign={"center"}
             mt={0}
-            color={"#fff"}
+            color={"#1d8f7a"}
           >
             Our Doctors
           </Text>
@@ -82,7 +87,7 @@ export default function Doctors() {
             fontWeight={700}
             textAlign={"center"}
             mt={0}
-            color={"#fff"}
+            color={"#4f6787"}
           >
             Explore a Multifaceted Team of <br />
             <Text as={"span"} color={"green.text"} fontWeight={800}>
