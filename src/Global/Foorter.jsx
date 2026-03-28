@@ -18,11 +18,20 @@ import imageBaseURL from "../Controllers/image";
 const Logo = (props) => {
   const { settingsData } = useSettingsData();
   const [logoError, setLogoError] = React.useState(false);
-
+  
   const logo = settingsData?.find((value) => value.id_name === "logo");
   const baseLogoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : null;
   const logoSrc = logoError || !baseLogoSrc ? "/favicon.png" : baseLogoSrc;
-
+  
+  if (baseLogoSrc && !logoError) {
+    console.debug("[Footer] Logo source resolved:", {
+      imageBaseURL,
+      logoValue: logo.value,
+      resolvedSrc: baseLogoSrc,
+      fallback: "/favicon.png",
+    });
+  }
+  
   return (
     <Image
       w={32}
@@ -45,6 +54,7 @@ const Logo = (props) => {
       }}
       onLoad={() => {
         if (logoError) setLogoError(false);
+        console.debug("[Footer] Logo loaded successfully:", logoSrc);
       }}
       {...props}
     />

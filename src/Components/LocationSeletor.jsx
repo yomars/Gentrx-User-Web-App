@@ -101,14 +101,23 @@ const getCity = async (lat, lng) => {
       2,
       300
     );
-
+    
+    console.debug("[LocationSelector] get_current_city response:", {
+      type: typeof res,
+      hasData: !!res?.data,
+      hasStatus: !!res?.status,
+      keys: Array.isArray(res) ? res.length : Object.keys(res || {}).slice(0, 5),
+    });
+    
     const fields = extractCityFields(res);
     if (!fields?.cityId || !fields?.cityName) {
+      console.error("[LocationSelector] Missing required city fields in response:", { response: res, extracted: fields });
       throw new Error("Invalid city response format");
     }
-
+    
     return fields;
   } catch (err) {
+    console.error("[LocationSelector] getCity error:", err.message, { lat, lng });
     throw err;
   }
 };
@@ -120,15 +129,22 @@ const getCities = async () => {
       2,
       300
     );
-
+    
     // Handle multiple response formats
     let citiesData = Array.isArray(res) ? res : res?.data;
     if (!Array.isArray(citiesData)) {
+      console.error("[LocationSelector] Invalid cities response format:", { type: typeof res, hasData: !!res?.data });
       return [];
     }
-
+    
+    console.debug("[LocationSelector] Fetched cities:", {
+      count: citiesData.length,
+      hasDefaults: citiesData.filter(c => c.default_city === 1).length > 0,
+    });
+    
     return citiesData;
   } catch (err) {
+    console.error("[LocationSelector] getCities error:", err.message);
     return [];
   }
 };
@@ -151,9 +167,21 @@ const LocationSeletor = ({ type }) => {
   });
 
   const cityList = Array.isArray(cities) ? cities : [];
+  
+  // Debug: Log exact state to understand what's being rendered
+  useEffect(() => {
+    console.log("[LocationSelector DEBUG] Current state:", {
+      selectedCity,
+      selectedCityValue: selectedCity?.city,
+      citiesCount: cityList.length,
+      firstCity: cityList[0],
+      allCities: cityList.map(c => ({ id: c.id, city: c.city, title: c.title, name: c.name, isDefault: c.default_city === 1 })),
+    });
+  }, [selectedCity, cityList]);
 
   const applyFallbackCity = useCallback(() => {
     if (!cityList.length) {
+      console.warn("[LocationSelector] No cities available for fallback");
       return false;
     }
 
@@ -172,6 +200,7 @@ const LocationSeletor = ({ type }) => {
       longitude: fallback.longitude,
     };
 
+    console.info("[LocationSelector] Applying fallback city:", formattedCity);
     setSelectedCity(formattedCity);
     setStorageItem("currentCity", JSON.stringify(formattedCity));
     return true;
@@ -183,7 +212,8 @@ const LocationSeletor = ({ type }) => {
       // Try to get user's current location first
       try {
         const location = await getCurrentLocation();
-
+        console.debug("[LocationSelector] Geolocation obtained:", location);
+        
         try {
           const cityData = await getCity(location.latitude, location.longitude);
           if (cityData?.cityId && cityData?.cityName) {
@@ -193,15 +223,18 @@ const LocationSeletor = ({ type }) => {
               latitude: cityData.latitude,
               longitude: cityData.longitude,
             };
+            console.info("[LocationSelector] Set city from geolocation:", formattedCity);
             setStorageItem("currentCity", JSON.stringify(formattedCity));
             setSelectedCity(formattedCity);
             return;
           }
         } catch (cityError) {
+          console.warn("[LocationSelector] Failed to fetch city for location, falling back...", cityError.message);
         }
       } catch (geoError) {
+        console.warn("[LocationSelector] Geolocation unavailable:", geoError);
       }
-
+      
       // Fallback to default/cached city
       const hasFallback = applyFallbackCity();
       if (!hasFallback) {
@@ -263,7 +296,10 @@ const LocationSeletor = ({ type }) => {
             {isLoading ? (
               <LoadingText />
             ) : selectedCity ? (
-              selectedCity.city
+              <>
+                {console.debug('[LocationSelector] Rendering button with city:', selectedCity.city)}
+                {selectedCity.city}
+              </>
             ) : (
               "Select Location"
             )}
@@ -283,7 +319,10 @@ const LocationSeletor = ({ type }) => {
             {isLoading ? (
               <LoadingText />
             ) : selectedCity ? (
-              selectedCity.city
+              <>
+                {console.debug('[LocationSelector] Rendering button with city:', selectedCity.city)}
+                {selectedCity.city}
+              </>
             ) : (
               "Select Location"
             )}
@@ -328,6 +367,12 @@ const LocationSeletor = ({ type }) => {
                 mb={2}
               />
             </HStack>
+            <Box fontSize="xs" color="gray.500" px={4} pb={2} maxH="60px" overflowY="auto" bg="gray.50" borderRadius="sm" p={2}>
+              <Text fontWeight="bold">DEBUG INFO:</Text>
+              <Text>Cities loaded: {cityList.length}</Text>
+              <Text>Selected: {selectedCity?.city || "none"}</Text>
+              <Text>Loading: {isLoading ? "yes" : "no"}</Text>
+            </Box>
             {citiesLoading ? (
               "Loading..."
             ) : (

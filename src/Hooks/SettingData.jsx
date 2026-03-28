@@ -18,14 +18,27 @@ const normalizeSettings = (data) => {
 const getData = async () => {
   try {
     const res = await GET(`get_configurations`);
+    console.debug("[SettingsData] Raw API response:", {
+      type: typeof res,
+      isArray: Array.isArray(res),
+      hasData: !!res?.data,
+      keys: !Array.isArray(res) ? Object.keys(res || {}).slice(0, 5) : [],
+    });
+    
     const settings = normalizeSettings(res);
-
+    
     if (Array.isArray(settings) && settings.length > 0) {
+      console.info("[SettingsData] Loaded configurations:", {
+        count: settings.length,
+        keys: settings.map(s => s.id_name).join(", ").substring(0, 100),
+      });
       return settings;
     }
-
+    
+    console.warn("[SettingsData] No valid settings found in response", { res });
     return [];
   } catch (err) {
+    console.error("[SettingsData] Error fetching configurations:", err.message);
     return [];
   }
 };
