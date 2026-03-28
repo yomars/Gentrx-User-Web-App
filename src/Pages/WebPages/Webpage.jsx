@@ -2,7 +2,7 @@
 import { GET } from "../../Controllers/ApiControllers";
 import { useQuery } from "@tanstack/react-query";
 import Loading from "../../Components/Loading";
-import { Alert, AlertIcon, Box, ChakraProvider, Text } from "@chakra-ui/react";
+import { Box, ChakraProvider, Text } from "@chakra-ui/react";
 import DOMPurify from "dompurify";
 import { NotFoundPage } from "../NotFoundPage";
 
