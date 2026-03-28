@@ -535,17 +535,16 @@ export default function TopbarNew() {
                     {" "}
                     <Button
                       fontSize={"sm"}
-                      fontWeight={500}
+                      fontWeight={600}
                       href={"#"}
-                      colorScheme={"green"}
+                      color={"#111827"}
+                      variant={"link"}
                       as={Link}
                       to={"/login"}
                       onClick={() => {
                         navigate("/login");
                         onClose();
                       }}
-                      w="100px"
-                      h="30px"
                     >
                       Sign In
                     </Button>
@@ -553,14 +552,15 @@ export default function TopbarNew() {
                       fontSize={"sm"}
                       fontWeight={600}
                       color={"white"}
-                      variant="ghost"
-                      bg={"pink.400"}
+                      variant="solid"
+                      bg={"#1f48dd"}
                       href={"#"}
                       _hover={{
-                        bg: "pink.300",
+                        bg: "#173bb8",
                       }}
-                      w="100px"
-                      h="30px"
+                      borderRadius={"999px"}
+                      px={6}
+                      h="40px"
                       onClick={() => {
                         navigate("/signup");
                         onClose();
