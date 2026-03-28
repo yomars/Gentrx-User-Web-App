@@ -1,9 +1,8 @@
-﻿import { lazy, startTransition, Suspense, useEffect } from "react";
+﻿import { lazy, startTransition, Suspense, useEffect, useMemo } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Box } from "@chakra-ui/react";
 import Footer from "./Foorter";
 import Loading from "../Components/Loading";
-import ErrorPage from "../Pages/ErrorPage";
 import { NotFoundPage } from "../Pages/NotFoundPage";
 import imageBaseURL from "../Controllers/image";
 import TopbarNew from "./TopbarNew";
@@ -49,17 +48,21 @@ const Clinics = lazy(() => import("../Pages/Clinics"));
 
 export default function Main() {
   const location = useLocation();
-  const { settingsData, settingsLoading, settingsError } = useSettingsData();
+  const { settingsData, settingsLoading } = useSettingsData();
+  const resolvedSettingsData = useMemo(
+    () => (Array.isArray(settingsData) ? settingsData : []),
+    [settingsData]
+  );
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location]);
 
   useEffect(() => {
-    const faviconItem = settingsData?.find(
+    const faviconItem = resolvedSettingsData.find(
       (value) => value.id_name === "fav_icon"
     );
-    const title = settingsData?.find(
+    const title = resolvedSettingsData.find(
       (value) => value.id_name === "clinic_name"
     );
     const faviconPath = faviconItem?.value ? `${imageBaseURL}/${faviconItem.value}` : "/favicon.png";
@@ -76,14 +79,13 @@ export default function Main() {
       favicon.href = faviconPath;
       document.getElementsByTagName("head")[0].appendChild(favicon);
     });
-  }, [settingsData]);
+  }, [resolvedSettingsData]);
 
-  const web_technical_issue = settingsData?.find(
+  const web_technical_issue = resolvedSettingsData.find(
     (value) => value.id_name === "web_technical_issue_enable"
   );
 
   if (settingsLoading) return <Loading />;
-  if (!settingsData || settingsError) return <ErrorPage />;
 
   return (
     <div>

@@ -20,6 +20,7 @@ import { GET } from "../Controllers/ApiControllers";
 import { useQuery } from "@tanstack/react-query";
 import { useCity } from "../Context/SelectedCity";
 import { motion } from "framer-motion";
+import { setStorageItem } from "../lib/storage";
 
 const LoadingText = () => {
   return (
@@ -87,10 +88,17 @@ const LocationSeletor = ({ type }) => {
   const toast = useToast();
   const [isLoading, setisLoading] = useState(false);
 
-  const { data: cities, isLoading: citiesLoading } = useQuery({
+  const {
+    data: cities,
+    isLoading: citiesLoading,
+    isError: citiesError,
+  } = useQuery({
     queryKey: ["cities"],
     queryFn: getCities,
+    retry: 1,
   });
+
+  const cityList = Array.isArray(cities) ? cities : [];
 
   const fetchLocation = useCallback(async () => {
     setisLoading(true); // Start loading
@@ -102,7 +110,7 @@ const LocationSeletor = ({ type }) => {
           id: city.city_id,
           city: city.city,
         };
-        localStorage.setItem("currentCity", JSON.stringify(formattedCity));
+        setStorageItem("currentCity", JSON.stringify(formattedCity));
         setSelectedCity(formattedCity);
       } catch (error) {
         toast({
@@ -136,11 +144,11 @@ const LocationSeletor = ({ type }) => {
 
   const filterCities = () => {
     if (searchValue.length > 0) {
-      return cities.filter((city) =>
+      return cityList.filter((city) =>
         city.title.toLowerCase().includes(searchValue.toLowerCase())
       );
     }
-    return cities;
+    return cityList;
   };
 
   return (
@@ -242,6 +250,11 @@ const LocationSeletor = ({ type }) => {
               "Loading..."
             ) : (
               <>
+                {citiesError && (
+                  <Text color="red.500" fontSize="sm" px={4} pb={2}>
+                    Unable to load city list. You can still use current location.
+                  </Text>
+                )}
                 <MenuItem
                   onClick={fetchLocation}
                   color={"primary.text"}
@@ -268,10 +281,7 @@ const LocationSeletor = ({ type }) => {
                         longitude: city.longitude,
                       };
                       setSelectedCity(selectdCity);
-                      localStorage.setItem(
-                        "currentCity",
-                        JSON.stringify(selectdCity)
-                      );
+                      setStorageItem("currentCity", JSON.stringify(selectdCity));
                     }}
                     py={2}
                     px={4}
