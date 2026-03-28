@@ -15,13 +15,21 @@ import React from "react";
 import useSettingsData from "../Hooks/SettingData";
 import imageBaseURL from "../Controllers/image";
 
-const Logo = (props) => {
-  const { settingsData } = useSettingsData();
+const Logo = ({ settingsData: externalSettingsData, ...props }) => {
+  const { settingsData: queriedSettingsData } = useSettingsData();
+  const settingsData =
+    Array.isArray(externalSettingsData) && externalSettingsData.length
+      ? externalSettingsData
+      : queriedSettingsData;
   const [logoError, setLogoError] = React.useState(false);
 
   const logo = settingsData?.find((value) => value.id_name === "logo");
   const baseLogoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : null;
-  const logoSrc = logoError || !baseLogoSrc ? "/favicon.png" : baseLogoSrc;
+  const logoSrc = logoError ? "/favicon.png" : baseLogoSrc;
+
+  if (!logoSrc) {
+    return null;
+  }
 
   return (
     <Image
@@ -57,8 +65,12 @@ const ListHeader = ({ children }) => (
   </Text>
 );
 
-export default function Footer() {
-  const { settingsData } = useSettingsData();
+export default function Footer({ settingsData: externalSettingsData }) {
+  const { settingsData: queriedSettingsData } = useSettingsData();
+  const settingsData =
+    Array.isArray(externalSettingsData) && externalSettingsData.length
+      ? externalSettingsData
+      : queriedSettingsData;
   const play_store_link = settingsData?.find(
     (value) => value.id_name === "play_store_link"
   );
@@ -79,7 +91,7 @@ export default function Footer() {
           mt={2}
         >
           <Stack align="flex-start">
-            <Logo />
+            <Logo settingsData={settingsData} />
             <Box as={RouterLink} to="/about-us" color="#fff" fontSize={{ base: "11px", md: "14px" }}>
               About GentRX
             </Box>

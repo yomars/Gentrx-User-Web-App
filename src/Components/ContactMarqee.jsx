@@ -3,13 +3,21 @@ import { Box, Flex, HStack, Link, Text } from "@chakra-ui/react";
 import useSettingsData from "../Hooks/SettingData";
 import { PhoneIcon } from "@chakra-ui/icons";
 import LocationSeletor from "./LocationSeletor";
-function ContactMarqee() {
-  const { settingsData } = useSettingsData();
+function ContactMarqee({ settingsData: externalSettingsData }) {
+  const { settingsData: queriedSettingsData } = useSettingsData();
+  const settingsData =
+    Array.isArray(externalSettingsData) && externalSettingsData.length
+      ? externalSettingsData
+      : queriedSettingsData;
 
   const phone1 = settingsData?.find((value) => value.id_name === "phone");
   const address = settingsData?.find((value) => value.id_name === "address");
-  const phoneValue = phone1?.value || "N/A";
-  const addressValue = address?.value || "Address not specified";
+  const phoneValue = phone1?.value || "";
+  const addressValue = address?.value || "";
+
+  if (!phoneValue && !addressValue) {
+    return null;
+  }
 
   return (
     <>
