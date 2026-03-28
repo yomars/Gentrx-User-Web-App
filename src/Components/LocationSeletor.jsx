@@ -22,6 +22,9 @@ import { useCity } from "../Context/SelectedCity";
 import { motion } from "framer-motion";
 import { setStorageItem, getStorageJSON } from "../lib/storage";
 
+const LOCATION_TOAST_ID = "location-selector-city-required";
+let hasAttemptedInitialLocationFetch = false;
+
 const LoadingText = () => {
   return (
     <Text>
@@ -204,8 +207,9 @@ const LocationSeletor = ({ type }) => {
 
       // Fallback to default/cached city
       const hasFallback = applyFallbackCity();
-      if (!hasFallback) {
+      if (!hasFallback && !toast.isActive(LOCATION_TOAST_ID)) {
         toast({
+          id: LOCATION_TOAST_ID,
           title: "Select a city",
           description: "Please select your location from the dropdown",
           status: "info",
@@ -219,7 +223,8 @@ const LocationSeletor = ({ type }) => {
   }, [applyFallbackCity, setSelectedCity, toast]);
 
   useEffect(() => {
-    if (!selectedCity) {
+    if (!selectedCity && !hasAttemptedInitialLocationFetch) {
+      hasAttemptedInitialLocationFetch = true;
       fetchLocation();
     }
   }, [selectedCity, fetchLocation]);
