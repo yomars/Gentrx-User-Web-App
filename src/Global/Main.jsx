@@ -167,6 +167,8 @@ export default function Main() {
                   path="/terms-and-conditions"
                   element={<Webpage id={3} />}
                 />
+                <Route path="/cookie-policy" element={<Webpage id={4} />} />
+                <Route path="/data-retention-policy" element={<Webpage id={5} />} />
                 <Route path="/payment-policy" element={<Webpage id={4} />} />
                 <Route path="/legal" element={<Webpage id={5} />} />
                 <Route path="/search" element={<Search />} />

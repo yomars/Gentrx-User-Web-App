@@ -15,8 +15,9 @@ if (typeof window !== "undefined") {
 	const originHost = window.location.host.toLowerCase();
 	const configuredHost = getHost(configured);
 
-	// On gentrx.ph, prefer same-origin requests to avoid apex<->www CORS/redirect issues.
-	if (!configured || (originHost.endsWith("gentrx.ph") && configuredHost.endsWith("gentrx.ph") && originHost !== configuredHost)) {
+	// Prefer same-origin requests whenever the runtime host differs from the configured host
+	// (covers localhost dev via Vite proxy AND apex<->www mismatches in production).
+	if (!configured || (configuredHost.endsWith("gentrx.ph") && originHost !== configuredHost)) {
 		apiAddress = origin;
 	}
 }
