@@ -28,6 +28,7 @@ import showToast from "../Controllers/ShowToast";
 import StripePaymentController from "../Controllers/StripePayController";
 import RazorpayPaymentController from "../Controllers/RazorpayPaymentController";
 import PaymentGetwayData from "../Hooks/Paymntgetways"; // Import icons if needed
+import { setStorageItem } from "../lib/storage";
 let minAmount = 100;
 
 const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
@@ -65,10 +66,7 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
     let token = user.token;
     const login = await ADD(token, "re_login_phone", data);
     if (login.response === 200) {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ ...login.data, token: user.token })
-      );
+      setStorageItem("user", JSON.stringify({ ...login.data, token: user.token }));
       return login.data;
     } else {
       toast({
@@ -88,10 +86,7 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
     const login = await ADD(token, "re_login_phone", data);
     setisPaymentLoading(false);
     if (login.response === 200) {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ ...login.data, token: user.token })
-      );
+      setStorageItem("user", JSON.stringify({ ...login.data, token: user.token }));
       toast({
         title: "Success",
         status: "success",

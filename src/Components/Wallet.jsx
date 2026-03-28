@@ -36,6 +36,7 @@ import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import AddMoney from "./AddMoney";
 import BalanceTransfer from "./BalanceTransfer";
 import moment from "moment";
+import { setStorageItem } from "../lib/storage";
 
 const getTransaction = async () => {
   let url = `get_all_transaction?user_id=${user?.id}&is_wallet_txn=1`;
@@ -64,10 +65,7 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
     };
     const login = await ADD(user.token, "re_login_phone", data);
     if (login.response === 200) {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ ...login.data, token: user.token })
-      );
+      setStorageItem("user", JSON.stringify({ ...login.data, token: user.token }));
       return login.data;
     } else if (login.response === 201) {
       toast({

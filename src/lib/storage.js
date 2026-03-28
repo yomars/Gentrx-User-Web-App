@@ -36,3 +36,16 @@ export const getStorageJSON = (key) => {
     return null;
   }
 };
+
+export const removeStorageItem = (key) => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    window.localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+};

@@ -1,5 +1,7 @@
-﻿const logoutFn = () => {
-  localStorage.removeItem("user");
+﻿import { removeStorageItem } from "../lib/storage";
+
+const logoutFn = () => {
+  removeStorageItem("user");
   window.location.href = "/";
   window.location.reload();
 };

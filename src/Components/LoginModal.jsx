@@ -33,6 +33,7 @@ import {
 import { Link as RouterLink } from "react-router-dom";
 import { app } from "../Controllers/firebase.config";
 import defaultISD from "../Controllers/defaultISD";
+import { setStorageItem } from "../lib/storage";
 
 function LoginModal({ isModalOpen, onModalClose }) {
   const [step, setStep] = useState(1);
@@ -162,7 +163,7 @@ function LoginModal({ isModalOpen, onModalClose }) {
       if (res.status === true) {
         setisLoading(false);
         const user = { ...res.data, token: res.token };
-        localStorage.setItem("user", JSON.stringify(user));
+        setStorageItem("user", JSON.stringify(user));
         toast({
           title: "Login Success",
           description: `Welcome ${user.f_name} ${user.l_name}`,

@@ -26,6 +26,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import defaultISD from "../Controllers/defaultISD";
+import { setStorageItem } from "../lib/storage";
 
 const FirebaseLogin = ({ redirectLocation }) => {
   const [isd_code, setIsd_code] = useState(defaultISD);
@@ -58,7 +59,7 @@ const FirebaseLogin = ({ redirectLocation }) => {
       
       if (res.status === true) {
         const user = { ...res.data, token: res.token };
-        localStorage.setItem("user", JSON.stringify(user));
+        setStorageItem("user", JSON.stringify(user));
         toast({
           title: "Login Success",
           description: `Welcome ${user.f_name} ${user.l_name}`,

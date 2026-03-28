@@ -1,6 +1,7 @@
 ﻿import axios from "axios";
 import GenerateToken from "./token";
 import api from "./api";
+import { removeStorageItem } from "../lib/storage";
 
 const handleSessionExpiration = (error) => {
   if (
@@ -12,7 +13,7 @@ const handleSessionExpiration = (error) => {
   ) {
     console.error(error.response.data.message);
     setTimeout(() => {
-      localStorage.removeItem("user");
+      removeStorageItem("user");
       window.location.href = "/login";
     }, 2000);
 

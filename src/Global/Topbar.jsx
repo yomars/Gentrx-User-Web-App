@@ -43,6 +43,7 @@ import WalletModel from "../Components/Wallet";
 import useSettingsData from "../Hooks/SettingData";
 import imageBaseURL from "../Controllers/image";
 import NotificationIcon from "../Components/Notification";
+import { removeStorageItem } from "../lib/storage";
 
 const LinksPublic = ["Home", "Doctors"];
 const LinksAuth = ["Appointments"];
@@ -279,7 +280,7 @@ export default function TopBar() {
                             />
                           }
                           onClick={() => {
-                            localStorage.removeItem("user");
+                            removeStorageItem("user");
                             navigate("/", { replace: true });
                             window.location.reload();
                           }}
@@ -409,7 +410,7 @@ export default function TopBar() {
                               <MenuItem
                                 fontSize={16}
                                 onClick={() => {
-                                  localStorage.removeItem("user");
+                                  removeStorageItem("user");
                                   navigate("/", { replace: true });
                                   window.location.reload();
                                 }}

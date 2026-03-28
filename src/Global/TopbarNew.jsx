@@ -49,6 +49,7 @@ import NotificationIcon from "../Components/Notification";
 import moment from "moment";
 import WalletModel from "../Components/Wallet";
 import LocationSeletor from "../Components/LocationSeletor";
+import { removeStorageItem } from "../lib/storage";
 
 // links
 const LinksPublic = ["Home", "Clinics", "Doctors"];
@@ -364,7 +365,7 @@ export default function TopbarNew() {
                           />
                         }
                         onClick={() => {
-                          localStorage.removeItem("user");
+                          removeStorageItem("user");
                           navigate("/", { replace: true });
                           window.location.reload();
                         }}
@@ -496,7 +497,7 @@ export default function TopbarNew() {
                               <MenuItem
                                 fontSize={16}
                                 onClick={() => {
-                                  localStorage.removeItem("user");
+                                  removeStorageItem("user");
                                   navigate("/", { replace: true });
                                   window.location.reload();
                                 }}
