@@ -139,9 +139,9 @@ export default function TopbarNew() {
 
   return (
     <Box
-      bg={"primary.main"}
+      bg={"#fff"}
       borderBottom={"0.5px solid"}
-      borderColor={"gray.400"}
+      borderColor={"#d9d9d9"}
       position="sticky"
       top="0"
       left="0"
@@ -151,10 +151,10 @@ export default function TopbarNew() {
         {" "}
         <Flex
           width="100%"
-          bg={"primary.main"}
-          color={useColorModeValue("#fff", "white")}
+          bg={"#fff"}
+          color={useColorModeValue("#111827", "#111827")}
           zIndex={99}
-          minH={"60px"}
+          minH={"74px"}
           py={{ base: 2 }}
           borderStyle={"solid"}
           align={"center"}
@@ -163,7 +163,7 @@ export default function TopbarNew() {
           <Flex display={{ base: "flex", md: "none" }}>
             <IconButton
               size={"lg"}
-              icon={<HamburgerIcon color={"#fff"} />}
+              icon={<HamburgerIcon color={"#111827"} />}
               aria-label={"Open Menu"}
               display={{ md: "none" }}
               onClick={isOpen ? onClose : onOpen}
@@ -177,7 +177,7 @@ export default function TopbarNew() {
           <Flex justify={{ base: "center", md: "start" }}>
             <Flex gap={2} align={"center"} as={Link} to={"/"}>
               <Image
-                w={10}
+                w={32}
                 src={logoSrc}
                 fallbackSrc={"/favicon.png"}
               />
@@ -185,7 +185,7 @@ export default function TopbarNew() {
                 fontFamily={"Quicksand, sans-serif"}
                 fontWeight={800}
                 fontSize={[16, 18, 20]}
-                display={{ base: " ", md: "block" }}
+                display={{ base: "none", md: "block" }}
               >
                 {clinicName}
               </Text>
@@ -206,7 +206,7 @@ export default function TopbarNew() {
               _hover={{
                 bg: "none",
               }}
-              icon={<SearchIcon color={"#fff"} />}
+              icon={<SearchIcon color={"#111827"} />}
               onClick={() => {
                 navigate("/search");
               }}
@@ -416,10 +416,10 @@ export default function TopbarNew() {
               <Box display={{ base: "none", md: "Flex" }} gap={5}>
                 <Button
                   fontSize={"sm"}
-                  fontWeight={500}
+                  fontWeight={600}
                   variant={"link"}
                   href={"#"}
-                  color={"#fff"}
+                  color={"#111827"}
                   as={Link}
                   to={"/login"}
                 >
@@ -429,14 +429,15 @@ export default function TopbarNew() {
                   fontSize={"sm"}
                   fontWeight={600}
                   color={"white"}
-                  variant="ghost"
-                  bg={"pink.400"}
+                  variant="solid"
+                  bg={"#1f48dd"}
                   href={"#"}
                   _hover={{
-                    bg: "pink.500",
+                    bg: "#173bb8",
                   }}
-                  w="100px"
-                  h="30px"
+                  borderRadius={"999px"}
+                  px={6}
+                  h="40px"
                   onClick={() => {
                     navigate("/signup");
                   }}
@@ -663,7 +664,7 @@ export default function TopbarNew() {
 
 const DesktopNav = () => {
   return (
-    <HStack as={"nav"} spacing={2} display={{ base: "none", md: "flex" }}>
+    <HStack as={"nav"} spacing={1} display={{ base: "none", md: "flex" }}>
       {LinksPublic.map((link) => (
         <NavLink key={link}>{link}</NavLink>
       ))}
@@ -681,8 +682,12 @@ const NavLink = (props) => {
   return (
     <Box
       as={Link}
-      px={2}
-      py={1}
+      px={3}
+      py={2}
+      fontSize={"16px"}
+      fontWeight={500}
+      color={"#111827"}
+      whiteSpace={"nowrap"}
       rounded={"md"}
       _hover={{
         textDecoration: "none",
