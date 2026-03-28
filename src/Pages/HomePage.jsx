@@ -619,7 +619,7 @@ export default function HomePage() {
               </GridItem>
               <GridItem align={"center"}>
                 <Box p={4}>
-                  <Image src="checkup.png" w={"80px"} />
+                  <Image src="/checkup.png" w={"80px"} />
                   <Text
                     fontSize={{ base: "14px", md: "18px" }}
                     fontWeight={600}
@@ -631,7 +631,7 @@ export default function HomePage() {
               </GridItem>
               <GridItem align={"center"}>
                 <Box p={4}>
-                  <Image src="treatment.png" w={"80px"} />
+                  <Image src="/treatment.png" w={"80px"} />
                   <Text
                     fontSize={{ base: "14px", md: "18px" }}
                     fontWeight={600}
@@ -643,7 +643,7 @@ export default function HomePage() {
               </GridItem>
               <GridItem align={"center"}>
                 <Box p={4}>
-                  <Image src="priscribe.png" w={"80px"} />
+                  <Image src="/priscribe.png" w={"80px"} />
                   <Text
                     fontSize={{ base: "14px", md: "18px" }}
                     fontWeight={600}
