@@ -39,6 +39,10 @@ export default function HomePage() {
   );
 
   const name = settingsData?.find((value) => value.id_name === "clinic_name");
+  const clinicName = name?.value || "GentRx";
+  const doctorImageSrc = doctorImage?.value
+    ? `${imageBaseURL}/${doctorImage.value}`
+    : "/doctor-2.png";
   return (
     <Box>
       <Box bg={"primary.main"} maxW={"100vw"} minH={"60vh"}>
@@ -57,7 +61,7 @@ export default function HomePage() {
                 mt={5}
                 fontWeight={400}
               >
-                Welcome to {name.value}
+                Welcome to {clinicName}
               </Text>
               <Heading
                 color={"primary.text"}
@@ -73,7 +77,7 @@ export default function HomePage() {
                 mt={5}
                 fontWeight={400}
               >
-                Experience Unmatched Healthcare Excellence at {name.value}:
+                Experience Unmatched Healthcare Excellence at {clinicName}:
                 Comprehensive Medical Services, Advanced Hospital Management,
                 and Compassionate Patient Care for a Healthier Tomorrow
               </Text>
@@ -109,7 +113,7 @@ export default function HomePage() {
               </Flex>
             </Box>
             <Image
-              src={`${imageBaseURL}/${doctorImage.value}`}
+              src={doctorImageSrc}
               w={{ base: "80%", md: "20%" }}
               flex={1}
             />

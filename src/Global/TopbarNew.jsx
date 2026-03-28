@@ -132,6 +132,8 @@ export default function TopbarNew() {
   const app_store_link = settingsData?.find(
     (value) => value.id_name === "app_store_link"
   );
+  const clinicName = name?.value || "GentRx";
+  const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
 
   return (
     <Box
@@ -174,8 +176,8 @@ export default function TopbarNew() {
             <Flex gap={2} align={"center"} as={Link} to={"/"}>
               <Image
                 w={10}
-                src={`${imageBaseURL}/${logo?.value}`}
-                fallbackSrc={"/vite.svg"}
+                src={logoSrc}
+                fallbackSrc={"/favicon.png"}
               />
               <Text
                 fontFamily={"Quicksand, sans-serif"}
@@ -183,7 +185,7 @@ export default function TopbarNew() {
                 fontSize={[16, 18, 20]}
                 display={{ base: " ", md: "block" }}
               >
-                {name.value}
+                {clinicName}
               </Text>
             </Flex>
 
