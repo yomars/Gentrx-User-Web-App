@@ -20,7 +20,7 @@ import { GET } from "../Controllers/ApiControllers";
 import { useQuery } from "@tanstack/react-query";
 import { useCity } from "../Context/SelectedCity";
 import { motion } from "framer-motion";
-import { setStorageItem, getStorageJSON } from "../lib/storage";
+import { setStorageItem } from "../lib/storage";
 
 const LoadingText = () => {
   return (
@@ -48,20 +48,6 @@ const LoadingText = () => {
   );
 };
 
-// Retry logic with exponential backoff for API calls
-const retryWithBackoff = async (fn, maxRetries = 3, delay = 500) => {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      const backoffDelay = delay * Math.pow(2, attempt);
-      console.warn(`[LocationSelector] Attempt ${attempt + 1} failed, retrying in ${backoffDelay}ms...`);
-      await new Promise(resolve => setTimeout(resolve, backoffDelay));
-    }
-  }
-};
-
 const getCurrentLocation = () => {
   return new Promise((resolve, reject) => {
     if (navigator.geolocation) {
@@ -80,42 +66,21 @@ const getCurrentLocation = () => {
   });
 };
 
-const extractCityFields = (response) => {
-  // Handle multiple API response formats
-  const data = response?.data || response;
-  if (!data) return null;
-  
-  // Extract city fields with multiple fallback options
-  const cityId = data.city_id ?? data.id ?? data.cityId;
-  const cityName = data.city ?? data.name ?? data.title;
-  const latitude = data.latitude ?? data.lat;
-  const longitude = data.longitude ?? data.lng ?? data.lon;
-  
-  return { cityId, cityName, latitude, longitude };
-};
-
 const getCity = async (lat, lng) => {
   try {
-    const res = await retryWithBackoff(
-      () => GET(`get_current_city?latitude=${lat}&longitude=${lng}`),
-      2,
-      300
-    );
+    const res = await GET(`get_current_city?latitude=${lat}&longitude=${lng}`);
+    console.debug("[LocationSelector] get_current_city response:", { type: typeof res, hasData: !!res?.data, hasStatus: !!res?.status, response: res });
     
-    console.debug("[LocationSelector] get_current_city response:", {
-      type: typeof res,
-      hasData: !!res?.data,
-      hasStatus: !!res?.status,
-      keys: Array.isArray(res) ? res.length : Object.keys(res || {}).slice(0, 5),
-    });
-    
-    const fields = extractCityFields(res);
-    if (!fields?.cityId || !fields?.cityName) {
-      console.error("[LocationSelector] Missing required city fields in response:", { response: res, extracted: fields });
-      throw new Error("Invalid city response format");
+    // Backend may return different response formats; check both cases
+    const isSuccess = res?.response === 200 || res?.status === true || res?.data;
+    if (!isSuccess) {
+      console.error("[LocationSelector] API returned invalid response:", res);
+      throw new Error(`Failed to get city - Invalid response: ${JSON.stringify(res)}`);
     }
     
-    return fields;
+    const cityData = res.data || res;
+    console.debug("[LocationSelector] Resolved city data:", cityData);
+    return cityData;
   } catch (err) {
     console.error("[LocationSelector] getCity error:", err.message, { lat, lng });
     throw err;
@@ -124,28 +89,22 @@ const getCity = async (lat, lng) => {
 
 const getCities = async () => {
   try {
-    const res = await retryWithBackoff(
-      () => GET("get_city?active=1"),
-      2,
-      300
-    );
+    const res = await GET("get_city?active=1");
+    console.debug("[LocationSelector] get_city response:", { type: typeof res, isArray: Array.isArray(res), hasData: !!res?.data, response: res });
     
-    // Handle multiple response formats
-    let citiesData = Array.isArray(res) ? res : res?.data;
-    if (!Array.isArray(citiesData)) {
-      console.error("[LocationSelector] Invalid cities response format:", { type: typeof res, hasData: !!res?.data });
-      return [];
+    // Backend may return different response formats; check both cases
+    const isSuccess = res?.response === 200 || res?.status === true || Array.isArray(res) || res?.data;
+    if (!isSuccess) {
+      console.error("[LocationSelector] API returned invalid response for cities:", res);
+      throw new Error(`Failed to get cities - Invalid response: ${JSON.stringify(res)}`);
     }
     
-    console.debug("[LocationSelector] Fetched cities:", {
-      count: citiesData.length,
-      hasDefaults: citiesData.filter(c => c.default_city === 1).length > 0,
-    });
-    
+    const citiesData = Array.isArray(res) ? res : (res.data || res);
+    console.debug("[LocationSelector] Resolved cities count:", Array.isArray(citiesData) ? citiesData.length : 0);
     return citiesData;
   } catch (err) {
     console.error("[LocationSelector] getCities error:", err.message);
-    return [];
+    throw err;
   }
 };
 
@@ -170,73 +129,75 @@ const LocationSeletor = ({ type }) => {
 
   const applyFallbackCity = useCallback(() => {
     if (!cityList.length) {
-      console.warn("[LocationSelector] No cities available for fallback");
       return false;
     }
 
-    // Prefer default city, then first city, then cached city
-    const defaultCity = cityList.find((city) => city.default_city === 1);
-    const cachedCity = getStorageJSON("currentCity");
-    const fallback = defaultCity || (cachedCity && cityList.find(c => c.id === cachedCity.id)) || cityList[0];
-    
-    const cityId = fallback.city_id ?? fallback.id;
-    const cityName = fallback.city ?? fallback.name ?? fallback.title;
-    
+    const fallback = cityList.find((city) => city.default_city === 1) || cityList[0];
     const formattedCity = {
-      id: cityId,
-      city: cityName,
+      id: fallback.id,
+      city: fallback.title,
       latitude: fallback.latitude,
       longitude: fallback.longitude,
     };
 
-    console.info("[LocationSelector] Applying fallback city:", formattedCity);
     setSelectedCity(formattedCity);
     setStorageItem("currentCity", JSON.stringify(formattedCity));
     return true;
   }, [cityList, setSelectedCity]);
 
   const fetchLocation = useCallback(async () => {
-    setisLoading(true);
+    setisLoading(true); // Start loading
     try {
-      // Try to get user's current location first
+      const location = await getCurrentLocation();
       try {
-        const location = await getCurrentLocation();
-        console.debug("[LocationSelector] Geolocation obtained:", location);
+        const city = await getCity(location.latitude, location.longitude);
+        console.debug("[LocationSelector] Processing city response fields:", Object.keys(city));
         
-        try {
-          const cityData = await getCity(location.latitude, location.longitude);
-          if (cityData?.cityId && cityData?.cityName) {
-            const formattedCity = {
-              id: cityData.cityId,
-              city: cityData.cityName,
-              latitude: cityData.latitude,
-              longitude: cityData.longitude,
-            };
-            console.info("[LocationSelector] Set city from geolocation:", formattedCity);
-            setStorageItem("currentCity", JSON.stringify(formattedCity));
-            setSelectedCity(formattedCity);
-            return;
-          }
-        } catch (cityError) {
-          console.warn("[LocationSelector] Failed to fetch city for location, falling back...", cityError.message);
+        // Handle multiple possible field names for city ID and name
+        const cityId = city.city_id || city.id || city.cityId;
+        const cityName = city.city || city.name || city.title;
+        
+        if (!cityId || !cityName) {
+          console.error("[LocationSelector] Missing required city fields. Response:", city);
+          throw new Error(`Missing city ID (${cityId}) or name (${cityName}) in response`);
         }
-      } catch (geoError) {
-        console.warn("[LocationSelector] Geolocation unavailable:", geoError);
-      }
-      
-      // Fallback to default/cached city
-      const hasFallback = applyFallbackCity();
-      if (!hasFallback) {
+        
+        const formattedCity = {
+          id: cityId,
+          city: cityName,
+        };
+        console.debug("[LocationSelector] Setting formatted city:", formattedCity);
+        setStorageItem("currentCity", JSON.stringify(formattedCity));
+        setSelectedCity(formattedCity);
+      } catch (error) {
+        console.error("[LocationSelector] City fetch error:", error.message);
+        const hasFallback = applyFallbackCity();
         toast({
-          title: "Select a city",
-          description: "Please select your location from the dropdown",
-          status: "info",
+          title: "Failed to get city",
+          description: hasFallback
+            ? "Using default city from server settings"
+            : "Please select a city manually",
+          status: hasFallback ? "warning" : "error",
           duration: 2000,
           isClosable: true,
         });
+        console.error("Error fetching city:", error);
       }
+    } catch (error) {
+      console.error("[LocationSelector] Geolocation error:", error);
+      const hasFallback = applyFallbackCity();
+      toast({
+        title: "Failed to get city",
+        description: hasFallback
+          ? "Location access unavailable. Using default city."
+          : "Please select a city manually",
+        status: hasFallback ? "warning" : "error",
+        duration: 2000,
+        isClosable: true,
+      });
+      console.error("Error fetching location:", error);
     } finally {
-      setisLoading(false);
+      setisLoading(false); // End loading
     }
   }, [applyFallbackCity, setSelectedCity, toast]);
 

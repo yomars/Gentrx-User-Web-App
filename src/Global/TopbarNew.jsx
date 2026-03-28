@@ -125,8 +125,6 @@ export default function TopbarNew() {
     onOpen: onWalletOpen,
     onClose: onWalletClose,
   } = useDisclosure();
-  const [logoError, setLogoError] = useState(false);
-  
   const logo = settingsData?.find((value) => value.id_name === "logo");
   const play_store_link = settingsData?.find(
     (value) => value.id_name === "play_store_link"
@@ -134,18 +132,15 @@ export default function TopbarNew() {
   const app_store_link = settingsData?.find(
     (value) => value.id_name === "app_store_link"
   );
+  const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
   
-  // Compute logo source with fallback chain
-  const baseLogoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : null;
-  const logoSrc = logoError || !baseLogoSrc ? "/favicon.png" : baseLogoSrc;
-  
-  if (baseLogoSrc && !logoError) {
-    console.debug("[TopbarNew] Logo source resolved:", {
+  // Debug logging for logo resolution
+  if (logo?.value) {
+    console.debug("[TopbarNew] Logo configuration:", {
       imageBaseURL,
       logoValue: logo.value,
-      resolvedSrc: baseLogoSrc,
-      fallback: "/favicon.png",
-      location: window.location.pathname,
+      resolvedSrc: logoSrc,
+      windowLocation: typeof window !== "undefined" ? window.location.href : "N/A",
     });
   }
   
@@ -197,18 +192,13 @@ export default function TopbarNew() {
                 fallbackSrc={"/favicon.png"}
                 onError={(e) => {
                   console.error("[TopbarNew] Logo image failed to load:", {
-                    attemptedSrc: baseLogoSrc || "none",
-                    currentSrc: logoSrc,
-                    error: e?.type || e?.message || "Unknown error",
-                    usingFallback: logoError || !baseLogoSrc ? true : false,
+                    src: logoSrc,
+                    error: e,
+                    altSrc: "/favicon.png",
                   });
-                  if (!logoError && baseLogoSrc) {
-                    setLogoError(true);
-                  }
                 }}
                 onLoad={() => {
-                  if (logoError) setLogoError(false);
-                  console.debug("[TopbarNew] Logo loaded successfully:", logoSrc);
+                  console.debug("[TopbarNew] Logo image loaded successfully:", logoSrc);
                 }}
               />
             </Flex>
