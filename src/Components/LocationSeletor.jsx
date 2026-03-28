@@ -68,24 +68,18 @@ const getCurrentLocation = () => {
 
 const getCity = async (lat, lng) => {
   const res = await GET(`get_current_city?latitude=${lat}&longitude=${lng}`);
-  // Backend may return different response formats; check both cases
-  const isSuccess = res?.response === 200 || res?.status === true || res?.data;
-  if (!isSuccess) {
-    console.error("API returned invalid response:", res);
-    throw new Error(`Failed to get city - Invalid response: ${JSON.stringify(res)}`);
+  if (res.response !== 200) {
+    throw new Error("Failed to get city");
   }
-  return res.data || res;
+  return res.data;
 };
 
 const getCities = async () => {
   const res = await GET("get_city?active=1");
-  // Backend may return different response formats; check both cases
-  const isSuccess = res?.response === 200 || res?.status === true || Array.isArray(res) || res?.data;
-  if (!isSuccess) {
-    console.error("API returned invalid response for cities:", res);
-    throw new Error(`Failed to get cities - Invalid response: ${JSON.stringify(res)}`);
+  if (res.response !== 200) {
+    throw new Error("Failed to get cities");
   }
-  return Array.isArray(res) ? res : (res.data || res);
+  return res.data;
 };
 
 const LocationSeletor = ({ type }) => {
@@ -101,8 +95,7 @@ const LocationSeletor = ({ type }) => {
   } = useQuery({
     queryKey: ["cities"],
     queryFn: getCities,
-    retry: 0, // Disable retries to avoid error spam in tracking prevention mode
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 1,
   });
 
   const cityList = Array.isArray(cities) ? cities : [];
