@@ -441,7 +441,7 @@ export default function TopbarNew() {
                     navigate("/signup");
                   }}
                 >
-                  Sign Up
+                  Sign Up Now
                 </Button>
               </Box>
             )}
@@ -565,7 +565,7 @@ export default function TopbarNew() {
                         onClose();
                       }}
                     >
-                      Sign Up
+                      Sign Up Now
                     </Button>
                   </Flex>
                 )}
