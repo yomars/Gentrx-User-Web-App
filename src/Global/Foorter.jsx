@@ -174,6 +174,11 @@ export default function Footer() {
                 ))}
               </Stack>
               <Flex gap={5} justifyContent={"start"} w={"100%"}>
+                <Text fontSize={"sm"} fontWeight={500} w={"100%"}>
+                  Download our app and register now
+                </Text>
+              </Flex>
+              <Flex gap={5} justifyContent={"start"} w={"100%"}>
                 <Link isExternal href={playStoreHref}>
                   <Image src={"/play store.png"} w={120} />
                 </Link>
