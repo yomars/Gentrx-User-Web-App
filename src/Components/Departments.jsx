@@ -33,7 +33,7 @@ export default function Departments() {
       {data ? (
         <>
           <Heading color={"primary.text"} fontWeight={600} textAlign={"center"}>
-            Departments
+            Find the Right Care for Your Health
           </Heading>
           <Text
             fontSize={14}
@@ -42,8 +42,8 @@ export default function Departments() {
             color={"gray.500"}
             fontWeight={500}
           >
-            Experience the ease of finding everything you need under one roof
-            with our comprehensive departmental offerings.
+            Browse a full list of medical departments. Pick your concern and
+            book a doctor in minutes.
           </Text>
           <Box mt={4}>
             <Grid

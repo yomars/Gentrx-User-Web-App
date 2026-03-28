@@ -2,7 +2,7 @@
 import { GET } from "../../Controllers/ApiControllers";
 import { useQuery } from "@tanstack/react-query";
 import Loading from "../../Components/Loading";
-import { Alert, AlertIcon, Box, ChakraProvider, Text } from "@chakra-ui/react";
+import { Box, ChakraProvider, Text } from "@chakra-ui/react";
 import DOMPurify from "dompurify";
 import { NotFoundPage } from "../NotFoundPage";
 
@@ -24,7 +24,12 @@ function Webpage({ id }) {
   if (isLoading) return <Loading />;
   if (!data || error) return <NotFoundPage />;
 
-  const sanitizedHtml = DOMPurify.sanitize(data.body);
+  const migratedHtml = String(data.body || "")
+    .replace(/https:\/\/www\.gentrx\.com\.ph/gi, "https://www.gentrx.ph")
+    .replace(/https:\/\/gentrx\.com\.ph/gi, "https://www.gentrx.ph")
+    .replace(/info@gentrx\.com\.ph/gi, "info@gentrx.ph");
+
+  const sanitizedHtml = DOMPurify.sanitize(migratedHtml);
 
   return (
     <Box>

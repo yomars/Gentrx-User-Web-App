@@ -8,6 +8,18 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    proxy: {
+      "/api": {
+        target: "https://gentrx.com.ph",
+        changeOrigin: true,
+        secure: true,
+      },
+      "/storage": {
+        target: "https://gentrx.com.ph",
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
   resolve: {
     alias: {

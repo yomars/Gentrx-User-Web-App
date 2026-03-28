@@ -69,7 +69,7 @@ export default function HomePage() {
                 fontSize={{ base: "32", md: "46", lg: "48" }}
                 fontWeight={600}
               >
-                We Are Providing Best & Affordable Health Care.
+                Best Health Care at Your Fingertips
               </Heading>
               <Text
                 fontSize={{ base: "16", md: "16", lg: "16" }}
@@ -77,9 +77,9 @@ export default function HomePage() {
                 mt={5}
                 fontWeight={400}
               >
-                Experience Unmatched Healthcare Excellence at {clinicName}:
-                Comprehensive Medical Services, Advanced Hospital Management,
-                and Compassionate Patient Care for a Healthier Tomorrow
+                {clinicName} connects you to licensed doctors in minutes. You
+                can book a visit, choose your specialist, and manage your
+                records in one app.
               </Text>
 
               <Flex gap={5} mt={5}>
@@ -227,15 +227,15 @@ export default function HomePage() {
                 mt={0}
                 color={"gray.600"}
               >
-                We are always ensure best <br />
+                Reliable Care You Can Count On <br />
                 <Text as={"span"} color={"primary.text"} fontWeight={600}>
-                  Medical treatment
+                  Whenever You Need Medical Support
                 </Text>{" "}
-                for Your Health
+                
               </Text>
               <Text fontSize={16} mt={2} color={"gray.500"} fontWeight={500}>
-                Pain Management Treatment Options Pain and symptom management is
-                one of the primary goals of palliative and hospice care
+                Choose your specialist, set your schedule, and confirm your
+                visit with ease.
               </Text>
               <List
                 spacing={5}
@@ -302,6 +302,38 @@ export default function HomePage() {
       {/* doctors */}
       <Box bg={"#fff"} pb={30} pt={30} mt={10}>
         <Doctors />
+      </Box>
+
+      {/* payment methods */}
+      <Box bg={"gray.50"} py={14}>
+        <div className="container">
+          <Heading color={"primary.text"} fontWeight={600} textAlign={"center"}>
+            Simple and Secure Payment Options
+          </Heading>
+          <Text
+            fontSize={14}
+            textAlign={"center"}
+            mt={2}
+            color={"gray.500"}
+            fontWeight={500}
+          >
+            Pay using trusted platforms available nationwide. Choose the
+            method that fits your needs.
+          </Text>
+          <Flex
+            mt={8}
+            gap={8}
+            justify={"center"}
+            align={"center"}
+            wrap={"wrap"}
+          >
+            <Image src="/icons/payment-methods/gcash.svg" h={10} />
+            <Image src="/icons/payment-methods/paymaya-combined.svg" h={10} />
+            <Image src="/icons/payment-methods/dragonpay.png" h={10} />
+            <Image src="/icons/payment-methods/visa.svg" h={10} />
+            <Image src="/icons/payment-methods/mastercard.svg" h={10} />
+          </Flex>
+        </div>
       </Box>
 
       {/* labs */}
@@ -422,7 +454,7 @@ export default function HomePage() {
               color={"gray.500"}
               fontWeight={500}
             >
-              At {name.value} , we understand that your health and well-being
+              At {clinicName}, we understand that your health and well-being
               are of paramount importance. <br /> Here{"`"}s why we believe you
               should choose us for your medical needs:
             </Text>
@@ -445,7 +477,7 @@ export default function HomePage() {
                     <MdHealthAndSafety fontSize={60} />
                     <Heading fontSize={28}>Personalized Care</Heading>
                     <Text fontSize={14}>
-                      At {name.value}, we prioritize your health and well-being
+                      At {clinicName}, we prioritize your health and well-being
                       above all else. Our hospital offers comprehensive medical
                       services tailored to meet your individual needs, ensuring
                       you receive the highest quality of care at every step of
@@ -484,7 +516,7 @@ export default function HomePage() {
                       Cutting-Edge Facilities
                     </Heading>
                     <Text fontSize={14}>
-                      At {name.value}, we prioritize your health and well-being
+                      At {clinicName}, we prioritize your health and well-being
                       above all else. Our hospital offers comprehensive medical
                       services tailored to meet your individual needs, ensuring
                       you receive the highest quality of care at every step of
@@ -517,7 +549,8 @@ export default function HomePage() {
                 fontSize={{ base: "36px", md: "48px" }}
                 w={{ base: "95%", md: "70%" }}
               >
-                A Comprehensive Guide to Your Health
+                Your Step by Step Guide to Booking a Visit and Completing Your
+                Treatment
               </Heading>
             </Box>
             <Box flex={1}>
@@ -612,17 +645,18 @@ export default function HomePage() {
 const FAQ = () => {
   const { settingsData } = useSettingsData();
   const name = settingsData?.find((value) => value.id_name === "clinic_name");
+  const clinicName = name?.value || "GentRx";
   const faqs1 = [
     {
-      question: `What services does ${name.value} offer?`,
-      answer: `${name.value} offers a comprehensive range of medical services, including dental, gynecology, orthology, neurology, general medicine, dermatology, and cardiology. We also provide advanced lab testing and diagnostic services.`,
+      question: `What services does ${clinicName} offer?`,
+      answer: `${clinicName} offers a comprehensive range of medical services, including dental, gynecology, orthology, neurology, general medicine, dermatology, and cardiology. We also provide advanced lab testing and diagnostic services.`,
     },
     {
-      question: `What makes ${name.value} different from other healthcare providers?`,
-      answer: `${name.value} stands out due to its commitment to affordable healthcare, advanced medical technology, top-tier specialists, and 24-hour service. We also offer discounts on all medical treatments and ensure a swift enrollment process.`,
+      question: `What makes ${clinicName} different from other healthcare providers?`,
+      answer: `${clinicName} stands out due to its commitment to affordable healthcare, advanced medical technology, top-tier specialists, and 24-hour service. We also offer discounts on all medical treatments and ensure a swift enrollment process.`,
     },
     {
-      question: `How can I book an Appointment at ${name.value}?`,
+      question: `How can I book an Appointment at ${clinicName}?`,
       answer: `You can easily book an Appointment through our website by navigating to the 'Book An Appointment' section. Simply select the service you need, choose a convenient time, and confirm your booking.`,
     },
     {
@@ -631,7 +665,7 @@ const FAQ = () => {
     },
     {
       question: `Are there any discounts available on medical treatments?`,
-      answer: `Yes, ${name.value} offers discounts on all medical treatments. For example, we provide a 5% discount on CBC and Hemoglobin tests, and a 10% discount on X-rays and CT scans.`,
+      answer: `Yes, ${clinicName} offers discounts on all medical treatments. For example, we provide a 5% discount on CBC and Hemoglobin tests, and a 10% discount on X-rays and CT scans.`,
     },
 
     // Add more FAQs here
@@ -640,19 +674,19 @@ const FAQ = () => {
   const faqs2 = [
     {
       question: `What are your operating hours?`,
-      answer: `${name.value} operates 24 hours a day, 7 days a week, ensuring that you receive the care you need whenever you need it.`,
+      answer: `${clinicName} operates 24 hours a day, 7 days a week, ensuring that you receive the care you need whenever you need it.`,
     },
     {
-      question: `Who are the doctors at ${name.value}?`,
+      question: `Who are the doctors at ${clinicName}?`,
       answer: `Our team consists of highly qualified and experienced doctors specializing in various fields such as cardiology, neurology, dermatology, and more. Detailed information about our doctors is available on the 'Meet Our Doctors' page on our website.`,
     },
     {
-      question: `How can I contact ${name.value} for more information?`,
+      question: `How can I contact ${clinicName} for more information?`,
       answer: `You can reach out to us anytime via the contact information provided on our website. We are always ready to assist you with any inquiries or support you may need.`,
     },
     {
-      question: `What is the process for receiving treatment at ${name.value}?`,
-      answer: `The treatment process at ${name.value} involves booking an Appointment, conducting a checkup, performing the necessary treatment, and prescribing medications or further care. Our streamlined process ensures efficient and effective care.`,
+      question: `What is the process for receiving treatment at ${clinicName}?`,
+      answer: `The treatment process at ${clinicName} involves booking an Appointment, conducting a checkup, performing the necessary treatment, and prescribing medications or further care. Our streamlined process ensures efficient and effective care.`,
     },
     {
       question: `How does ${name.value} ensure the quality of its medical services?`,

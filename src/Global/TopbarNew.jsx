@@ -134,6 +134,8 @@ export default function TopbarNew() {
   );
   const clinicName = name?.value || "GentRx";
   const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
+  const playStoreHref = play_store_link?.value || "#";
+  const appStoreHref = app_store_link?.value || "#";
 
   return (
     <Box
@@ -633,16 +635,16 @@ export default function TopbarNew() {
               p={3}
             >
               <Text textAlign={"left"} fontSize={14} mb={2} fontWeight={500}>
-                Download the {name.value} App form -
+                Download the {clinicName} App from -
               </Text>
               <Flex gap={5} justifyContent={"left"} w={"100%"}>
-                <Link href={play_store_link} isExternal>
+                <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
                   {" "}
                   <Image src={"/play store.png"} w={"120px"} />
-                </Link>
-                <Link href={app_store_link} isExternal>
+                </a>
+                <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
                   <Image src={"/app store.png"} w={"120px"} />
-                </Link>
+                </a>
               </Flex>
             </DrawerFooter>
           </DrawerContent>
