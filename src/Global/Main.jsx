@@ -62,9 +62,10 @@ export default function Main() {
     const title = settingsData?.find(
       (value) => value.id_name === "clinic_name"
     );
+    const faviconPath = faviconItem?.value ? `${imageBaseURL}/${faviconItem.value}` : "/favicon.png";
 
     startTransition(() => {
-      document.title = title?.value || "document";
+      document.title = title?.value || "GentRx";
 
       // Change the favicon
       const favicon =
@@ -72,7 +73,7 @@ export default function Main() {
         document.createElement("link");
       favicon.type = "image/x-icon";
       favicon.rel = "icon";
-      favicon.href = `${imageBaseURL}/${faviconItem?.value}`;
+      favicon.href = faviconPath;
       document.getElementsByTagName("head")[0].appendChild(favicon);
     });
   }, [settingsData]);
