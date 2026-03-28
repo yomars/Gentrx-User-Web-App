@@ -7,9 +7,11 @@ import "swiper/swiper-bundle.css";
 import theme from "./../theme";
 import App from "./App.jsx";
 import "./index.css";
+import { getStorageItem, setStorageItem } from "./lib/storage";
+
 // Override local storage color mode setting to light
-if (localStorage.getItem("chakra-ui-color-mode") === "dark") {
-  localStorage.setItem("chakra-ui-color-mode", "light");
+if (getStorageItem("chakra-ui-color-mode") === "dark") {
+  setStorageItem("chakra-ui-color-mode", "light");
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(

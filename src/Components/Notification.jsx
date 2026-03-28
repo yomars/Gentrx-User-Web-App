@@ -21,6 +21,10 @@ import imageBaseURL from "../Controllers/image";
 // import messaging from firebase.js
 
 const getData = async () => {
+  if (!user?.id || !user?.created_at) {
+    return [];
+  }
+
   const res = await GET(
     `get_user_notification/date/${user.id}/${user.created_at}`
   );
@@ -30,6 +34,10 @@ const getData = async () => {
   return res.data;
 };
 const getDotStatus = async () => {
+  if (!user?.id) {
+    return [];
+  }
+
   const res = await GET(`users_notification_seen_status/${user.id}`);
   if (res.response !== 200) {
     return [];
@@ -38,6 +46,10 @@ const getDotStatus = async () => {
 };
 
 const updateReadStatus = async () => {
+  if (!user?.id || !user?.token) {
+    return [];
+  }
+
   let data = {
     id: user.id,
     notification_seen_at: true,
@@ -57,10 +69,12 @@ function NotificationIcon() {
   const { data } = useQuery({
     queryKey: ["notification"],
     queryFn: getData,
+    enabled: Boolean(user?.id && user?.created_at),
   });
   const { data: dotStatus } = useQuery({
     queryKey: ["dot-status"],
     queryFn: getDotStatus,
+    enabled: Boolean(user?.id),
   });
 
   const mutation = useMutation({
@@ -150,7 +164,9 @@ function NotificationIcon() {
           </MenuItem>
         ))}
         {data?.length === 0 && (
-          <MenuItem color={"#000"}>No notifications</MenuItem>
+          <MenuItem color={"#000"}>
+            {user ? "No notifications" : "Login to view notifications"}
+          </MenuItem>
         )}
       </MenuList>
     </Menu>

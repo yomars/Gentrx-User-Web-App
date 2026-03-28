@@ -1,2 +1,4 @@
-﻿const user = JSON.parse(localStorage.getItem("user"));
+﻿import { getStorageJSON } from "../lib/storage";
+
+const user = getStorageJSON("user");
 export default user;

@@ -1,2 +1,4 @@
-﻿const currentCity = JSON.parse(localStorage.getItem("currentCity"));
+﻿import { getStorageJSON } from "../lib/storage";
+
+const currentCity = getStorageJSON("currentCity");
 export default currentCity;
