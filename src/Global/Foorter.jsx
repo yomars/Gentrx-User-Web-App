@@ -34,10 +34,11 @@ import imageBaseURL from "../Controllers/image";
 const Logo = (props) => {
   const { settingsData } = useSettingsData();
   const logo = settingsData?.find((value) => value.id_name === "logo");
+  const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
   return (
     <Image
       w={12}
-      src={`${imageBaseURL}/${logo?.value}`}
+      src={logoSrc}
       alt="Logo"
       {...props}
     />
@@ -129,6 +130,9 @@ export default function Footer() {
     (value) => value.id_name === "app_store_link"
   );
   const title = settingsData?.find((value) => value.id_name === "clinic_name");
+  const clinicName = title?.value || "GentRx";
+  const playStoreHref = play_store_link?.value || "#";
+  const appStoreHref = app_store_link?.value || "#";
   return (
     <Box>
       {" "}
@@ -152,11 +156,11 @@ export default function Footer() {
                   fontWeight={800}
                   fontSize={20}
                 >
-                  {title.value}
+                  {clinicName}
                 </Text>
               </Flex>
               <Text fontSize={"sm"}>
-                © 2024 {title.value}. All rights reserved
+                © 2025 {clinicName}. Philippines. All Rights Reserved.
               </Text>
               <Stack direction={"row"} spacing={6}>
                 {socialMedia?.map((platform, index) => (
@@ -170,42 +174,39 @@ export default function Footer() {
                 ))}
               </Stack>
               <Flex gap={5} justifyContent={"start"} w={"100%"}>
-                <Link isExternal href={play_store_link.value}>
+                <Link isExternal href={playStoreHref}>
                   <Image src={"/play store.png"} w={120} />
                 </Link>
-                <Link isExternal href={app_store_link.value}>
+                <Link isExternal href={appStoreHref}>
                   <Image src={"/app store.png"} w={120} />
                 </Link>
               </Flex>
             </Stack>
             <Stack align={"flex-start"}>
-              <ListHeader>Hospital</ListHeader>
+              <ListHeader>About us</ListHeader>
               <Box as={RouterLink} to={"/about-us"}>
-                About us
+                About GentRX
               </Box>
-              <Box as={RouterLink} to={"/departments"}>
-                Departments
+              <Box as={RouterLink} to={"/clinics"}>
+                Clinics
               </Box>
               <Box as={RouterLink} to={"/doctors"}>
                 Doctors
               </Box>
-              {/* <Box as={RouterLink} to={"#"}>
-                Labs
-              </Box> */}
               <Box as={RouterLink} to={"/contact-us"}>
                 Contact Us
               </Box>
             </Stack>
             <Stack align={"flex-start"}>
-              <ListHeader>Support</ListHeader>
-              {/* <Box as="a" href={"#"}>
-                Help Center
-              </Box> */}
+              <ListHeader>Legal and Privacy</ListHeader>
               <Box as={RouterLink} to={"/terms-and-conditions"}>
-                Terms of Service
+                Terms and Conditions
               </Box>
-              <Box as={RouterLink} to={"/legal"}>
-                Legal
+              <Box as={RouterLink} to={"/data-retention-policy"}>
+                Data Retention Policy
+              </Box>
+              <Box as={RouterLink} to={"/cookie-policy"}>
+                Cookie Policy
               </Box>
               <Box as={RouterLink} to={"/privacy-policy"}>
                 Privacy Policy
