@@ -139,16 +139,6 @@ export default function TopbarNew() {
   const baseLogoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : null;
   const logoSrc = logoError || !baseLogoSrc ? "/favicon.png" : baseLogoSrc;
   
-  if (baseLogoSrc && !logoError) {
-    console.debug("[TopbarNew] Logo source resolved:", {
-      imageBaseURL,
-      logoValue: logo.value,
-      resolvedSrc: baseLogoSrc,
-      fallback: "/favicon.png",
-      location: window.location.pathname,
-    });
-  }
-  
   const playStoreHref = play_store_link?.value || "#";
   const appStoreHref = app_store_link?.value || "#";
 

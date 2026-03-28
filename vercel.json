@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://gentrx.ph/api/:path*"
+      "destination": "https://gentrx.com.ph/api/:path*"
     },
     {
       "source": "/storage/:path*",
-      "destination": "https://gentrx.ph/storage/:path*"
+      "destination": "https://gentrx.com.ph/storage/:path*"
     },
     {
       "source": "/:path*",
