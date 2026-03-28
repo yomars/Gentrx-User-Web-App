@@ -39,10 +39,22 @@ export default function HomePage() {
   );
 
   const name = settingsData?.find((value) => value.id_name === "clinic_name");
+  const playStoreLink = settingsData?.find(
+    (value) => value.id_name === "play_store_link"
+  );
+  const appStoreLink = settingsData?.find(
+    (value) => value.id_name === "app_store_link"
+  );
+  const appGalleryLink = settingsData?.find(
+    (value) => value.id_name === "app_gallery_link"
+  );
   const clinicName = name?.value || "GentRx";
   const doctorImageSrc = doctorImage?.value
     ? `${imageBaseURL}/${doctorImage.value}`
     : "/doctor-2.png";
+  const playStoreHref = playStoreLink?.value || "#";
+  const appStoreHref = appStoreLink?.value || "#";
+  const appGalleryHref = appGalleryLink?.value || "#";
   return (
     <Box>
       <Box bg={"primary.main"} maxW={"100vw"} minH={"60vh"}>
@@ -55,14 +67,6 @@ export default function HomePage() {
             flexDir={{ base: "column", md: "row" }}
           >
             <Box pb={12} flex={1} maxW={"100%"}>
-              <Text
-                fontSize={{ base: "20", md: "24", lg: "30" }}
-                color={"#FFF"}
-                mt={5}
-                fontWeight={400}
-              >
-                Welcome to {clinicName}
-              </Text>
               <Heading
                 color={"primary.text"}
                 as={"h1"}
@@ -79,8 +83,20 @@ export default function HomePage() {
               >
                 {clinicName} connects you to licensed doctors in minutes. You
                 can book a visit, choose your specialist, and manage your
-                records in one app.
+                records in one app. Download the app and start booking today.
               </Text>
+
+              <Flex gap={4} mt={4} wrap={"wrap"}>
+                <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
+                  <Image src="/play store.png" w={120} />
+                </a>
+                <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
+                  <Image src="/app store.png" w={120} />
+                </a>
+                <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
+                  <Image src="/appgallery.png" w={120} />
+                </a>
+              </Flex>
 
               <Flex gap={5} mt={5}>
                 <Button
@@ -118,6 +134,28 @@ export default function HomePage() {
               flex={1}
             />
           </Flex>
+
+          <Grid
+            templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }}
+            gap={4}
+            pb={10}
+          >
+            {[
+              { value: "35+", label: "Years of Experience" },
+              { value: "30+", label: "Years of Experience" },
+              { value: "100+", label: "Years of Experience" },
+              { value: "500+", label: "Years of Experience" },
+            ].map((stat) => (
+              <GridItem key={stat.value} textAlign="center" color="#fff">
+                <Heading fontSize={{ base: "28px", md: "36px" }} color="primary.text">
+                  {stat.value}
+                </Heading>
+                <Text fontSize={{ base: "12px", md: "14px" }} color="#ffffffcc">
+                  {stat.label}
+                </Text>
+              </GridItem>
+            ))}
+          </Grid>
         </div>
       </Box>
       <Box>
@@ -227,13 +265,13 @@ export default function HomePage() {
                 mt={0}
                 color={"gray.600"}
               >
-                Reliable Care You Can Count On <br />
-                <Text as={"span"} color={"primary.text"} fontWeight={600}>
-                  Whenever You Need Medical Support
-                </Text>{" "}
-                
+                Reliable Care You Can Count On Whenever You Need Medical
+                Support
               </Text>
               <Text fontSize={16} mt={2} color={"gray.500"} fontWeight={500}>
+                Download the GentRx app and book your doctor in minutes.
+              </Text>
+              <Text fontSize={16} mt={1} color={"gray.500"} fontWeight={500}>
                 Choose your specialist, set your schedule, and confirm your
                 visit with ease.
               </Text>
@@ -445,7 +483,7 @@ export default function HomePage() {
               mt={0}
               color={"primary.text"}
             >
-              Why Choose Our Hospital?
+              Quality Medical Care You Can Access Anytime
             </Text>
             <Text
               fontSize={14}
@@ -454,9 +492,8 @@ export default function HomePage() {
               color={"gray.500"}
               fontWeight={500}
             >
-              At {clinicName}, we understand that your health and well-being
-              are of paramount importance. <br /> Here{"`"}s why we believe you
-              should choose us for your medical needs:
+              Get the services you need in one place. Book your doctor, view
+              available departments, and manage your visit with ease.
             </Text>
             <Box mt={5}>
               <Grid
@@ -537,14 +574,6 @@ export default function HomePage() {
           <Flex p={3} align={"center"} flexDir={{ base: "column", md: "row" }}>
             <Box flex={1}>
               {" "}
-              <Text
-                fontSize={{ base: 18, md: 24 }}
-                fontWeight={600}
-                mt={0}
-                color={"primary.text"}
-              >
-                Our Operational Method
-              </Text>
               <Heading
                 fontSize={{ base: "36px", md: "48px" }}
                 w={{ base: "95%", md: "70%" }}
@@ -561,10 +590,8 @@ export default function HomePage() {
                 mt={0}
                 color={"gray.600"}
               >
-                We serve as your reliable one-stop destination for all your
-                healthcare needs. Our extensive directory is crafted to offer
-                convenient access to a diverse array of healthcare services and
-                providers, guaranteeing optimal care for you and your family.
+                Follow these steps to set your appointment and complete your
+                visit with ease.
               </Text>
             </Box>
           </Flex>
@@ -592,7 +619,7 @@ export default function HomePage() {
               </GridItem>
               <GridItem align={"center"}>
                 <Box p={4}>
-                  <Image src="checkup.png" w={"80px"} />
+                  <Image src="/checkup.png" w={"80px"} />
                   <Text
                     fontSize={{ base: "14px", md: "18px" }}
                     fontWeight={600}
@@ -604,7 +631,7 @@ export default function HomePage() {
               </GridItem>
               <GridItem align={"center"}>
                 <Box p={4}>
-                  <Image src="treatment.png" w={"80px"} />
+                  <Image src="/treatment.png" w={"80px"} />
                   <Text
                     fontSize={{ base: "14px", md: "18px" }}
                     fontWeight={600}
@@ -616,13 +643,13 @@ export default function HomePage() {
               </GridItem>
               <GridItem align={"center"}>
                 <Box p={4}>
-                  <Image src="priscribe.png" w={"80px"} />
+                  <Image src="/priscribe.png" w={"80px"} />
                   <Text
                     fontSize={{ base: "14px", md: "18px" }}
                     fontWeight={600}
                     mt={3}
                   >
-                    Prescribe & Payment
+                    Prescribe and Payment
                   </Text>
                 </Box>
               </GridItem>
@@ -689,7 +716,7 @@ const FAQ = () => {
       answer: `The treatment process at ${clinicName} involves booking an Appointment, conducting a checkup, performing the necessary treatment, and prescribing medications or further care. Our streamlined process ensures efficient and effective care.`,
     },
     {
-      question: `How does ${name.value} ensure the quality of its medical services?`,
+      question: `How does ${clinicName} ensure the quality of its medical services?`,
       answer: `We utilize cutting-edge medical technology and state-of-the-art facilities to provide the highest quality care. Our dedicated team of healthcare professionals ensures personalized attention and expert medical guidance throughout your treatment journey.`,
     },
 

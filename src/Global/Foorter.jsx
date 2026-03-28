@@ -174,6 +174,11 @@ export default function Footer() {
                 ))}
               </Stack>
               <Flex gap={5} justifyContent={"start"} w={"100%"}>
+                <Text fontSize={"sm"} fontWeight={500} w={"100%"}>
+                  Download our app and register now
+                </Text>
+              </Flex>
+              <Flex gap={5} justifyContent={"start"} w={"100%"}>
                 <Link isExternal href={playStoreHref}>
                   <Image src={"/play store.png"} w={120} />
                 </Link>
@@ -187,14 +192,15 @@ export default function Footer() {
               <Box as={RouterLink} to={"/about-us"}>
                 About GentRX
               </Box>
-              <Box as={RouterLink} to={"/clinics"}>
-                Clinics
+              <ListHeader>Useful Links</ListHeader>
+              <Box as={RouterLink} to={"/login"}>
+                Login as a Patient
               </Box>
-              <Box as={RouterLink} to={"/doctors"}>
-                Doctors
+              <Box as={RouterLink} to={"/login"}>
+                Login as a Nurse
               </Box>
-              <Box as={RouterLink} to={"/contact-us"}>
-                Contact Us
+              <Box as={Link} href={"https://www.gentrx.ph/admin/"} isExternal>
+                Login as a Doctor
               </Box>
             </Stack>
             <Stack align={"flex-start"}>
