@@ -1,41 +1,66 @@
-﻿import { useQuery } from "@tanstack/react-query"; // Adjust the import according to your project structure
+﻿import { useQuery } from "@tanstack/react-query";
 import { GET } from "../Controllers/ApiControllers";
 
-const getData = async () => {
-  const res = await GET(`get_configurations`);
-  console.debug("[SettingsData] API response:", { type: typeof res, hasData: !!res?.data, isArray: Array.isArray(res), response: res });
-  
-  if (Array.isArray(res?.data)) {
-    console.debug("[SettingsData] Returning res.data (array)");
-    return res.data;
+const normalizeSettings = (data) => {
+  // Handle multiple API response formats
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (data?.settings && Array.isArray(data.settings)) return data.settings;
+  if (typeof data === "object" && data !== null) {
+    // Try to extract array from object values
+    const values = Object.values(data);
+    const arrays = values.filter(Array.isArray);
+    if (arrays.length === 1) return arrays[0];
   }
-  if (Array.isArray(res)) {
-    console.debug("[SettingsData] Returning res (array)");
-    return res;
-  }
-  console.debug("[SettingsData] Returning empty array (no data found)");
   return [];
+};
+
+const getData = async () => {
+  try {
+    const res = await GET(`get_configurations`);
+    console.debug("[SettingsData] Raw API response:", {
+      type: typeof res,
+      isArray: Array.isArray(res),
+      hasData: !!res?.data,
+      keys: !Array.isArray(res) ? Object.keys(res || {}).slice(0, 5) : [],
+    });
+    
+    const settings = normalizeSettings(res);
+    
+    if (Array.isArray(settings) && settings.length > 0) {
+      console.info("[SettingsData] Loaded configurations:", {
+        count: settings.length,
+        keys: settings.map(s => s.id_name).join(", ").substring(0, 100),
+      });
+      return settings;
+    }
+    
+    console.warn("[SettingsData] No valid settings found in response", { res });
+    return [];
+  } catch (err) {
+    console.error("[SettingsData] Error fetching configurations:", err.message);
+    return [];
+  }
 };
 
 const useSettingsData = () => {
   const {
     isLoading: settingsLoading,
-    data: settingsData,
+    data: settingsData = [],
     error: settingsError,
   } = useQuery({
     queryKey: ["settings"],
     queryFn: getData,
-    retry: 1,
+    retry: 2,
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
   });
   
-  if (settingsData?.length) {
-    console.debug("[SettingsData] Hook - Found settings:", {
-      count: settingsData.length,
-      settingNames: settingsData.map(s => s.id_name).join(", "),
-    });
-  }
-  
-  return { settingsData, settingsLoading, settingsError };
+  return {
+    settingsData: settingsData || [],
+    settingsLoading,
+    settingsError,
+  };
 };
 
 export default useSettingsData;
