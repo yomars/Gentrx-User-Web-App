@@ -20,14 +20,6 @@ if (typeof window !== "undefined") {
 	if (!configured || (configuredHost.endsWith("gentrx.ph") && originHost !== configuredHost)) {
 		apiAddress = origin;
 	}
-	
-	console.debug("[API Address] Resolution:", {
-		VITE_API_ADDRESS: configured || "(not set)",
-		configuredHost,
-		originHost,
-		origin,
-		finalApiAddress: apiAddress,
-	});
 }
 
 export default apiAddress.replace(/\/+$/, "");

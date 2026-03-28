@@ -18,39 +18,7 @@ const Logo = (props) => {
   const { settingsData } = useSettingsData();
   const logo = settingsData?.find((value) => value.id_name === "logo");
   const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
-  
-  // Debug logging for logo resolution
-  if (logo?.value) {
-    console.debug("[Footer] Logo configuration:", {
-      imageBaseURL,
-      logoValue: logo.value,
-      resolvedSrc: logoSrc,
-      windowLocation: typeof window !== "undefined" ? window.location.href : "N/A",
-    });
-  }
-  
-  return (
-    <Image
-      w={32}
-      src={logoSrc}
-      alt="Logo"
-      filter="drop-shadow(0 0 12px rgba(255,255,255,0.8))"
-      border="2px solid rgba(255,255,255,0.8)"
-      borderRadius="md"
-      p={1}
-      onError={(e) => {
-        console.error("[Footer] Logo image failed to load:", {
-          src: logoSrc,
-          error: e,
-          altSrc: "/favicon.png",
-        });
-      }}
-      onLoad={() => {
-        console.debug("[Footer] Logo image loaded successfully:", logoSrc);
-      }}
-      {...props}
-    />
-  );
+  return <Image w={32} src={logoSrc} alt="Logo" filter="drop-shadow(0 0 12px rgba(255,255,255,0.8))" border="2px solid rgba(255,255,255,0.8)" borderRadius="md" p={1} {...props} />;
 };
 
 const ListHeader = ({ children }) => (
