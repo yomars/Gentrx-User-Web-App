@@ -45,11 +45,9 @@ export default function Doctors() {
   const { selectedCity } = useCity();
 
   const getData = async () => {
-    const searchParams = new URLSearchParams({ active: "1" });
-    if (selectedCity?.id) {
-      searchParams.set("city_id", String(selectedCity.id));
-    }
-    const res = await GET(`get_doctor?${searchParams.toString()}`);
+    const res = await GET(
+      `get_doctor?active=1&city_id=${selectedCity?.id || ""}`
+    );
     return res.data;
   };
   const { isLoading, data, error } = useQuery({

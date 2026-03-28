@@ -24,7 +24,6 @@ import { setStorageItem, getStorageJSON } from "../lib/storage";
 
 const LOCATION_TOAST_ID = "location-selector-city-required";
 let hasAttemptedInitialLocationFetch = false;
-let hasAppliedInitialCityFallback = false;
 
 const LoadingText = () => {
   return (
@@ -229,13 +228,6 @@ const LocationSeletor = ({ type }) => {
       fetchLocation();
     }
   }, [selectedCity, fetchLocation]);
-
-  useEffect(() => {
-    if (!selectedCity && cityList.length > 0 && !hasAppliedInitialCityFallback) {
-      hasAppliedInitialCityFallback = true;
-      applyFallbackCity();
-    }
-  }, [applyFallbackCity, cityList.length, selectedCity]);
 
   const filterCities = () => {
     if (searchValue.length > 0) {

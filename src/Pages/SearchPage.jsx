@@ -43,17 +43,11 @@ function SearchPage() {
   });
 
   const getDoctors = async () => {
-    const query = new URLSearchParams({ active: "1" });
-    if (selectedCity?.id) {
-      query.set("city_id", String(selectedCity.id));
-    }
-    if (selectedDept?.id) {
-      query.set("department", String(selectedDept.id));
-    }
-    if (searchParams.get("search")) {
-      query.set("search", searchParams.get("search"));
-    }
-    const res = await GET(`get_doctor?${query.toString()}`);
+    const res = await GET(
+      `get_doctor?active=1&city_id=${selectedCity?.id || ""}&department=${
+        selectedDept?.id || ""
+      }&search=${searchParams.get("search") || ""}`
+    );
     return res.data;
   };
 

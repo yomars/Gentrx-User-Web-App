@@ -26,14 +26,9 @@ import { useCity } from "../Context/SelectedCity";
 export default function DoctorsByDeptID({ deptID, deptName }) {
   const { selectedCity } = useCity();
   const getData = async () => {
-    const query = new URLSearchParams({
-      department: String(deptID),
-      active: "1",
-    });
-    if (selectedCity?.id) {
-      query.set("city_id", String(selectedCity.id));
-    }
-    const res = await GET(`get_doctor?${query.toString()}`);
+    const res = await GET(
+      `get_doctor?department=${deptID}&active=1&city_id=${selectedCity?.id}`
+    );
     return res.data;
   };
 
