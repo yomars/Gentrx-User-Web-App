@@ -3,8 +3,9 @@ import { GET } from "../Controllers/ApiControllers";
 
 const getData = async () => {
   const res = await GET(`get_configurations`);
-  console.log(res)
-  return res.data;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res)) return res;
+  return [];
 };
 
 const useSettingsData = () => {
@@ -15,6 +16,7 @@ const useSettingsData = () => {
   } = useQuery({
     queryKey: ["settings"],
     queryFn: getData,
+    retry: 1,
   });
   return { settingsData, settingsLoading, settingsError };
 };
