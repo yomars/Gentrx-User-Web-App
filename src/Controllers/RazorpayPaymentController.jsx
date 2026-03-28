@@ -17,6 +17,53 @@ import currency_name from "./CurrName";
 import PaymentGetwayData from "../Hooks/Paymntgetways";
 import useSettingsData from "../Hooks/SettingData";
 
+const RAZORPAY_SDK_URL = "https://checkout.razorpay.com/v1/checkout.js";
+let razorpayScriptPromise;
+
+const loadRazorpayScript = () => {
+  if (typeof window === "undefined") {
+    return Promise.resolve(false);
+  }
+
+  if (window.Razorpay) {
+    return Promise.resolve(true);
+  }
+
+  if (razorpayScriptPromise) {
+    return razorpayScriptPromise;
+  }
+
+  razorpayScriptPromise = new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(
+      `script[src="${RAZORPAY_SDK_URL}"]`
+    );
+
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(true), {
+        once: true,
+      });
+      existingScript.addEventListener(
+        "error",
+        () => reject(new Error("Failed to load Razorpay SDK")),
+        { once: true }
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = RAZORPAY_SDK_URL;
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
+    document.body.appendChild(script);
+  }).catch((error) => {
+    razorpayScriptPromise = undefined;
+    throw error;
+  });
+
+  return razorpayScriptPromise;
+};
+
 const RazorpayPaymentController = ({
   isOpen,
   onClose,
@@ -37,6 +84,12 @@ const RazorpayPaymentController = ({
     );
     const placeOrder = async (order_id) => {
       if (razorpayRef.current) return;
+
+      await loadRazorpayScript();
+
+      if (!window.Razorpay) {
+        throw new Error("Razorpay SDK is unavailable");
+      }
 
       const options = {
         key: paymentGetwaysData?.key,
@@ -107,6 +160,7 @@ const RazorpayPaymentController = ({
 
       try {
         setisPaymentLoading(true);
+        await loadRazorpayScript();
         const response = await ADD(user.token, "create_rz_order", formData);
 
         onClose();
@@ -114,7 +168,11 @@ const RazorpayPaymentController = ({
         placeOrder(response.id);
       } catch (error) {
         setisPaymentLoading(false);
-        showToast(toast, "error", JSON.stringify(error));
+        showToast(
+          toast,
+          "error",
+          error?.message || "Unable to start Razorpay checkout"
+        );
         onClose();
         razorpayRef.current = null;
       }
