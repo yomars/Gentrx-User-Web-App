@@ -1,42 +1,18 @@
-﻿import { FaRegHospital } from "react-icons/fa";
-import { IoMdPeople } from "react-icons/io";
-import { MdHealthAndSafety } from "react-icons/md";
-import { FaCheckCircle, FaHandHoldingMedical } from "react-icons/fa";
-import { FaHospitalAlt } from "react-icons/fa";
-import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
-  Box,
-  Button,
-  Flex,
-  Grid,
-  GridItem,
-  Heading,
-  Image,
-  List,
-  ListIcon,
-  ListItem,
-  Text,
-  useTheme,
-} from "@chakra-ui/react";
-import { BiCalendar } from "react-icons/bi";
+import { FaCalendarAlt, FaHospitalAlt, FaUserMd } from "react-icons/fa";
+import { MdBiotech, MdHealthAndSafety } from "react-icons/md";
+import { Box, Button, Flex, Grid, GridItem, Heading, Image, Text } from "@chakra-ui/react";
 import Departments from "../Components/Departments";
-import Doctors from "../Components/Doctors";
-import { Link } from "react-router-dom";
-import Testimonials from "../Components/Testimonials";
 import useSettingsData from "../Hooks/SettingData";
-import imageBaseURL from "../Controllers/image";
+import { BsPrescription } from "react-icons/bs";
+import { HiUserCircle } from "react-icons/hi";
+import { IoMdWallet } from "react-icons/io";
 import Clinics from "../Components/Clinics";
+import Doctors from "../Components/Doctors";
+import Testimonials from "../Components/Testimonials";
+import { Link as RouterLink } from "react-router-dom";
 
 export default function HomePage() {
-  const theme = useTheme();
   const { settingsData } = useSettingsData();
-  const doctorImage = settingsData?.find(
-    (value) => value.id_name === "web_doctor_image"
-  );
 
   const name = settingsData?.find((value) => value.id_name === "clinic_name");
   const playStoreLink = settingsData?.find(
@@ -48,97 +24,111 @@ export default function HomePage() {
   const appGalleryLink = settingsData?.find(
     (value) => value.id_name === "app_gallery_link"
   );
+
   const clinicName = name?.value || "GentRx";
-  const doctorImageSrc = doctorImage?.value
-    ? `${imageBaseURL}/${doctorImage.value}`
-    : "/doctor-2.png";
   const playStoreHref = playStoreLink?.value || "#";
   const appStoreHref = appStoreLink?.value || "#";
   const appGalleryHref = appGalleryLink?.value || "#";
+
+  const quickAccessItems = [
+    { label: "Appointment", icon: <FaCalendarAlt fontSize={26} />, to: "/doctors" },
+    { label: "Lab Test", icon: <MdBiotech fontSize={28} />, to: "/lab-tests" },
+    { label: "Check-up", icon: <MdHealthAndSafety fontSize={28} />, to: "/doctors" },
+    { label: "Doctors", icon: <FaUserMd fontSize={26} />, to: "/doctors" },
+    { label: "Prescription", icon: <BsPrescription fontSize={26} />, to: "/prescriptions" },
+    { label: "Patient Profile", icon: <HiUserCircle fontSize={30} />, to: "/profile" },
+    { label: "Hospital Info", icon: <FaHospitalAlt fontSize={26} />, to: "/clinics" },
+    { label: "Top-up", icon: <IoMdWallet fontSize={26} />, to: "/login" },
+  ];
+
   return (
     <Box>
-      <Box bg={"primary.main"} maxW={"100vw"} minH={"60vh"}>
+      <Box bg="#f3f3f3" maxW="100vw">
         <div className="container">
           <Flex
-            gap={5}
-            pt={30}
-            align={"center"}
-            maxW={"100%"}
+            gap={10}
+            pt={{ base: 10, md: 16 }}
+            align="center"
+            maxW="100%"
             flexDir={{ base: "column", md: "row" }}
           >
-            <Box pb={12} flex={1} maxW={"100%"}>
+            <Box pb={8} flex={1} maxW="100%">
               <Heading
-                color={"primary.text"}
-                as={"h1"}
-                fontSize={{ base: "32", md: "46", lg: "48" }}
+                color="#34C38F"
+                as="h1"
+                fontSize={{ base: "44px", md: "56px", lg: "64px" }}
                 fontWeight={600}
+                lineHeight={1.05}
+                letterSpacing="-0.02em"
               >
                 Best Health Care at Your Fingertips
               </Heading>
               <Text
-                fontSize={{ base: "16", md: "16", lg: "16" }}
-                color={"#ffffff80"}
+                fontSize={{ base: "18px", md: "18px" }}
+                color="#2f3848"
                 mt={5}
-                fontWeight={400}
+                fontWeight={500}
+                lineHeight={1.5}
+                maxW="820px"
               >
-                {clinicName} connects you to licensed doctors in minutes. You
-                can book a visit, choose your specialist, and manage your
-                records in one app. Download the app and start booking today.
+                {clinicName} connects you to licensed doctors in minutes. You can book a
+                visit, choose your specialist, and manage your records in one app. Download
+                the app and start booking today.
               </Text>
 
-              <Flex gap={4} mt={4} wrap={"wrap"}>
+              <Flex gap={4} mt={5} wrap="wrap">
                 <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/play store.png" w={120} />
+                  <Image src="/play store.png" w={180} />
                 </a>
                 <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/app store.png" w={120} />
+                  <Image src="/app store.png" w={180} />
                 </a>
                 <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/appgallery.png" w={120} />
+                  <Image src="/appgallery.png" w={180} />
                 </a>
               </Flex>
 
-              <Flex gap={5} mt={5}>
+              <Flex gap={4} mt={6} wrap="wrap">
                 <Button
-                  bg={"#FFF"}
-                  w={200}
-                  onClick={() => {
-                    const section = document.querySelector("#started");
-                    section.scrollIntoView({
-                      behavior: "smooth",
-                      block: "end",
-                    });
-                  }}
+                  as={RouterLink}
+                  to="/doctors"
+                  bg="#1f48dd"
+                  color="#fff"
+                  px={8}
+                  h="52px"
+                  borderRadius="999px"
+                  _hover={{ bg: "#173bb8" }}
                 >
-                  Get Started
+                  Book Appointment
                 </Button>
                 <Button
-                  w={200}
-                  bg={"transparent"}
-                  color={"#fff"}
-                  border={"1px solid #fff"}
-                  _hover={{
-                    color: "primary.main",
-                    bg: "#fff",
+                  variant="outline"
+                  borderColor="#1f48dd"
+                  color="#1f48dd"
+                  px={8}
+                  h="52px"
+                  borderRadius="999px"
+                  onClick={() => {
+                    const section = document.querySelector("#started");
+                    section?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
-                  as={Link}
-                  to={"/doctors"}
                 >
-                  Get Appointment
+                  Explore Departments
                 </Button>
               </Flex>
             </Box>
-            <Image
-              src={doctorImageSrc}
-              w={{ base: "80%", md: "20%" }}
-              flex={1}
-            />
+            <Image src="/both-doctors.png" w={{ base: "90%", md: "48%" }} flex={1} />
           </Flex>
 
           <Grid
             templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }}
-            gap={4}
-            pb={10}
+            gap={0}
+            mt={6}
+            pb={8}
+            bg="#fff"
+            borderRadius="16px"
+            border="1px solid #e8e8e8"
+            overflow="hidden"
           >
             {[
               { value: "35+", label: "Years of Experience" },
@@ -146,11 +136,18 @@ export default function HomePage() {
               { value: "100+", label: "Years of Experience" },
               { value: "500+", label: "Years of Experience" },
             ].map((stat) => (
-              <GridItem key={stat.value} textAlign="center" color="#fff">
-                <Heading fontSize={{ base: "28px", md: "36px" }} color="primary.text">
+              <GridItem
+                key={stat.value}
+                textAlign="left"
+                px={{ base: 4, md: 8 }}
+                py={{ base: 3, md: 4 }}
+                borderRight={{ base: "0", md: "1px solid #e8e8e8" }}
+                _last={{ borderRight: "0" }}
+              >
+                <Heading fontSize={{ base: "34px", md: "46px" }} color="#34C38F" lineHeight={1}>
                   {stat.value}
                 </Heading>
-                <Text fontSize={{ base: "12px", md: "14px" }} color="#ffffffcc">
+                <Text fontSize={{ base: "16px", md: "14px" }} color="#2f3848" mt={1}>
                   {stat.label}
                 </Text>
               </GridItem>
@@ -158,655 +155,169 @@ export default function HomePage() {
           </Grid>
         </div>
       </Box>
-      <Box>
-        <div className="container">
-          <Box my={10}>
-            <Grid
-              templateColumns={{
-                base: "repeat(1, 1fr)",
-                md: "repeat(3, 1fr)",
-                lg: "repeat(3, 1fr)",
-              }}
-            >
-              <GridItem backgroundColor={"primary.text"} cursor={"pointer"}>
-                <Box p={12} display={"flex"} alignItems={"center"}>
-                  <Box>
-                    <Heading color={"#FFF"} fontSize={{ base: "25", md: "28" }}>
-                      Reach Out to Us
-                    </Heading>
-                    <Text color={"#FFF"} fontWeight={500}>
-                      Feel free to get in touch anytime. We`re ready to assist
-                      you!
-                    </Text>
-                  </Box>
-                </Box>
-                <Button
-                  colorScheme="gray"
-                  w={"100%"}
-                  size={"sm"}
-                  leftIcon={<BiCalendar />}
-                  borderRadius={0}
-                  background={"#000"}
-                  color={"#fff"}
-                  py={7}
-                  _hover={{
-                    bg: "#000",
-                  }}
-                  as={Link}
-                  to={"/doctors"}
-                >
-                  Make Appointment
-                </Button>
-              </GridItem>
-              <GridItem
-                backgroundColor={"primary.main"}
-                cursor={"pointer"}
-                borderRight={"0.5px solid"}
-                borderColor={"gray.300"}
-              >
-                <Box p={8}>
-                  <FaHospitalAlt
-                    color={theme.colors.primary["text"]}
-                    fontSize={32}
-                  />
-                  <Heading
-                    color={"#FFF"}
-                    mt={5}
-                    fontSize={{ base: "25", md: "28" }}
-                  >
-                    24-Hour Service
-                  </Heading>
-                  <Text color={"#FFF"} fontWeight={500}>
-                    We take pride in offering 24-hour medical services to ensure
-                    you receive the care you need, whenever you need it.
-                  </Text>
-                </Box>
-              </GridItem>
-              <GridItem
-                backgroundColor={"primary.main"}
-                cursor={"pointer"}
-                borderTop={{ base: "0.5px solid", md: "0" }}
-                borderColor={"gray.300"}
-              >
-                <Box p={8}>
-                  <FaHandHoldingMedical
-                    color={theme.colors.primary["text"]}
-                    fontSize={32}
-                  />
-                  <Heading
-                    color={"#FFF"}
-                    mt={5}
-                    fontSize={{ base: "25", md: "28" }}
-                  >
-                    Advanced Medical Technology
-                  </Heading>
-                  <Text color={"#FFF"} fontWeight={500}>
-                    We utilize cutting-edge medical technology to deliver the
-                    highest quality care.
-                  </Text>
-                </Box>
-              </GridItem>
-            </Grid>
-          </Box>
-        </div>
-      </Box>
 
-      {/*  */}
-      <Box pt={10} bg={"gray.100"}>
-        <div className="container">
-          <Flex gap={5} pt={16} flexDir={{ base: "column", md: "row" }}>
-            <Flex flex={1} justify={{ base: "center", md: "left" }}>
-              <Image src="/doctor-2.png" w={{ base: 300, md: 400 }} />
-            </Flex>
-            <Box flex={1} pb={10}>
-              <Text
-                fontSize={{ base: 22, md: 32 }}
-                fontWeight={500}
-                mt={0}
-                color={"gray.600"}
-              >
-                Reliable Care You Can Count On Whenever You Need Medical
-                Support
-              </Text>
-              <Text fontSize={16} mt={2} color={"gray.500"} fontWeight={500}>
-                Download the GentRx app and book your doctor in minutes.
-              </Text>
-              <Text fontSize={16} mt={1} color={"gray.500"} fontWeight={500}>
-                Choose your specialist, set your schedule, and confirm your
-                visit with ease.
-              </Text>
-              <List
-                spacing={5}
-                textAlign="start"
-                mt={10}
-                color={"gray.800"}
-                fontSize={16}
-              >
-                <ListItem>
-                  <ListIcon
-                    as={FaCheckCircle}
-                    color="primary.text"
-                    fontSize={20}
-                  />
-                  Top-tier Specialists in Healthcare.
-                </ListItem>
-                <ListItem>
-                  <ListIcon
-                    as={FaCheckCircle}
-                    color="primary.text"
-                    fontSize={20}
-                  />
-                  Advanced Doctor Services Available.
-                </ListItem>
-                <ListItem>
-                  <ListIcon
-                    as={FaCheckCircle}
-                    color="primary.text"
-                    fontSize={20}
-                  />
-                  Discounts Offered on All Medical Treatments.
-                </ListItem>
-                <ListItem>
-                  <ListIcon
-                    as={FaCheckCircle}
-                    color="primary.text"
-                    fontSize={20}
-                  />
-                  Easy and Swift Enrollment Process.
-                </ListItem>
-              </List>
-              <Button
-                mt={10}
-                colorScheme="green"
-                w={"100%"}
-                size={"sm"}
-                leftIcon={<BiCalendar />}
-                as={Link}
-                to={"/doctors"}
-              >
-                Make Appointment
-              </Button>
-            </Box>
-          </Flex>
-        </div>
-      </Box>
-      <Box id="started">
-        <Clinics />
-        <Box pb={30} pt={2} mt={5}>
+      <Box id="started" bg="#fff">
+        <Box pb={16} pt={8}>
           <Departments />
         </Box>
       </Box>
 
-      {/* doctors */}
-      <Box bg={"#fff"} pb={30} pt={30} mt={10}>
-        <Doctors />
-      </Box>
-
-      {/* payment methods */}
-      <Box bg={"gray.50"} py={14}>
+      <Box pt={6} bg="#f3f3f3">
         <div className="container">
-          <Heading color={"primary.text"} fontWeight={600} textAlign={"center"}>
-            Simple and Secure Payment Options
-          </Heading>
-          <Text
-            fontSize={14}
-            textAlign={"center"}
-            mt={2}
-            color={"gray.500"}
-            fontWeight={500}
-          >
-            Pay using trusted platforms available nationwide. Choose the
-            method that fits your needs.
-          </Text>
-          <Flex
-            mt={8}
-            gap={8}
-            justify={"center"}
-            align={"center"}
-            wrap={"wrap"}
-          >
-            <Image src="/icons/payment-methods/gcash.svg" h={10} />
-            <Image src="/icons/payment-methods/paymaya-combined.svg" h={10} />
-            <Image src="/icons/payment-methods/dragonpay.png" h={10} />
-            <Image src="/icons/payment-methods/visa.svg" h={10} />
-            <Image src="/icons/payment-methods/mastercard.svg" h={10} />
-          </Flex>
-        </div>
-      </Box>
-
-      {/* labs */}
-
-      {/* <Box pt={10}>
-        <div className="container">
-          <Flex gap={5} pt={16} flexDir={{ base: "column", md: "row" }}>
+          <Flex gap={8} pt={6} flexDir={{ base: "column", md: "row" }}>
             <Flex flex={1} justify={{ base: "center", md: "left" }}>
-              <Image src="/labs.svg" w={{ base: 400, md: 500 }} />
+              <Image src="/images/quality-care.png" w={{ base: 360, md: 460 }} objectFit="contain" />
             </Flex>
             <Box flex={1} pb={10}>
               <Text
-                fontSize={{ base: 22, md: 28 }}
+                fontSize={{ base: "34px", md: "50px" }}
                 fontWeight={600}
-                color={"green.text"}
-                letterSpacing={"1px"}
-                mb={0}
-              >
-                Lab Tests Services
-              </Text>
-              <Text
-                fontSize={{ base: 22, md: 32 }}
-                fontWeight={500}
                 mt={0}
-                color={"gray.600"}
+                color="#34C38F"
+                lineHeight={1.15}
               >
-                Comprehensive{" "}
-                <Text as={"span"} color={"primary.text"} fontWeight={600}>
-                  Testing Solutions
-                </Text>{" "}
-                <br />
-                for Your Health Needs.
+                Reliable Care You Can Count On Whenever You Need Medical Support
               </Text>
-              <Text fontSize={16} mt={2} color={"gray.500"} fontWeight={500}>
-                Our advanced laboratory facilities offer a comprehensive range
-                of diagnostic tests, conducted by experienced medical
-                technicians.
+              <Text fontSize={{ base: "20px", md: "17px" }} mt={3} color="#2f3848" fontWeight={500}>
+                Download the GentRx app and book your doctor in minutes.
               </Text>
-              <List
-                spacing={5}
-                textAlign="start"
-                mt={10}
-                color={"gray.800"}
-                fontSize={16}
-              >
-                <ListItem>
-                  <ListIcon
-                    as={FaCheckCircle}
-                    color="primary.text"
-                    fontSize={20}
-                  />
-                  Extensive Range of Diagnostic Tests Available.
-                </ListItem>
-                <ListItem>
-                  <ListIcon
-                    as={FaCheckCircle}
-                    color="primary.text"
-                    fontSize={20}
-                  />
-                  State-of-the-Art Laboratory Facilities.
-                </ListItem>
-                <ListItem>
-                  <ListIcon
-                    as={FaCheckCircle}
-                    color="primary.text"
-                    fontSize={20}
-                  />
-                  Experienced and Caring Medical Technicians.
-                </ListItem>
-                <ListItem>
-                  <ListIcon
-                    as={FaCheckCircle}
-                    color="primary.text"
-                    fontSize={20}
-                  />
-                  Timely and Accurate Test Results.
-                </ListItem>
-              </List>
-              <Button
-                mt={10}
-                colorScheme="green"
-                w={"100%"}
-                size={"sm"}
-                leftIcon={<BiCalendar />}
-                onClick={() => {
-                  if (labref.current) {
-                    labref.current.scrollIntoView({ behavior: "smooth" });
-                  }
-                }}
-              >
-                Book Lab Test Now
-              </Button>
+
+              <Flex gap={4} mt={4} wrap="wrap">
+                <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
+                  <Image src="/play store.png" w={180} />
+                </a>
+                <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
+                  <Image src="/app store.png" w={180} />
+                </a>
+                <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
+                  <Image src="/appgallery.png" w={180} />
+                </a>
+              </Flex>
+
+              <Box mt={8} bg="#6bc483" borderRadius="20px" p={8}>
+                <Heading color="#fff" fontSize={{ base: "30px", md: "30px" }} lineHeight={1.2}>
+                  Choose your specialist, set your schedule, and confirm your visit with ease.
+                </Heading>
+                <Grid
+                  templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }}
+                  gap={5}
+                  mt={8}
+                >
+                  {quickAccessItems.map((item) => (
+                    <GridItem
+                      key={item.label}
+                      as={RouterLink}
+                      to={item.to}
+                      bg="#9ad8ad"
+                      borderRadius="16px"
+                      p={5}
+                      textAlign="center"
+                      color="#fff"
+                      transition="transform 0.2s ease, box-shadow 0.2s ease"
+                      _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
+                    >
+                      <Flex align="center" justify="center" mb={3}>{item.icon}</Flex>
+                      <Text fontWeight={600} fontSize={{ base: "14px", md: "16px" }}>{item.label}</Text>
+                    </GridItem>
+                  ))}
+                </Grid>
+              </Box>
             </Box>
           </Flex>
         </div>
       </Box>
 
-      <Box bg={"#fff"} mt={"10"} ref={labref}>
-        <LabTests />
-      </Box> */}
-      <Box pt={5}>
+      <Box bg="#f3f3f3" py={14}>
         <div className="container">
-          <Box>
-            {" "}
-            <Text
-              fontSize={{ base: 24, md: 32 }}
-              fontWeight={500}
-              textAlign={"center"}
-              mt={0}
-              color={"primary.text"}
-            >
-              Quality Medical Care You Can Access Anytime
-            </Text>
-            <Text
-              fontSize={14}
-              textAlign={"center"}
-              mt={2}
-              color={"gray.500"}
-              fontWeight={500}
-            >
-              Get the services you need in one place. Book your doctor, view
-              available departments, and manage your visit with ease.
-            </Text>
-            <Box mt={5}>
-              <Grid
-                templateColumns={{
-                  base: "repeat(1, 1fr)",
-                  md: "repeat(3, 1fr)",
-                  lg: "repeat(3, 1fr)",
-                }}
-                gap={6}
-              >
-                <GridItem
-                  backgroundColor={"primary.400"}
-                  borderRadius={10}
-                  cursor={"pointer"}
-                  color={"#fff"}
-                >
-                  <Box p={5}>
-                    <MdHealthAndSafety fontSize={60} />
-                    <Heading fontSize={28}>Personalized Care</Heading>
-                    <Text fontSize={14}>
-                      At {clinicName}, we prioritize your health and well-being
-                      above all else. Our hospital offers comprehensive medical
-                      services tailored to meet your individual needs, ensuring
-                      you receive the highest quality of care at every step of
-                      your journey
-                    </Text>
-                  </Box>
-                </GridItem>
-                <GridItem
-                  backgroundColor={"primary.500"}
-                  borderRadius={10}
-                  cursor={"pointer"}
-                  color={"#fff"}
-                >
-                  <Box p={5}>
-                    <IoMdPeople fontSize={60} />
-                    <Heading fontSize={28}>Expert Team</Heading>
-                    <Text fontSize={14}>
-                      With a dedicated team of experienced healthcare
-                      professionals, including doctors, nurses, and support
-                      staff, we are committed to providing you with personalized
-                      attention and expert medical guidance. You can trust our
-                      skilled team to deliver compassionate care and support
-                      throughout your treatment.
-                    </Text>
-                  </Box>
-                </GridItem>
-                <GridItem
-                  backgroundColor={"primary.900"}
-                  borderRadius={10}
-                  cursor={"pointer"}
-                  color={"#fff"}
-                >
-                  <Box p={5}>
-                    <FaRegHospital fontSize={60} />
-                    <Heading fontSize={28} mt={2}>
-                      Cutting-Edge Facilities
-                    </Heading>
-                    <Text fontSize={14}>
-                      At {clinicName}, we prioritize your health and well-being
-                      above all else. Our hospital offers comprehensive medical
-                      services tailored to meet your individual needs, ensuring
-                      you receive the highest quality of care at every step of
-                      your journey
-                    </Text>
-                  </Box>
-                </GridItem>
-              </Grid>
-            </Box>
-          </Box>
+          <Heading color="#34C38F" fontWeight={600} textAlign="center" fontSize={{ base: "34px", md: "58px" }}>
+            Simple and Secure Payment Options
+          </Heading>
+          <Text
+            fontSize={{ base: "20px", md: "18px" }}
+            textAlign="center"
+            mt={2}
+            color="#2f3848"
+            fontWeight={500}
+          >
+            Pay using trusted platforms available nationwide. Choose the method that fits your needs.
+          </Text>
+          <Flex mt={8} gap={8} justify="center" align="center" wrap="wrap">
+            <Image src="/icons/payment-methods/gcash.svg" maxH="58px" w="auto" objectFit="contain" />
+            <Image src="/icons/payment-methods/paymaya-combined.svg" maxH="58px" w="auto" objectFit="contain" />
+            <Image src="/icons/payment-methods/dragonpay.png" maxH="58px" w="auto" objectFit="contain" />
+            <Image src="/icons/payment-methods/visa.svg" maxH="58px" w="auto" objectFit="contain" />
+            <Image src="/icons/payment-methods/mastercard.svg" maxH="58px" w="auto" objectFit="contain" />
+          </Flex>
         </div>
       </Box>
 
-      {/* banner */}
-      <Box mt={10} bg={"#fff"} pt={5} pb={24}>
+      <Box mt={8} bg="#fff" pt={5} pb={8}>
         <div className="container">
-          {" "}
-          <Flex p={3} align={"center"} flexDir={{ base: "column", md: "row" }}>
+          <Flex
+            align="center"
+            gap={8}
+            flexDir={{ base: "column", md: "row" }}
+            bg="#6bc483"
+            p={{ base: 6, md: 10 }}
+          >
             <Box flex={1}>
-              {" "}
+              <Heading color="#fff" fontSize={{ base: "36px", md: "56px" }} lineHeight={1.1}>
+                Quality Medical Care You Can Access Anytime
+              </Heading>
+              <Text fontSize={{ base: "20px", md: "18px" }} mt={4} color="#fff" maxW="95%">
+                Get the services you need in one place. Book your doctor, view available departments,
+                and manage your visit with ease.
+              </Text>
+            </Box>
+            <Flex flex={1} justify={{ base: "center", md: "flex-end" }}>
+              <Image src="/images/quality-care.png" maxW={{ base: "90%", md: "420px" }} objectFit="contain" />
+            </Flex>
+          </Flex>
+        </div>
+      </Box>
+
+      <Box mt={4} bg="#f3f3f3" pt={5} pb={14}>
+        <div className="container">
+          <Flex p={0} align="center" flexDir={{ base: "column", md: "row" }}>
+            <Box flex={1}>
               <Heading
-                fontSize={{ base: "36px", md: "48px" }}
-                w={{ base: "95%", md: "70%" }}
+                color="#34C38F"
+                fontSize={{ base: "34px", md: "48px" }}
+                w={{ base: "95%", md: "90%" }}
+                lineHeight={1.1}
               >
-                Your Step by Step Guide to Booking a Visit and Completing Your
-                Treatment
+                Your Step by Step Guide to Booking a Visit and Completing Your Treatment
               </Heading>
             </Box>
             <Box flex={1}>
-              {" "}
-              <Text
-                fontSize={{ base: 14, md: 18 }}
-                fontWeight={400}
-                mt={0}
-                color={"gray.600"}
-              >
-                Follow these steps to set your appointment and complete your
-                visit with ease.
+              <Text fontSize={{ base: "18px", md: "18px" }} fontWeight={500} mt={0} color="#2f3848">
+                Follow these steps to set your appointment and complete your visit with ease.
               </Text>
             </Box>
           </Flex>
-          <Box mt={10}>
-            {" "}
-            <Grid
-              templateColumns={{
-                base: "repeat(2, 1fr)",
-                md: "repeat(2, 1fr)",
-                lg: "repeat(4, 1fr)",
-              }}
-              gap={6}
-            >
-              <GridItem align={"center"}>
-                <Box p={4}>
-                  <Image src="/appoinment.png" w={"80px"} />
-                  <Text
-                    fontSize={{ base: "14px", md: "18px" }}
-                    fontWeight={600}
-                    mt={3}
-                  >
-                    Book An Appointment
-                  </Text>
-                </Box>
-              </GridItem>
-              <GridItem align={"center"}>
-                <Box p={4}>
-                  <Image src="/checkup.png" w={"80px"} />
-                  <Text
-                    fontSize={{ base: "14px", md: "18px" }}
-                    fontWeight={600}
-                    mt={3}
-                  >
-                    Conduct Checkup
-                  </Text>
-                </Box>
-              </GridItem>
-              <GridItem align={"center"}>
-                <Box p={4}>
-                  <Image src="/treatment.png" w={"80px"} />
-                  <Text
-                    fontSize={{ base: "14px", md: "18px" }}
-                    fontWeight={600}
-                    mt={3}
-                  >
-                    Perform Treatment
-                  </Text>
-                </Box>
-              </GridItem>
-              <GridItem align={"center"}>
-                <Box p={4}>
-                  <Image src="/priscribe.png" w={"80px"} />
-                  <Text
-                    fontSize={{ base: "14px", md: "18px" }}
-                    fontWeight={600}
-                    mt={3}
-                  >
-                    Prescribe and Payment
-                  </Text>
-                </Box>
-              </GridItem>
-            </Grid>
+          <Box mt={8} display="flex" justifyContent="center">
+            <Image
+              src="/yourstepbystepheronew.png"
+              w={{ base: "100%", md: "86%" }}
+              maxH={{ base: "420px", md: "460px" }}
+              objectFit="contain"
+              borderRadius="16px"
+            />
           </Box>
         </div>
       </Box>
 
-      {/* faq */}
-      <Box mt={10} pt={5} pb={24}>
-        <FAQ />
+      <Box bg="#fff" py={8}>
+        <Clinics />
       </Box>
-      <Box mt={10} bg={"#fff"} pt={5} pb={24}>
+
+      <Box bg="#fff" py={10}>
+        <Doctors />
+      </Box>
+
+      <Box bg="#fff" py={12}>
         <Testimonials />
       </Box>
     </Box>
   );
 }
-
-const FAQ = () => {
-  const { settingsData } = useSettingsData();
-  const name = settingsData?.find((value) => value.id_name === "clinic_name");
-  const clinicName = name?.value || "GentRx";
-  const faqs1 = [
-    {
-      question: `What services does ${clinicName} offer?`,
-      answer: `${clinicName} offers a comprehensive range of medical services, including dental, gynecology, orthology, neurology, general medicine, dermatology, and cardiology. We also provide advanced lab testing and diagnostic services.`,
-    },
-    {
-      question: `What makes ${clinicName} different from other healthcare providers?`,
-      answer: `${clinicName} stands out due to its commitment to affordable healthcare, advanced medical technology, top-tier specialists, and 24-hour service. We also offer discounts on all medical treatments and ensure a swift enrollment process.`,
-    },
-    {
-      question: `How can I book an Appointment at ${clinicName}?`,
-      answer: `You can easily book an Appointment through our website by navigating to the 'Book An Appointment' section. Simply select the service you need, choose a convenient time, and confirm your booking.`,
-    },
-    {
-      question: `What types of diagnostic tests are available at your lab?`,
-      answer: `Our laboratory offers a wide range of diagnostic tests, including Complete Blood Count (CBC), Hemoglobin (Hb) tests, X-rays, and CT scans. We provide timely and accurate results to support your healthcare needs.`,
-    },
-    {
-      question: `Are there any discounts available on medical treatments?`,
-      answer: `Yes, ${clinicName} offers discounts on all medical treatments. For example, we provide a 5% discount on CBC and Hemoglobin tests, and a 10% discount on X-rays and CT scans.`,
-    },
-
-    // Add more FAQs here
-  ];
-
-  const faqs2 = [
-    {
-      question: `What are your operating hours?`,
-      answer: `${clinicName} operates 24 hours a day, 7 days a week, ensuring that you receive the care you need whenever you need it.`,
-    },
-    {
-      question: `Who are the doctors at ${clinicName}?`,
-      answer: `Our team consists of highly qualified and experienced doctors specializing in various fields such as cardiology, neurology, dermatology, and more. Detailed information about our doctors is available on the 'Meet Our Doctors' page on our website.`,
-    },
-    {
-      question: `How can I contact ${clinicName} for more information?`,
-      answer: `You can reach out to us anytime via the contact information provided on our website. We are always ready to assist you with any inquiries or support you may need.`,
-    },
-    {
-      question: `What is the process for receiving treatment at ${clinicName}?`,
-      answer: `The treatment process at ${clinicName} involves booking an Appointment, conducting a checkup, performing the necessary treatment, and prescribing medications or further care. Our streamlined process ensures efficient and effective care.`,
-    },
-    {
-      question: `How does ${clinicName} ensure the quality of its medical services?`,
-      answer: `We utilize cutting-edge medical technology and state-of-the-art facilities to provide the highest quality care. Our dedicated team of healthcare professionals ensures personalized attention and expert medical guidance throughout your treatment journey.`,
-    },
-
-    // Add more FAQs here
-  ];
-
-  return (
-    <Box>
-      {" "}
-      <div className="container">
-        <Heading
-          fontWeight={600}
-          mt={0}
-          color={"primary.text"}
-          textAlign={"center"}
-          fontSize={{ base: "24px", md: "30px" }}
-        >
-          FAQ
-        </Heading>{" "}
-        <Box mt={10}>
-          {" "}
-          <Grid
-            templateColumns={{
-              base: "repeat(1, 1fr)",
-              md: "repeat(2, 1fr)",
-              lg: "repeat(2, 1fr)",
-            }}
-            gap={6}
-          >
-            <GridItem align={"center"}>
-              {" "}
-              <Accordion allowToggle>
-                {faqs1.map((faq, index) => (
-                  <AccordionItem key={index}>
-                    <h2>
-                      <AccordionButton
-                        _expanded={{ bg: "primary.main", color: "white" }}
-                      >
-                        <Box
-                          as="span"
-                          flex="1"
-                          textAlign="left"
-                          fontWeight={600}
-                          fontSize={18}
-                          py={2}
-                        >
-                          {faq.question}
-                        </Box>{" "}
-                        <AccordionIcon />
-                      </AccordionButton>
-                    </h2>
-                    <AccordionPanel pb={4} textAlign={"left"}>
-                      {faq.answer}
-                    </AccordionPanel>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </GridItem>
-            <GridItem align={"center"}>
-              {" "}
-              <Accordion allowToggle>
-                {faqs2.map((faq, index) => (
-                  <AccordionItem key={index}>
-                    <h2>
-                      <AccordionButton
-                        _expanded={{ bg: "primary.main", color: "white" }}
-                      >
-                        <Box
-                          as="span"
-                          flex="1"
-                          textAlign="left"
-                          fontWeight={600}
-                          fontSize={18}
-                          py={2}
-                        >
-                          {faq.question}
-                        </Box>{" "}
-                        <AccordionIcon />
-                      </AccordionButton>
-                    </h2>
-                    <AccordionPanel pb={4} textAlign={"left"}>
-                      {faq.answer}
-                    </AccordionPanel>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </GridItem>
-          </Grid>
-        </Box>
-      </div>
-    </Box>
-  );
-};
