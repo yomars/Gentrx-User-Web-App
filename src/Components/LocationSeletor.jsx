@@ -167,6 +167,17 @@ const LocationSeletor = ({ type }) => {
   });
 
   const cityList = Array.isArray(cities) ? cities : [];
+  
+  // Debug: Log exact state to understand what's being rendered
+  useEffect(() => {
+    console.log("[LocationSelector DEBUG] Current state:", {
+      selectedCity,
+      selectedCityValue: selectedCity?.city,
+      citiesCount: cityList.length,
+      firstCity: cityList[0],
+      allCities: cityList.map(c => ({ id: c.id, city: c.city, title: c.title, name: c.name, isDefault: c.default_city === 1 })),
+    });
+  }, [selectedCity, cityList]);
 
   const applyFallbackCity = useCallback(() => {
     if (!cityList.length) {
@@ -285,7 +296,10 @@ const LocationSeletor = ({ type }) => {
             {isLoading ? (
               <LoadingText />
             ) : selectedCity ? (
-              selectedCity.city
+              <>
+                {console.debug('[LocationSelector] Rendering button with city:', selectedCity.city)}
+                {selectedCity.city}
+              </>
             ) : (
               "Select Location"
             )}
@@ -305,7 +319,10 @@ const LocationSeletor = ({ type }) => {
             {isLoading ? (
               <LoadingText />
             ) : selectedCity ? (
-              selectedCity.city
+              <>
+                {console.debug('[LocationSelector] Rendering button with city:', selectedCity.city)}
+                {selectedCity.city}
+              </>
             ) : (
               "Select Location"
             )}
@@ -350,6 +367,12 @@ const LocationSeletor = ({ type }) => {
                 mb={2}
               />
             </HStack>
+            <Box fontSize="xs" color="gray.500" px={4} pb={2} maxH="60px" overflowY="auto" bg="gray.50" borderRadius="sm" p={2}>
+              <Text fontWeight="bold">DEBUG INFO:</Text>
+              <Text>Cities loaded: {cityList.length}</Text>
+              <Text>Selected: {selectedCity?.city || "none"}</Text>
+              <Text>Loading: {isLoading ? "yes" : "no"}</Text>
+            </Box>
             {citiesLoading ? (
               "Loading..."
             ) : (
