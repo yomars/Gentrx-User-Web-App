@@ -100,6 +100,24 @@ const LocationSeletor = ({ type }) => {
 
   const cityList = Array.isArray(cities) ? cities : [];
 
+  const applyFallbackCity = useCallback(() => {
+    if (!cityList.length) {
+      return false;
+    }
+
+    const fallback = cityList.find((city) => city.default_city === 1) || cityList[0];
+    const formattedCity = {
+      id: fallback.id,
+      city: fallback.title,
+      latitude: fallback.latitude,
+      longitude: fallback.longitude,
+    };
+
+    setSelectedCity(formattedCity);
+    setStorageItem("currentCity", JSON.stringify(formattedCity));
+    return true;
+  }, [cityList, setSelectedCity]);
+
   const fetchLocation = useCallback(async () => {
     setisLoading(true); // Start loading
     try {
@@ -113,20 +131,26 @@ const LocationSeletor = ({ type }) => {
         setStorageItem("currentCity", JSON.stringify(formattedCity));
         setSelectedCity(formattedCity);
       } catch (error) {
+        const hasFallback = applyFallbackCity();
         toast({
           title: "Failed to get city",
-          description: "Please select a city manually",
-          status: "error",
+          description: hasFallback
+            ? "Using default city from server settings"
+            : "Please select a city manually",
+          status: hasFallback ? "warning" : "error",
           duration: 2000,
           isClosable: true,
         });
         console.error("Error fetching city:", error);
       }
     } catch (error) {
+      const hasFallback = applyFallbackCity();
       toast({
         title: "Failed to get city",
-        description: "Please select a city manually",
-        status: "error",
+        description: hasFallback
+          ? "Location access unavailable. Using default city."
+          : "Please select a city manually",
+        status: hasFallback ? "warning" : "error",
         duration: 2000,
         isClosable: true,
       });
@@ -134,7 +158,7 @@ const LocationSeletor = ({ type }) => {
     } finally {
       setisLoading(false); // End loading
     }
-  }, [setSelectedCity, toast]);
+  }, [applyFallbackCity, setSelectedCity, toast]);
 
   useEffect(() => {
     if (!selectedCity) {
