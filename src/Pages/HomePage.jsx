@@ -67,14 +67,6 @@ export default function HomePage() {
             flexDir={{ base: "column", md: "row" }}
           >
             <Box pb={12} flex={1} maxW={"100%"}>
-              <Text
-                fontSize={{ base: "20", md: "24", lg: "30" }}
-                color={"#FFF"}
-                mt={5}
-                fontWeight={400}
-              >
-                Welcome to {clinicName}
-              </Text>
               <Heading
                 color={"primary.text"}
                 as={"h1"}
@@ -273,13 +265,13 @@ export default function HomePage() {
                 mt={0}
                 color={"gray.600"}
               >
-                Reliable Care You Can Count On <br />
-                <Text as={"span"} color={"primary.text"} fontWeight={600}>
-                  Whenever You Need Medical Support
-                </Text>{" "}
-                
+                Reliable Care You Can Count On Whenever You Need Medical
+                Support
               </Text>
               <Text fontSize={16} mt={2} color={"gray.500"} fontWeight={500}>
+                Download the GentRx app and book your doctor in minutes.
+              </Text>
+              <Text fontSize={16} mt={1} color={"gray.500"} fontWeight={500}>
                 Choose your specialist, set your schedule, and confirm your
                 visit with ease.
               </Text>
@@ -491,7 +483,7 @@ export default function HomePage() {
               mt={0}
               color={"primary.text"}
             >
-              Why Choose Our Hospital?
+              Quality Medical Care You Can Access Anytime
             </Text>
             <Text
               fontSize={14}
@@ -500,9 +492,8 @@ export default function HomePage() {
               color={"gray.500"}
               fontWeight={500}
             >
-              At {clinicName}, we understand that your health and well-being
-              are of paramount importance. <br /> Here{"`"}s why we believe you
-              should choose us for your medical needs:
+              Get the services you need in one place. Book your doctor, view
+              available departments, and manage your visit with ease.
             </Text>
             <Box mt={5}>
               <Grid
@@ -583,14 +574,6 @@ export default function HomePage() {
           <Flex p={3} align={"center"} flexDir={{ base: "column", md: "row" }}>
             <Box flex={1}>
               {" "}
-              <Text
-                fontSize={{ base: 18, md: 24 }}
-                fontWeight={600}
-                mt={0}
-                color={"primary.text"}
-              >
-                Our Operational Method
-              </Text>
               <Heading
                 fontSize={{ base: "36px", md: "48px" }}
                 w={{ base: "95%", md: "70%" }}

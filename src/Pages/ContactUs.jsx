@@ -97,7 +97,7 @@ export default function ContactUs() {
             mt={0}
             color={"#fff"}
           >
-            Contact Us
+            We Are Here to Assist You With Any Inquiry
           </Text>
 
           <Text
@@ -108,8 +108,9 @@ export default function ContactUs() {
             mt={0}
             color={"#fff"}
           >
-            We are here to assist you with any inquiries or support. Feel free
-            to contact us, and we will get back to you as soon as possible.
+            If you have questions about appointments, services, or patient
+            care, reach out to us. Our team is ready to help and ensure you
+            get the support you need.
           </Text>
         </Box>
       </Box>{" "}
@@ -124,7 +125,7 @@ export default function ContactUs() {
           >
             <Icon as={BiLocationPlus} boxSize={8} mb={4} color="blue.500" />
             <Heading as="h3" size="md" mb={2}>
-              Address
+              We are located at
             </Heading>
             <Text>{addressValue}</Text>
           </Box>
@@ -138,7 +139,7 @@ export default function ContactUs() {
           >
             <Icon as={IoMdCall} boxSize={8} mb={4} color="blue.500" />
             <Heading as="h3" size="md" mb={2}>
-              Call Us
+              Contact Number
             </Heading>
             <Text>{phone1Value}</Text>
             <Text>{phone2Value}</Text>
@@ -153,7 +154,7 @@ export default function ContactUs() {
           >
             <Icon as={FaEnvelope} boxSize={8} mb={4} color="blue.500" />
             <Heading as="h3" size="md" mb={2}>
-              Email Us
+              Customer Support
             </Heading>
             <Text>{emailValue}</Text>
           </Box>
@@ -223,6 +224,10 @@ export default function ContactUs() {
                   />
                 </FormControl>
 
+                <Text mt={3} fontSize={13} color="gray.600">
+                  I agree to our privacy policy and terms and conditions
+                </Text>
+
                 {showMsg ? (
                   <Alert
                     mt={4}
@@ -250,7 +255,7 @@ export default function ContactUs() {
                   type="submit"
                   isLoading={mutation.isPending}
                 >
-                  Send Message
+                  Submit
                 </Button>
               </form>
             </Box>
