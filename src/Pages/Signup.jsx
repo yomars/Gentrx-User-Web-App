@@ -150,7 +150,7 @@ const Signup = () => {
               fontWeight={500}
               lineHeight={1.6}
             >
-              For questions or concerns related to data retention, you may contact: GentRx Data Protection Team info@gentrx.com.ph Santusan Street, Barangay Manggahan, General Trias, Cavite +63 995 514 8229
+              For questions or concerns related to data retention, you may contact: GentRx Data Protection Team info@gentrx.ph Santusan Street, Barangay Manggahan, General Trias, Cavite +63 995 514 8229
             </Text>
 
             <form onSubmit={handleSubmit(onSubmit)}>

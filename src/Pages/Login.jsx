@@ -182,7 +182,7 @@ const FirebaseLogin = ({ redirectLocation }) => {
 
             <Text color="#4a5568" fontSize={{ base: "13px", md: "15px" }} mb={5} lineHeight={1.5} maxW={{ lg: "520px" }}>
               For question of concerns related to data retention, you may contact:
-              GenRx Data Protection Team info@gentrx.com.ph Santusan Street,
+              GenRx Data Protection Team info@gentrx.ph Santusan Street,
               Barangay Manggahan, General Trias, Cavite +63 995 514 8229
             </Text>
 
