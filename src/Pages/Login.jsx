@@ -3,6 +3,8 @@ import {
   Box,
   Button,
   Flex,
+  Grid,
+  GridItem,
   Heading,
   Image,
   Input,
@@ -17,6 +19,11 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import { FaCalendarAlt, FaHospitalAlt, FaUserMd } from "react-icons/fa";
+import { MdBiotech, MdHealthAndSafety } from "react-icons/md";
+import { BsPrescription } from "react-icons/bs";
+import { HiUserCircle } from "react-icons/hi";
+import { IoMdWallet } from "react-icons/io";
 import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import showToast from "../Controllers/ShowToast";
 import { ADD } from "../Controllers/ApiControllers";
@@ -27,6 +34,7 @@ import {
 } from "react-router-dom";
 import defaultISD from "../Controllers/defaultISD";
 import { setStorageItem } from "../lib/storage";
+import useSettingsData from "../Hooks/SettingData";
 
 const FirebaseLogin = ({ redirectLocation }) => {
   const [isd_code, setIsd_code] = useState(defaultISD);
@@ -37,6 +45,32 @@ const FirebaseLogin = ({ redirectLocation }) => {
   const [isLoading, setisLoading] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
+  const { settingsData } = useSettingsData();
+
+  const playStoreLink = settingsData?.find(
+    (value) => value.id_name === "play_store_link"
+  );
+  const appStoreLink = settingsData?.find(
+    (value) => value.id_name === "app_store_link"
+  );
+  const appGalleryLink = settingsData?.find(
+    (value) => value.id_name === "app_gallery_link"
+  );
+
+  const playStoreHref = playStoreLink?.value || "#";
+  const appStoreHref = appStoreLink?.value || "#";
+  const appGalleryHref = appGalleryLink?.value || "#";
+
+  const quickAccessItems = [
+    { label: "Appointment", icon: <FaCalendarAlt fontSize={26} />, to: "/doctors" },
+    { label: "Lab Test", icon: <MdBiotech fontSize={28} />, to: "/lab-tests" },
+    { label: "Check-up", icon: <MdHealthAndSafety fontSize={28} />, to: "/doctors" },
+    { label: "Doctors", icon: <FaUserMd fontSize={26} />, to: "/doctors" },
+    { label: "Prescription", icon: <BsPrescription fontSize={26} />, to: "/login" },
+    { label: "Patient Profile", icon: <HiUserCircle fontSize={30} />, to: "/login" },
+    { label: "Hospital Info", icon: <FaHospitalAlt fontSize={26} />, to: "/clinics" },
+    { label: "Top-up", icon: <IoMdWallet fontSize={26} />, to: "/login" },
+  ];
 
   // Password login handler
   const handlePasswordLogin = async () => {
@@ -80,132 +114,232 @@ const FirebaseLogin = ({ redirectLocation }) => {
   };
 
   return (
-    <Flex
-      minH="50vh"
-      alignItems="center"
-      justifyContent="center"
-      bg="gray.100"
-      padding="4"
-    >
+    <Box bg="#f3f3f3" py={{ base: 3, md: 5 }}>
+      <Flex alignItems="center" justifyContent="center" px={{ base: 4, md: 6 }}>
       <Box
-        width={["100%", "80%", "70%", "60%"]}
-        maxWidth="900px"
-        boxShadow="lg"
-        backgroundColor="white"
-        borderRadius="md"
+        width="100%"
+        maxWidth="1320px"
+        backgroundColor="#f3f3f3"
+        borderRadius="xl"
         overflow="hidden"
       >
-        <Flex direction={["column", "column", "row", "row"]}>
+        <Flex direction={{ base: "column", lg: "row" }} gap={{ base: 5, lg: 9 }}>
           <Box
-            width={["100%", "100%", "50%", "50%"]}
-            backgroundColor="primary.main"
-            color="white"
+            width={{ base: "100%", lg: "44%" }}
+            bg="#e5e7eb"
             display="flex"
             flexDirection="column"
             alignItems="center"
             justifyContent="center"
-            padding={["6", "8", "8", "10"]}
-            textAlign="center"
+            borderRadius="xl"
+            p={{ base: "3", md: "4" }}
+            position="relative"
           >
-            <Heading size={["md", "lg", "lg", "lg"]} mb="4">
-              Login
-            </Heading>
-            <Text fontSize={["md", "lg", "lg", "lg"]} mb="6">
-              We provide the best and most affordable healthcare services.
-            </Text>
             <Image
-              src="/medical-report.png"
-              alt="Login Illustration"
-              boxSize={["100px", "120px", "150px", "150px"]}
-              mb="4"
+              src="/images/login-hero.png"
+              alt="GentRx Login Hero"
+              width="100%"
+              maxH={{ base: "320px", md: "400px", lg: "480px" }}
+              objectFit="cover"
+              borderRadius="lg"
             />
+            <Box
+              position="absolute"
+              bottom="24px"
+              left="50%"
+              transform="translateX(-50%)"
+              bg="#6bc483"
+              color="#fff"
+              px={7}
+              py={3}
+              borderRadius="10px"
+              textAlign="center"
+              fontWeight={700}
+              fontSize={{ base: "22px", md: "28px" }}
+              lineHeight={1.1}
+              w="82%"
+            >
+              We are ready to serve you
+            </Box>
           </Box>
 
-          <Box width={["100%", "100%", "50%", "50%"]} p={["6", "8", "8"]}>
-            <Text fontSize="md" mb="2" fontWeight={600}>
-              Mobile number
-            </Text>
-            <InputGroup size={"md"} mb="4">
-              <InputLeftAddon
-                cursor={"pointer"}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpen();
-                }}
-              >
-                {isd_code}
-              </InputLeftAddon>
-              <Input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => {
-                  setphoneNumber(e.target.value);
-                }}
-              />
-            </InputGroup>
+          <Box
+            width={{ base: "100%", lg: "56%" }}
+            p={{ base: "4", md: "6", lg: "8" }}
+            display="flex"
+            flexDirection="column"
+            justifyContent="center"
+          >
+            <Heading
+              fontSize={{ base: "34px", md: "38px", lg: "40px" }}
+              color="#0b8f3f"
+              mb={4}
+              lineHeight={1.12}
+              maxW={{ lg: "480px" }}
+            >
+              We are always ensure best medical treatment for your health
+            </Heading>
 
-            <Text fontSize="md" mb="2" fontWeight={600}>
-              PIN
+            <Text color="#4a5568" fontSize={{ base: "13px", md: "15px" }} mb={5} lineHeight={1.5} maxW={{ lg: "520px" }}>
+              For question of concerns related to data retention, you may contact:
+              GenRx Data Protection Team info@gentrx.com.ph Santusan Street,
+              Barangay Manggahan, General Trias, Cavite +63 995 514 8229
             </Text>
-            <InputGroup size={"md"} mb="4">
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your PIN"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <InputRightElement>
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+
+            <Box>
+              <InputGroup size={"lg"} mb="4">
+                <InputLeftAddon
+                  cursor={"pointer"}
+                  bg="#dbe2ed"
+                  borderColor="#bec8d8"
+                  color="#27364b"
+                  h="52px"
+                  px={4}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpen();
+                  }}
+                >
+                  {isd_code}
+                </InputLeftAddon>
+                <Input
+                  type="tel"
+                  value={phoneNumber}
+                  h="52px"
+                  bg="#dbe2ed"
+                  borderColor="#bec8d8"
+                  color="#27364b"
+                  _placeholder={{ color: "#5c6778" }}
+                  onChange={(e) => {
+                    setphoneNumber(e.target.value);
+                  }}
                 />
-              </InputRightElement>
-            </InputGroup>
+              </InputGroup>
 
-            <Button
-              colorScheme="orange"
-              width="100%"
-              mb="4"
-              onClick={handlePasswordLogin}
-              isLoading={isLoading}
-            >
-              Login
-            </Button>
+              <InputGroup size={"lg"} mb="4">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••"
+                  value={password}
+                  h="52px"
+                  bg="#dbe2ed"
+                  borderColor="#bec8d8"
+                  color="#27364b"
+                  _placeholder={{ color: "#5c6778" }}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <InputRightElement h="52px">
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  />
+                </InputRightElement>
+              </InputGroup>
 
-            {/* <Link
-              color="blue.500"
-              textAlign="center"
-              display="block"
-              mb="4"
-              fontSize="sm"
-              as={RouterLink}
-              to={"/forgot-password"}
-            >
-              Forgot Password?
-            </Link> */}
+              <Button
+                bg="#1f48dd"
+                color="white"
+                _hover={{ bg: "#173bb8" }}
+                width="100%"
+                h="52px"
+                mb="4"
+                borderRadius="999px"
+                fontWeight={700}
+                onClick={handlePasswordLogin}
+                isLoading={isLoading}
+              >
+                Login
+              </Button>
 
-            <Text fontSize="sm" textAlign="center" mb="4">
-              By continuing, you agree to our{" "}
-              <Link color="blue.500" as={RouterLink} to={"/terms"}>
-                Terms of Use
-              </Link>{" "}
-              and{" "}
-              <Link color="blue.500" as={RouterLink} to={"/privacy-and-policy"}>
-                Privacy Policy
+              <Text fontSize="sm" textAlign="center" mb="4" color="#4a5568">
+                By continuing, you agree to our{" "}
+                <Link color="#2b6cb0" as={RouterLink} to={"/terms"}>
+                  Terms of Use
+                </Link>{" "}
+                and{" "}
+                <Link color="#2b6cb0" as={RouterLink} to={"/privacy-and-policy"}>
+                  Privacy Policy
+                </Link>
+              </Text>
+              <Link
+                color="#2b6cb0"
+                textAlign="center"
+                display="block"
+                as={RouterLink}
+                to={"/signup"}
+                fontWeight={600}
+              >
+                Don&apos;t have an account? Sign Up
               </Link>
-            </Text>
-            <Link
-              color="blue.500"
-              textAlign="center"
-              display="block"
-              as={RouterLink}
-              to={"/signup"}
+            </Box>
+          </Box>
+        </Flex>
+      </Box>
+
+      </Flex>
+
+      <Box maxW="1320px" mx="auto" px={{ base: 4, md: 6 }} mt={{ base: 7, md: 9 }}>
+        <Flex gap={8} pt={1} flexDir={{ base: "column", md: "row" }} align="flex-start">
+          <Flex flex={1} justify={{ base: "center", md: "left" }}>
+            <Image src="/mobile-promotion.png" w={{ base: 360, md: 500 }} objectFit="contain" />
+          </Flex>
+          <Box flex={1} pb={10}>
+            <Text
+              fontSize={{ base: "40px", md: "58px" }}
+              fontWeight={600}
+              mt={0}
+              color="#34C38F"
+              lineHeight={1.14}
             >
-              New here? Create an account
-            </Link>
+              Reliable Care You Can Count On Whenever You Need Medical Support
+            </Text>
+            <Text fontSize={{ base: "20px", md: "17px" }} mt={3} color="#2f3848" fontWeight={500}>
+              Download the GentRx app and book your doctor in minutes.
+            </Text>
+
+            <Flex gap={4} mt={4} wrap="wrap">
+              <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
+                <Image src="/play store.png" w={180} />
+              </a>
+              <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
+                <Image src="/app store.png" w={180} />
+              </a>
+              <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
+                <Image src="/appgallery.png" w={180} />
+              </a>
+            </Flex>
+
+            <Box mt={8} bg="#6bc483" borderRadius="20px" p={8}>
+              <Heading color="#fff" fontSize={{ base: "30px", md: "30px" }} lineHeight={1.2}>
+                Choose your specialist, set your schedule, and confirm your visit with ease.
+              </Heading>
+              <Grid
+                templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }}
+                gap={5}
+                mt={8}
+              >
+                {quickAccessItems.map((item) => (
+                  <GridItem
+                    key={item.label}
+                    as={RouterLink}
+                    to={item.to}
+                    bg="#9ad8ad"
+                    borderRadius="16px"
+                    p={5}
+                    textAlign="center"
+                    color="#fff"
+                    transition="transform 0.2s ease, box-shadow 0.2s ease"
+                    _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
+                  >
+                    <Flex align="center" justify="center" mb={3}>{item.icon}</Flex>
+                    <Text fontWeight={600} fontSize={{ base: "14px", md: "16px" }}>{item.label}</Text>
+                  </GridItem>
+                ))}
+              </Grid>
+            </Box>
           </Box>
         </Flex>
       </Box>
@@ -215,7 +349,7 @@ const FirebaseLogin = ({ redirectLocation }) => {
         onClose={onClose}
         setisd_code={setIsd_code}
       />
-    </Flex>
+    </Box>
   );
 };
 

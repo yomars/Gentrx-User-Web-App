@@ -7,13 +7,12 @@ const WhatsAppButton = () => {
     (value) => value.id_name === "whatsapp"
   );
   const handleWhatsAppClick = () => {
-    // Replace with your WhatsApp number and message
-    const phoneNumber = whatsappNumber.value;
+    if (!whatsappNumber?.value) return;
+    // wa.me requires number WITHOUT leading +
+    const phoneNumber = whatsappNumber.value.replace(/^\+/, "");
     const message =
       "Hello! I would like to book an appointment at your hospital. Could you please guide me through the process?";
-    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-      message
-    )}`;
+    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
 

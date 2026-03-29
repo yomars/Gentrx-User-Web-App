@@ -362,7 +362,7 @@ const Signup = () => {
             minH={["400px", "500px", "100vh", "100vh"]}
           >
             <Image
-              src="/public/images/login-hero.png"
+              src="/public/images/signup-hero.png"
               alt="Doctor"
               w={{ base: "90%", md: "100%" }}
               maxH="600px"

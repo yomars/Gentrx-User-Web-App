@@ -18,7 +18,24 @@ const Logo = (props) => {
   const { settingsData } = useSettingsData();
   const logo = settingsData?.find((value) => value.id_name === "logo");
   const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
-  return <Image w={32} src={logoSrc} alt="Logo" filter="drop-shadow(0 0 12px rgba(255,255,255,0.8))" border="2px solid rgba(255,255,255,0.8)" borderRadius="md" p={1} {...props} />;
+  return (
+    <Box
+      bg="rgba(255,255,255,0.94)"
+      borderRadius="xl"
+      px={3}
+      py={2.5}
+      boxShadow="0 14px 30px rgba(0, 22, 84, 0.32), 0 3px 10px rgba(0, 22, 84, 0.2)"
+    >
+      <Image
+        w={40}
+        src={logoSrc}
+        alt="Logo"
+        objectFit="contain"
+        filter="brightness(1.04) saturate(1.22) contrast(1.18) drop-shadow(0 4px 10px rgba(0, 22, 84, 0.25))"
+        {...props}
+      />
+    </Box>
+  );
 };
 
 const ListHeader = ({ children }) => (
