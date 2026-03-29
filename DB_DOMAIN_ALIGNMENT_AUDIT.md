@@ -81,7 +81,7 @@ Scope: Full workspace review of runtime code, scripts, configuration, and techni
 - Files:
   - src/Pages/Login.jsx
   - src/Pages/Signup.jsx
-- Change: info@gentrx.com.ph -> info@gentrx.ph
+- Change: info@gentrx.ph retained as the current contact email domain
 
 ## Domain-dependent logic inventory
 
