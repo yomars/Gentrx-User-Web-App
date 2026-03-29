@@ -98,12 +98,12 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "https://gentrx.ph",
+        target: "https://www.gentrx.com.ph",
         changeOrigin: true,
         secure: true,
       },
       "/storage": {
-        target: "https://gentrx.ph",
+        target: "https://www.gentrx.com.ph",
         changeOrigin: true,
         secure: true,
       },

@@ -19,9 +19,15 @@ if (typeof window !== "undefined") {
 	const originHost = window.location.host.toLowerCase();
 	const configuredHost = getHost(configured);
 
-	// Use same-origin only for local development. In production we keep the configured
-	// API host so apex/www canonical redirects do not create rewrite loops.
-	if (!configured || !configuredHost || isLocalRuntimeHost(originHost)) {
+	// Use same-origin for localhost and for the public gentrx.ph frontend so /api and
+	// /storage can be proxied through the frontend host. Direct host access is kept for
+	// any explicitly configured external backend domain.
+	if (
+		!configured ||
+		!configuredHost ||
+		isLocalRuntimeHost(originHost) ||
+		(originHost.endsWith("gentrx.ph") && configuredHost.endsWith("gentrx.ph"))
+	) {
 		apiAddress = origin;
 	}
 }
