@@ -59,22 +59,29 @@ export default function Main() {
   }, [location]);
 
   useEffect(() => {
+    const logoItem = resolvedSettingsData.find(
+      (value) => value.id_name === "logo"
+    );
     const faviconItem = resolvedSettingsData.find(
       (value) => value.id_name === "fav_icon"
     );
     const title = resolvedSettingsData.find(
       (value) => value.id_name === "clinic_name"
     );
-    const faviconPath = faviconItem?.value ? `${imageBaseURL}/${faviconItem.value}` : "/favicon.png";
+    const faviconPath = logoItem?.value
+      ? `${imageBaseURL}/${logoItem.value}`
+      : faviconItem?.value
+        ? `${imageBaseURL}/${faviconItem.value}`
+        : "/favicon.png";
 
     startTransition(() => {
       document.title = title?.value || "GentRx";
 
       // Change the favicon
       const favicon =
-        document.querySelector('link[rel="icon"]') ||
+        document.querySelector('link[rel="icon"], link[rel="shortcut icon"]') ||
         document.createElement("link");
-      favicon.type = "image/x-icon";
+      favicon.type = "image/png";
       favicon.rel = "icon";
       favicon.href = faviconPath;
       document.getElementsByTagName("head")[0].appendChild(favicon);
