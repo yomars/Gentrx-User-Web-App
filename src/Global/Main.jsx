@@ -36,6 +36,7 @@ const Files = lazy(() => import("../Pages/Files"));
 const Prescriptions = lazy(() => import("../Pages/Prescriptions"));
 const LaboratoryRequests = lazy(() => import("../Pages/LaboratoryRequests"));
 const Webpage = lazy(() => import("../Pages/WebPages/Webpage"));
+const AboutUs = lazy(() => import("../Pages/AboutUs"));
 const FamilyMember = lazy(() => import("../Pages/FamilyMember/FamilyMember"));
 const Signup = lazy(() => import("../Pages/Signup"));
 const FamilyMembers = lazy(() => import("../Components/FamilyMembers"));
@@ -170,7 +171,7 @@ export default function Main() {
                   element={<StripePaymentProcess />}
                 />
                 {/*web pages */}
-                <Route path="/about-us" element={<Webpage id={1} />} />
+                <Route path="/about-us" element={<AboutUs />} />
                 <Route path="/privacy-policy" element={<Webpage id={2} />} />
                 <Route
                   path="/terms-and-conditions"

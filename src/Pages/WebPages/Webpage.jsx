@@ -6,7 +6,7 @@ import { Box, ChakraProvider, Text } from "@chakra-ui/react";
 import DOMPurify from "dompurify";
 import { NotFoundPage } from "../NotFoundPage";
 
-function Webpage({ id }) {
+function Webpage({ id, showTitle = true }) {
   const getData = async () => {
     const res = await GET(`get_web_page/page/${id}`);
 
@@ -33,27 +33,32 @@ function Webpage({ id }) {
 
   return (
     <Box>
-      {" "}
-      <Box
-        bg="#eafaf7"
-        p={4}
-        py={{ base: "4", md: "10" }}
-        border="1px solid"
-        borderColor="#d6f1eb"
-      >
-        <Box className="container">
-          <Text
-            fontFamily={"Quicksand, sans-serif"}
-            fontSize={{ base: 20, md: 32 }}
-            fontWeight={700}
-            textAlign={"center"}
-            mt={0}
-            color={"#1d8f7a"}
+      {showTitle && (
+        <>
+          {" "}
+          <Box
+            bg="#eafaf7"
+            p={4}
+            py={{ base: "4", md: "10" }}
+            border="1px solid"
+            borderColor="#d6f1eb"
           >
-            {data?.title}
-          </Text>
-        </Box>
-      </Box>{" "}
+            <Box className="container">
+              <Text
+                fontFamily={"Quicksand, sans-serif"}
+                fontSize={{ base: 20, md: 32 }}
+                fontWeight={700}
+                textAlign={"center"}
+                mt={0}
+                color={"#1d8f7a"}
+              >
+                {data?.title}
+              </Text>
+            </Box>
+          </Box>
+          {" "}
+        </>
+      )}
       <Box className="container" mt={5} pb={20} px={5}>
         <ChakraProvider resetCSS={false}>
           {" "}
