@@ -22,6 +22,8 @@ function Testimonials() {
     queryKey: "testimonials",
     queryFn: getData,
   });
+  const testimonials = Array.isArray(data) ? data : [];
+  const canLoop = testimonials.length > 3;
 
   const breakpoints = {
     // When window width is >= 320px
@@ -68,11 +70,11 @@ function Testimonials() {
               spaceBetween={50}
               slidesPerView={5}
               breakpoints={breakpoints}
-              loop={true}
+              loop={canLoop}
               pagination={{ clickable: true }}
               
             >
-              {data?.map((item) => (
+              {testimonials.map((item) => (
                 <SwiperSlide key={item.id} style={{ padding: "40px 0" }}>
                   <Box px={3}>
                     <TestimonialCard item={item} />
@@ -124,7 +126,7 @@ const TestimonialCard = ({ item }) => {
         borderRadius="full"
         boxSize="100px"
         src={`${imageBaseURL}/${image}`}
-        fallbackSrc="user.png"
+        fallbackSrc="/user.png"
         alt={title}
         mx="auto"
         mb={4}

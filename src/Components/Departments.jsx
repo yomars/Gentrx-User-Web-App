@@ -157,8 +157,9 @@ export default function Departments() {
                         src={
                           item.image
                             ? `${imageBaseURL}/${item.image}`
-                            : "imagePlaceholder.png"
+                            : "/imagePlaceholder.png"
                         }
+                        fallbackSrc="/imagePlaceholder.png"
                         maxW={{ base: "78px", md: "90px" }}
                         maxH={{ base: "78px", md: "90px" }}
                         objectFit="contain"

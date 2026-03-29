@@ -28,6 +28,7 @@ function ClinicTestimonials({ clinicId }) {
     queryKey: ["clinic-testimonials", clinicId],
     queryFn: () => getData(clinicId),
   });
+  const testimonials = Array.isArray(data) ? data : [];
   return (
     <Box mt={5}>
       {data ? (
@@ -37,10 +38,10 @@ function ClinicTestimonials({ clinicId }) {
               modules={[Pagination]}
               spaceBetween={50}
               slidesPerView={1}
-              loop={true}
+              loop={testimonials.length > 1}
               pagination={{ clickable: true }}
             >
-              {data?.map((item) => (
+              {testimonials.map((item) => (
                 <SwiperSlide key={item.id} style={{ padding: "20px 0" }}>
                   <Box px={2}>
                     <TestimonialCard item={item} />

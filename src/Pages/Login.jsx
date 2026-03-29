@@ -137,6 +137,7 @@ const FirebaseLogin = ({ redirectLocation }) => {
           >
             <Image
               src="/images/login-hero.png"
+              fallbackSrc="/doctor-2.png"
               alt="GentRx Login Hero"
               width="100%"
               maxH={{ base: "320px", md: "400px", lg: "480px" }}
@@ -284,7 +285,7 @@ const FirebaseLogin = ({ redirectLocation }) => {
       <Box maxW="1320px" mx="auto" px={{ base: 4, md: 6 }} mt={{ base: 7, md: 9 }}>
         <Flex gap={8} pt={1} flexDir={{ base: "column", md: "row" }} align="flex-start">
           <Flex flex={1} justify={{ base: "center", md: "left" }}>
-            <Image src="/mobile-promotion.png" w={{ base: 360, md: 500 }} objectFit="contain" />
+            <Image src="/mobile-promotion.png" fallbackSrc="/doctor-2.png" w={{ base: 360, md: 500 }} objectFit="contain" />
           </Flex>
           <Box flex={1} pb={10}>
             <Text
@@ -302,13 +303,13 @@ const FirebaseLogin = ({ redirectLocation }) => {
 
             <Flex gap={4} mt={4} wrap="wrap">
               <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
-                <Image src="/play store.png" w={180} />
+                <Image src="/play store.png" fallbackSrc="/google-play-icon.svg" w={180} />
               </a>
               <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-                <Image src="/app store.png" w={180} />
+                <Image src="/app store.png" fallbackSrc="/apple-store-icon.svg" w={180} />
               </a>
               <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
-                <Image src="/appgallery.png" w={180} />
+                <Image src="/appgallery.png" fallbackSrc="/vite.svg" w={180} />
               </a>
             </Flex>
 

@@ -119,8 +119,9 @@ export default function LabTests() {
                           src={
                             item.image
                               ? `${imageBaseURL}/${item.image}`
-                              : "ctscan.svg"
+                              : "/ctscan.svg"
                           }
+                          fallbackSrc="/ctscan.svg"
                           w={"100%"}
                         />
                       </Box>

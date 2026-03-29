@@ -35,7 +35,7 @@ const TechnicalError = () => {
           <Image
             w={16}
             src={`${imageBaseURL}/${logo?.value}`}
-            fallbackSrc={"/vite.svg"}
+            fallbackSrc={"/favicon.png"}
           />
           <Text
             fontFamily={"Quicksand, sans-serif"}

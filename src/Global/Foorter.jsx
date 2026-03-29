@@ -29,6 +29,7 @@ const Logo = (props) => {
       <Image
         w={40}
         src={logoSrc}
+        fallbackSrc="/favicon.png"
         alt="Logo"
         objectFit="contain"
         filter="brightness(1.04) saturate(1.22) contrast(1.18) drop-shadow(0 4px 10px rgba(0, 22, 84, 0.25))"
@@ -110,10 +111,10 @@ export default function Footer() {
           </Text>
           <Flex gap={5} justifyContent="start" w="100%" wrap="wrap">
             <Link isExternal href={playStoreHref}>
-              <Image src="/play store.png" w={180} />
+              <Image src="/play store.png" fallbackSrc="/google-play-icon.svg" w={180} />
             </Link>
             <Link isExternal href={appStoreHref}>
-              <Image src="/app store.png" w={180} />
+              <Image src="/app store.png" fallbackSrc="/apple-store-icon.svg" w={180} />
             </Link>
           </Flex>
           <Text fontSize={{ base: "11px", md: "14px" }} pt={2}>

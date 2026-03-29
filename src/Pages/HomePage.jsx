@@ -76,13 +76,13 @@ export default function HomePage() {
 
               <Flex gap={4} mt={5} wrap="wrap">
                 <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/play store.png" w={180} />
+                  <Image src="/play store.png" fallbackSrc="/google-play-icon.svg" w={180} />
                 </a>
                 <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/app store.png" w={180} />
+                  <Image src="/app store.png" fallbackSrc="/apple-store-icon.svg" w={180} />
                 </a>
                 <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/appgallery.png" w={180} />
+                  <Image src="/appgallery.png" fallbackSrc="/vite.svg" w={180} />
                 </a>
               </Flex>
 
@@ -115,7 +115,7 @@ export default function HomePage() {
                 </Button>
               </Flex>
             </Box>
-            <Image src="/both-doctors.png" w={{ base: "90%", md: "48%" }} flex={1} />
+            <Image src="/both-doctors.png" fallbackSrc="/doctor-2.png" w={{ base: "90%", md: "48%" }} flex={1} />
           </Flex>
 
           <Grid
@@ -164,7 +164,7 @@ export default function HomePage() {
         <div className="container">
           <Flex gap={8} pt={6} flexDir={{ base: "column", md: "row" }}>
             <Flex flex={1} justify={{ base: "center", md: "left" }}>
-              <Image src="/mobile-promotion.png" w={{ base: 360, md: 460 }} objectFit="contain" />
+              <Image src="/mobile-promotion.png" fallbackSrc="/doctor-2.png" w={{ base: 360, md: 460 }} objectFit="contain" />
             </Flex>
             <Box flex={1} pb={10}>
               <Text
@@ -182,13 +182,13 @@ export default function HomePage() {
 
               <Flex gap={4} mt={4} wrap="wrap">
                 <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/play store.png" w={180} />
+                  <Image src="/play store.png" fallbackSrc="/google-play-icon.svg" w={180} />
                 </a>
                 <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/app store.png" w={180} />
+                  <Image src="/app store.png" fallbackSrc="/apple-store-icon.svg" w={180} />
                 </a>
                 <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/appgallery.png" w={180} />
+                  <Image src="/appgallery.png" fallbackSrc="/vite.svg" w={180} />
                 </a>
               </Flex>
 
@@ -355,6 +355,7 @@ export default function HomePage() {
             <Box flex={1} display="flex" justifyContent="center" alignItems="flex-start">
               <Image
                 src="/yourstepbystepheronew.png"
+                fallbackSrc="/doctor-2.png"
                 w={{ base: "100%", md: "100%" }}
                 maxH={{ base: "420px", md: "600px" }}
                 objectFit="contain"
@@ -384,7 +385,7 @@ export default function HomePage() {
               </Text>
             </Box>
             <Flex flex={1} justify={{ base: "center", md: "flex-end" }}>
-              <Image src="/images/quality-care.png" maxW={{ base: "90%", md: "420px" }} objectFit="contain" />
+              <Image src="/images/quality-care.png" fallbackSrc="/doctor-2.png" maxW={{ base: "90%", md: "420px" }} objectFit="contain" />
             </Flex>
           </Flex>
         </div>

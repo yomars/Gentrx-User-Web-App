@@ -362,7 +362,8 @@ const Signup = () => {
             minH={["400px", "500px", "100vh", "100vh"]}
           >
             <Image
-              src="/public/images/signup-hero.png"
+              src="/images/signup-hero.png"
+              fallbackSrc="/doctor-2.png"
               alt="Doctor"
               w={{ base: "90%", md: "100%" }}
               maxH="600px"
