@@ -309,10 +309,7 @@ export default function AboutUs() {
               />
           </Flex>
         </Box>
-      </Box>
-
-      {/* ── Rest of About Us content from CMS ── */}
-      <Webpage id={1} showTitle={false} />
+      </Box>      
     </Box>
   );
 }
