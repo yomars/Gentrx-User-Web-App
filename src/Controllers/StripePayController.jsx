@@ -33,6 +33,10 @@ import PaymentGetwayData from "../Hooks/Paymntgetways";
 import Loading from "../Components/Loading";
 import ISD_CODES from "./ISDCODES";
 import showToast from "./ShowToast";
+import {
+  clearPendingWalletTopup,
+  savePendingWalletTopup,
+} from "../lib/walletTopup";
 
 // Stripe initialization
 const getStripePromise = (key) => loadStripe(key);
@@ -66,7 +70,7 @@ const formattedData = (data) => {
 };
 
 // Checkout Form
-const CheckoutForm = ({ onSuccess, onCancel }) => {
+const CheckoutForm = ({ onSuccess, onCancel, type, data }) => {
   const stripe = useStripe();
   const elements = useElements();
   const toast = useToast();
@@ -98,23 +102,44 @@ const CheckoutForm = ({ onSuccess, onCancel }) => {
     setIsLoading(true);
 
     try {
+      if (type === "Wallet") {
+        savePendingWalletTopup({
+          amount: data.amount,
+          paymentMethod: "stripe",
+          description: "Amount credited to user wallet",
+          returnPath: `${window.location.pathname}${window.location.search}`,
+          source: "wallet",
+          status: "pending",
+          userId: user?.id,
+        });
+      }
+
       const { error: stripeError, paymentIntent } = await stripe.confirmPayment(
         {
           elements,
           confirmParams: {
-            return_url: `${window.location.origin}/stripe-payment`,
+            return_url: `${window.location.origin}/stripe-payment?source=${type.toLowerCase()}`,
           },
         }
       );
 
       if (stripeError) {
+        if (type === "Wallet") {
+          clearPendingWalletTopup();
+        }
         setError(stripeError.message);
         showToast(toast, "error", stripeError.message);
         onCancel();
       } else if (paymentIntent?.status === "succeeded") {
+        if (type === "Wallet") {
+          clearPendingWalletTopup();
+        }
         onSuccess(paymentIntent.id);
       }
     } catch (err) {
+      if (type === "Wallet") {
+        clearPendingWalletTopup();
+      }
       setError(err.message);
       showToast(toast, "error", err.message);
       onCancel();
@@ -241,6 +266,8 @@ const StripePaymentController = ({
                 <CheckoutForm
                   onSuccess={handleSuccess}
                   onCancel={handleCancel}
+                  type={type}
+                  data={data}
                 />
               </Elements>
             ) : (

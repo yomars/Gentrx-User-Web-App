@@ -38,11 +38,12 @@ import {
   DrawerHeader,
   DrawerBody,
   Divider,
+  useToast,
 } from "@chakra-ui/react";
 import { HamburgerIcon, SearchIcon } from "@chakra-ui/icons";
 import useSettingsData from "../Hooks/SettingData";
-import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import imageBaseURL from "../Controllers/image";
 import user from "../Controllers/user";
 import NotificationIcon from "../Components/Notification";
@@ -50,6 +51,8 @@ import moment from "moment";
 import WalletModel from "../Components/Wallet";
 import LocationSeletor from "../Components/LocationSeletor";
 import { removeStorageItem } from "../lib/storage";
+import showToast from "../Controllers/ShowToast";
+import { consumeWalletTopupResult } from "../lib/walletTopup";
 
 // links
 const LinksPublic = ["Home", "Clinics", "Doctors"];
@@ -118,6 +121,8 @@ export default function TopbarNew() {
   const { settingsData } = useSettingsData();
   const btnRef = useRef();
   const navigate = useNavigate();
+  const location = useLocation();
+  const toast = useToast();
   const [activeTab, setactiveTab] = useState("Home");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
@@ -135,6 +140,23 @@ export default function TopbarNew() {
   const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
   const playStoreHref = play_store_link?.value || "#";
   const appStoreHref = app_store_link?.value || "#";
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const walletTopupResult = consumeWalletTopupResult();
+
+    if (walletTopupResult?.status === "success") {
+      onWalletOpen();
+      showToast(
+        toast,
+        "success",
+        walletTopupResult.message || "Wallet loaded successfully."
+      );
+    }
+  }, [location.key, onWalletOpen, toast]);
 
   return (
     <Box
@@ -647,7 +669,7 @@ export default function TopbarNew() {
         <WalletModel
           isModalOpen={isWalletOpen}
           closeModal={onWalletClose}
-          openModal={onWalletClose}
+          openModal={onWalletOpen}
         />
       )}
     </Box>
