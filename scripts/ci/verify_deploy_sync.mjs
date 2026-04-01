@@ -43,6 +43,10 @@ async function fetchWithTimeout(url, timeoutMs) {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function detectExpectedSha() {
   const explicit = read("EXPECTED_GIT_SHA");
   if (explicit) return explicit;
@@ -67,6 +71,8 @@ function detectExpectedRepo() {
 async function main() {
   const targetUrlRaw = read("VERIFY_TARGET_URL") || read("SMOKE_TARGET_URL");
   const timeoutMs = Number(read("VERIFY_TIMEOUT_MS", read("SMOKE_TIMEOUT_MS", "20000")));
+  const maxAttempts = Number(read("VERIFY_MAX_ATTEMPTS", "8"));
+  const retryDelayMs = Number(read("VERIFY_RETRY_DELAY_MS", "15000"));
 
   if (!targetUrlRaw) {
     throw new Error("Missing required env var: VERIFY_TARGET_URL or SMOKE_TARGET_URL");
@@ -80,31 +86,47 @@ async function main() {
 
   const expectedRepo = detectExpectedRepo();
   const versionUrl = new URL("version.json", targetUrl);
-  versionUrl.searchParams.set("ts", Date.now().toString());
+  let lastError = "";
+  let version = null;
+  let deployedSha = "";
 
-  const response = await fetchWithTimeout(versionUrl.toString(), timeoutMs);
-  if (!response.ok) {
-    throw new Error(`Version endpoint responded with status ${response.status}.`);
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    versionUrl.searchParams.set("ts", `${Date.now()}-${attempt}`);
+
+    const response = await fetchWithTimeout(versionUrl.toString(), timeoutMs);
+    if (!response.ok) {
+      lastError = `Version endpoint responded with status ${response.status}.`;
+    } else {
+      try {
+        version = await response.json();
+      } catch {
+        lastError = "Version endpoint did not return valid JSON.";
+        version = null;
+      }
+
+      if (version) {
+        deployedSha = String(version.gitSha || "").trim();
+        if (!deployedSha) {
+          lastError = "Live version metadata is missing gitSha.";
+        } else if (expectedRepo && version.repo && version.repo !== expectedRepo) {
+          lastError = `Repository mismatch. Expected ${expectedRepo}, got ${version.repo}.`;
+        } else if (deployedSha !== expectedSha) {
+          lastError = `Git SHA mismatch. Expected ${expectedSha}, got ${deployedSha}.`;
+        } else {
+          lastError = "";
+          break;
+        }
+      }
+    }
+
+    if (attempt < maxAttempts) {
+      console.log(`Verification attempt ${attempt}/${maxAttempts} failed: ${lastError}`);
+      await sleep(retryDelayMs);
+    }
   }
 
-  let version;
-  try {
-    version = await response.json();
-  } catch {
-    throw new Error("Version endpoint did not return valid JSON.");
-  }
-
-  const deployedSha = String(version.gitSha || "").trim();
-  if (!deployedSha) {
-    throw new Error("Live version metadata is missing gitSha.");
-  }
-
-  if (expectedRepo && version.repo && version.repo !== expectedRepo) {
-    throw new Error(`Repository mismatch. Expected ${expectedRepo}, got ${version.repo}.`);
-  }
-
-  if (deployedSha !== expectedSha) {
-    throw new Error(`Git SHA mismatch. Expected ${expectedSha}, got ${deployedSha}.`);
+  if (lastError) {
+    throw new Error(lastError);
   }
 
   console.log(`Deployment sync OK for ${targetUrl.origin}`);
