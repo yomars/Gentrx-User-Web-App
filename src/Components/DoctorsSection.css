@@ -1,0 +1,228 @@
+/* ==============================================
+   DoctorsSection.css
+   Premium doctor card grid with hover-reveal overlay.
+   Inspired by aderdent.com/ekibimiz/ interaction pattern.
+   ============================================== */
+
+/* ── Grid layout ── */
+.ds-section {
+  padding-bottom: 40px;
+}
+
+.ds-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .ds-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 560px) {
+  .ds-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 380px;
+  }
+}
+
+/* ── Card shell ── */
+.ds-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #fff;
+
+  /* Soft neutral shadow */
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+
+  /* Smooth lift on hover */
+  transition:
+    transform 0.35s ease-in-out,
+    box-shadow 0.35s ease-in-out;
+
+  /* Prevent text-select during tap */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ds-card:hover,
+.ds-card:focus-within {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14);
+}
+
+/* ── Portrait image ── */
+.ds-card__img-wrap {
+  width: 100%;
+  /* 4:5 portrait ratio – feels professional, plenty of face room */
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: #e9ecef;
+}
+
+.ds-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top; /* keep faces in frame */
+  display: block;
+  /* Subtle scale on hover via parent state */
+  transition: transform 0.45s ease-in-out;
+}
+
+.ds-card:hover .ds-card__img,
+.ds-card--active .ds-card__img {
+  transform: scale(1.04);
+}
+
+/* ── Default nameplate (always visible below image) ── */
+.ds-card__nameplate {
+  padding: 14px 18px 16px;
+  background: #fff;
+}
+
+.ds-card__name {
+  margin: 0 0 3px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  font-family: "Figtree", sans-serif;
+  line-height: 1.3;
+}
+
+.ds-card__spec {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #34C38F; /* primary.text from Gentrx theme */
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: "Quicksand", sans-serif;
+}
+
+/* ── Hover overlay ── */
+.ds-card__overlay {
+  position: absolute;
+  inset: 0;                        /* covers the entire card */
+  display: flex;
+  align-items: flex-end;
+
+  /* Gradient: fully transparent top → rich teal bottom */
+  background: linear-gradient(
+    to top,
+    rgba(7, 51, 47, 0.93) 0%,
+    rgba(7, 51, 47, 0.55) 50%,
+    rgba(7, 51, 47, 0.0) 100%
+  );
+
+  /* Hidden state: shifted down + transparent */
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.38s ease-in-out,
+    transform 0.38s ease-in-out;
+
+  pointer-events: none; /* pass clicks through when hidden */
+}
+
+/* Show overlay on hover (desktop) or active class (mobile) */
+.ds-card:hover .ds-card__overlay,
+.ds-card:focus-within .ds-card__overlay,
+.ds-card--active .ds-card__overlay {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ── Overlay content ── */
+.ds-card__overlay-inner {
+  padding: 24px 20px 22px;
+  width: 100%;
+}
+
+.ds-card__overlay-name {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  font-family: "Figtree", sans-serif;
+  line-height: 1.3;
+}
+
+.ds-card__overlay-spec {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #34C38F; /* Gentrx accent green */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: "Quicksand", sans-serif;
+}
+
+.ds-card__overlay-exp {
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: "Figtree", sans-serif;
+}
+
+.ds-card__overlay-clinic {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: "Figtree", sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── CTA button inside overlay ── */
+.ds-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 22px;
+  border: none;
+  border-radius: 50px;
+  background: #34C38F;             /* Gentrx primary green */
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: "Figtree", sans-serif;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  width: 100%;
+
+  /* Smooth press feedback */
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease;
+}
+
+.ds-card__cta:hover {
+  background: #289974;
+  transform: scale(1.02);
+}
+
+.ds-card__cta:active {
+  transform: scale(0.97);
+}
+
+/* ── Reduced-motion: respect user preference ── */
+@media (prefers-reduced-motion: reduce) {
+  .ds-card,
+  .ds-card__img,
+  .ds-card__overlay,
+  .ds-card__cta {
+    transition: none !important;
+    transform: none !important;
+  }
+}

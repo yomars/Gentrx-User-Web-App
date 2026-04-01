@@ -23,7 +23,7 @@ import { useState } from "react";
 import useDebounce from "../Hooks/UseDebounce";
 import api from "../Controllers/api";
 import printPDF from "../Controllers/printPDF";
-import imageBaseURL from "../Controllers/image";
+import { resolveAttachmentUrl } from "../lib/media";
 
 function Prescriptions() {
   const [searchQuery, setsearchQuery] = useState("");
@@ -142,10 +142,9 @@ function Prescriptions() {
                                 size={"sm"}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (file.pdf_file) {
-                                    printPDF(
-                                      `${imageBaseURL}/${file.pdf_file}`
-                                    );
+                                  const pdfURL = resolveAttachmentUrl(file, ["pdf_file"]);
+                                  if (pdfURL) {
+                                    printPDF(pdfURL);
                                   } else {
                                     printPDF(
                                       `${api}/prescription/generatePDF/${file.id}`

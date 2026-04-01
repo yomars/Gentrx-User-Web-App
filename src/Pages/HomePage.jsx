@@ -7,6 +7,7 @@ import { BsPrescription } from "react-icons/bs";
 import { HiUserCircle } from "react-icons/hi";
 import { IoMdWallet } from "react-icons/io";
 import Testimonials from "../Components/Testimonials";
+import DoctorsSection from "../Components/DoctorsSection";
 import { Link as RouterLink } from "react-router-dom";
 
 export default function HomePage() {
@@ -388,6 +389,12 @@ export default function HomePage() {
               <Image src="/images/quality-care.png" fallbackSrc="/doctor-2.png" maxW={{ base: "90%", md: "420px" }} objectFit="contain" />
             </Flex>
           </Flex>
+        </div>
+      </Box>
+
+      <Box bg="#f3f3f3" py={12}>
+        <div className="container">
+          <DoctorsSection />
         </div>
       </Box>
 

@@ -1,16 +1,21 @@
 ﻿const printPDF = (pdfUrl) => {
-    const newWindow = window.open(pdfUrl, "_blank");
-    if (newWindow) {
-      newWindow.focus();
-  
-      newWindow.onload = () => {
-        newWindow.load();
-        newWindow.onafterprint = () => {
-          newWindow.close();
-        };
+  const newWindow = window.open(pdfUrl, "_blank", "noopener,noreferrer");
+  if (!newWindow) return;
+
+  newWindow.focus();
+
+  // Try automatic print when browser allows it, but never break file opening.
+  newWindow.onload = () => {
+    try {
+      newWindow.print();
+      newWindow.onafterprint = () => {
+        newWindow.close();
       };
+    } catch {
+      // Some browsers block programmatic printing for cross-origin docs.
     }
   };
+};
   
-  export default printPDF;
+export default printPDF;
   

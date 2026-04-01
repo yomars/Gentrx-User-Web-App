@@ -1,0 +1,28 @@
+# =============================================================================
+# Block Storage additions — append these to /opt/gentrx-api/.env
+# on production server 149.28.145.80
+# =============================================================================
+
+# ---- File storage (block volume) ----
+FILESYSTEM_DISK=block_storage
+BLOCK_STORAGE_ROOT=/mnt/gentrx/uploads
+BLOCK_STORAGE_URL=https://api.gentrx.ph/storage
+
+# ---- Patient file limits ----
+# These are read by FileUploadService — adjust per compliance requirements
+UPLOAD_MAX_DOCTORS_MB=2
+UPLOAD_MAX_CLIENTS_MB=2
+UPLOAD_MAX_PATIENTS_MB=20
+UPLOAD_MAX_SYSTEM_MB=5
+
+# ---- Signed URL TTL for private patient files (seconds) ----
+SIGNED_URL_TTL_SECONDS=300
+
+# =============================================================================
+# Staging server env additions — append to /opt/gentrx-api/.env
+# on staging server 207.148.74.62
+# (uses a separate mount — do NOT point to prod /mnt/)
+# =============================================================================
+# FILESYSTEM_DISK=block_storage
+# BLOCK_STORAGE_ROOT=/mnt/gentrx-staging/uploads
+# BLOCK_STORAGE_URL=https://staging-api.gentrx.ph/storage

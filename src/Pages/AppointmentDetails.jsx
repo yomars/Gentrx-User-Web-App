@@ -52,6 +52,7 @@ import RatingStars from "../Hooks/RatingStars";
 import AddDoctorReview from "../Components/AddDoctorReview";
 import { AnimatePresence, motion } from "framer-motion";
 import { GoFileSubmodule } from "react-icons/go";
+import { resolveAttachmentUrl } from "../lib/media";
 
 const formatDate = (dateString) => {
   const date = moment(dateString);
@@ -61,9 +62,10 @@ const formatDate = (dateString) => {
     year: date.format("YYYY"),
   };
 };
-function openFile(url) {
-  const finalURL = `${imageBaseURL}/${url}`;
-  window.open(finalURL, "_blank");
+function openFile(fileRecord) {
+  const finalURL = resolveAttachmentUrl(fileRecord, ["file"]);
+  if (!finalURL) return;
+  window.open(finalURL, "_blank", "noopener,noreferrer");
 }
 
 const AppointmentDetails = () => {
@@ -453,8 +455,9 @@ const AppointmentDetails = () => {
                     colorScheme="green"
                     rightIcon={<AiOutlineDownload fontSize={18} />}
                     onClick={() => {
-                      if (item.pdf_file) {
-                        printPDF(`${imageBaseURL}/${item.pdf_file}`);
+                      const pdfURL = resolveAttachmentUrl(item, ["pdf_file"]);
+                      if (pdfURL) {
+                        printPDF(pdfURL);
                       } else {
                         printPDF(`${api}/prescription/generatePDF/${item.id}`);
                       }
@@ -517,7 +520,7 @@ const AppointmentDetails = () => {
                               size={"sm"}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openFile(file.file);
+                                openFile(file);
                               }}
                             />
                           </Flex>

@@ -18,14 +18,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import user from "../Controllers/user";
 import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
-import imageBaseURL from "../Controllers/image";
 import { SearchIcon } from "@chakra-ui/icons";
 import { useState } from "react";
 import useDebounce from "../Hooks/UseDebounce";
+import { resolveAttachmentUrl } from "../lib/media";
 
-function openFile(url) {
-  const finalURL = `${imageBaseURL}/${url}`;
-  window.open(finalURL, "_blank");
+function openFile(fileRecord) {
+  const finalURL = resolveAttachmentUrl(fileRecord, ["file"]);
+  if (!finalURL) return;
+  window.open(finalURL, "_blank", "noopener,noreferrer");
 }
 
 function Files() {
@@ -142,7 +143,7 @@ function Files() {
                                 size={"sm"}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  openFile(file.file);
+                                  openFile(file);
                                 }}
                               />
                             </Flex>

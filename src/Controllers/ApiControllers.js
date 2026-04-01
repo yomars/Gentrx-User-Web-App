@@ -2,6 +2,7 @@
 import GenerateToken from "./token";
 import api from "./api";
 import { removeStorageItem } from "../lib/storage";
+import { normalizeMediaPayload } from "../lib/media";
 
 const handleSessionExpiration = (error) => {
   const isSessionExpired =
@@ -57,7 +58,7 @@ const GET = async (endPoint) => {
   };
   try {
     const response = await axios(config);
-    return response.data;
+    return normalizeMediaPayload(response.data);
   } catch (error) {
     console.error(error);
     throw handleSessionExpiration(error);
@@ -77,8 +78,7 @@ const ADD = async (token, endPoint, data) => {
   };
   try {
     const response = await axios(config);
-
-    return response.data;
+    return normalizeMediaPayload(response.data);
   } catch (error) {
     console.error(error);
     return handleMutationError(error);
@@ -97,8 +97,7 @@ const ADDMulti = async (token, url, data) => {
   };
   try {
     const response = await axios(config);
-
-    return response.data;
+    return normalizeMediaPayload(response.data);
   } catch (error) {
     console.error(error);
     return handleMutationError(error);
@@ -118,7 +117,7 @@ const UPDATE = async (token, endPoint, data) => {
   };
   try {
     const response = await axios(config);
-    return response.data;
+    return normalizeMediaPayload(response.data);
   } catch (error) {
     console.error(error);
     return handleMutationError(error);
@@ -138,7 +137,7 @@ const DELETE = async (token, endPoint, data) => {
   };
   try {
     const response = await axios(config);
-    return response.data;
+    return normalizeMediaPayload(response.data);
   } catch (error) {
     console.error(error);
     return handleMutationError(error);
@@ -158,8 +157,7 @@ const UPLOAD = async (token, url, data) => {
   };
   try {
     const response = await axios(config);
-
-    return response.data;
+    return normalizeMediaPayload(response.data);
   } catch (error) {
     console.error(error);
     return handleMutationError(error);

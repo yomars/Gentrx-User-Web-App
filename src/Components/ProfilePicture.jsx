@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import showToast from "../Controllers/ShowToast";
 import Loading from "./Loading";
 import { updateUserLocalStorage } from "../Controllers/updateUserLocalStorage";
+import { resolveMediaUrl } from "../lib/media";
 
 const handleUpdate = async (data) => {
   const res = await ADD(user.token, "update_user", data);
@@ -25,10 +26,9 @@ function ProfilePicture({ img }) {
 
   const mutation = useMutation({
     mutationFn: async (data) => {
-      let formData = {
-        id: user.id,
-        image: data,
-      };
+      const formData = new FormData();
+      formData.append("id", user.id);
+      formData.append("image", data);
       await handleUpdate(formData);
     },
     onSuccess: () => {
@@ -65,7 +65,7 @@ function ProfilePicture({ img }) {
     <Box w={"100%"}>
       <Box pos={"relative"} w={"fit-content"}>
         <Image
-          src={`${imageBaseURL}/${img}`}
+          src={resolveMediaUrl(img) || `${imageBaseURL}/${img}`}
           w={32}
           h={32}
           fallbackSrc="/user.png"
