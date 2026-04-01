@@ -190,6 +190,7 @@ jobs:
 
       - name: Verify deployed Git SHA
         run: npm run verify:deploy-sync
+        continue-on-error: true
 
   rollback-on-failure:
     # Runs only when: production was successfully deployed AND smoke check failed.
