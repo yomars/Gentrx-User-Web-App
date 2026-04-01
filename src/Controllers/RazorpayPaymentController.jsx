@@ -17,6 +17,38 @@ import currency_name from "./CurrName";
 import PaymentGetwayData from "../Hooks/Paymntgetways";
 import useSettingsData from "../Hooks/SettingData";
 
+const loadRazorpaySdk = () => {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") {
+      reject(new Error("Window is unavailable"));
+      return;
+    }
+
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const existing = document.querySelector('script[data-sdk="razorpay-checkout"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(true), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Razorpay SDK failed to load")), {
+        once: true,
+      });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.defer = true;
+    script.dataset.sdk = "razorpay-checkout";
+    script.onload = () => resolve(true);
+    script.onerror = () => reject(new Error("Razorpay SDK failed to load"));
+    document.body.appendChild(script);
+  });
+};
+
 const RazorpayPaymentController = ({
   isOpen,
   onClose,
@@ -29,37 +61,90 @@ const RazorpayPaymentController = ({
   const [isPaymentLoading, setisPaymentLoading] = useState(false);
   const toast = useToast();
   const razorpayRef = useRef(null);
+  const hasStartedCheckoutRef = useRef(false);
   const { settingsData } = useSettingsData();
+  const payableAmount = Number(
+    type === "Wallet" ? data?.amount : data?.total_amount ?? data?.amount
+  );
+  const clinicName = settingsData?.find(
+    (value) => value.id_name === "clinic_name"
+  )?.value;
 
   useEffect(() => {
-    const title = settingsData?.find(
-      (value) => value.id_name === "clinic_name"
-    );
+    if (!isOpen) {
+      hasStartedCheckoutRef.current = false;
+      setisPaymentLoading(false);
+      if (razorpayRef.current) {
+        razorpayRef.current.close();
+        razorpayRef.current = null;
+      }
+      return;
+    }
+
+    if (hasStartedCheckoutRef.current) {
+      return;
+    }
+
+    if (!paymentGetwaysData?.key || !paymentGetwaysData?.secret) {
+      return;
+    }
+
+    if (!Number.isFinite(payableAmount) || payableAmount <= 0) {
+      showToast(toast, "error", "Invalid payment amount.");
+      cancelFn && cancelFn();
+      onClose();
+      return;
+    }
+
+    let cancelled = false;
+    hasStartedCheckoutRef.current = true;
+
+    const cleanupRazorpay = () => {
+      if (razorpayRef.current) {
+        razorpayRef.current.close();
+        razorpayRef.current = null;
+      }
+    };
+
+    const handleCancel = () => {
+      setisPaymentLoading(false);
+      hasStartedCheckoutRef.current = false;
+      cleanupRazorpay();
+      cancelFn && cancelFn();
+      onClose();
+    };
+
+    const handleSuccess = (paymentId) => {
+      setisPaymentLoading(false);
+      hasStartedCheckoutRef.current = false;
+      cleanupRazorpay();
+      nextFn(paymentId);
+      onClose();
+    };
+
     const placeOrder = async (order_id) => {
-      if (razorpayRef.current) return;
+      if (cancelled || razorpayRef.current) return;
+      try {
+        await loadRazorpaySdk();
+      } catch {
+        showToast(toast, "error", "Razorpay SDK failed to load.");
+        handleCancel();
+        return;
+      }
 
       const options = {
         key: paymentGetwaysData?.key,
-        amount: data.amount * 100,
+        amount: Math.round((Number.isFinite(payableAmount) ? payableAmount : 0) * 100),
         currency: currency_name,
-        name: title?.value,
+        name: clinicName,
         description: data.desc || "Test Transaction",
         order_id: order_id,
         handler: function (response) {
-          nextFn(response.razorpay_payment_id);
-          onClose();
-          razorpayRef.current = null;
-          razorpayRef.current.close();
-          razorpayRef.current = null;
+          handleSuccess(response.razorpay_payment_id);
         },
         modal: {
           ondismiss: function () {
-            onClose();
-            setisPaymentLoading(false);
-            razorpayRef.current = null;
-            cancelFn && cancelFn();
-            razorpayRef.current.close();
-            razorpayRef.current = null;
+            handleCancel();
           },
         },
         prefill: {
@@ -79,18 +164,16 @@ const RazorpayPaymentController = ({
       razorpayRef.current = new window.Razorpay(options);
 
       razorpayRef.current.on("payment.failed", function (response) {
-        alert(response.error.description);
-        onClose();
-        setisPaymentLoading(false);
-        razorpayRef.current = null;
-        cancelFn && cancelFn();
+        showToast(
+          toast,
+          "error",
+          response?.error?.description || "Razorpay payment failed."
+        );
+        handleCancel();
       });
 
       razorpayRef.current.on("payment.closed", function () {
-        onClose();
-        setisPaymentLoading(false);
-        razorpayRef.current = null;
-        cancelFn && cancelFn();
+        handleCancel();
       });
 
       razorpayRef.current.open();
@@ -98,7 +181,7 @@ const RazorpayPaymentController = ({
 
     const RazorPayOrder = async () => {
       let formData = {
-        amount: type === "Wallet" ? data.amount : data.total_amount,
+        amount: payableAmount,
         key: paymentGetwaysData?.key,
         secret: paymentGetwaysData?.secret,
         type: type,
@@ -109,39 +192,48 @@ const RazorpayPaymentController = ({
         setisPaymentLoading(true);
         const response = await ADD(user.token, "create_rz_order", formData);
 
-        onClose();
+        if (cancelled) {
+          return;
+        }
+
+        if (!response?.id) {
+          throw new Error(response?.message || "Failed to create Razorpay order.");
+        }
+
         setisPaymentLoading(false);
         placeOrder(response.id);
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
         setisPaymentLoading(false);
-        showToast(toast, "error", JSON.stringify(error));
-        onClose();
-        razorpayRef.current = null;
+        hasStartedCheckoutRef.current = false;
+        showToast(
+          toast,
+          "error",
+          error?.message || "Unable to start Razorpay checkout."
+        );
+        handleCancel();
       }
     };
 
-    if (isOpen) {
-      RazorPayOrder();
-    }
+    RazorPayOrder();
 
     // Cleanup function to reset references when component unmounts or `isOpen` changes
     return () => {
-      if (razorpayRef.current) {
-        razorpayRef.current.close();
-        razorpayRef.current = null;
-      }
+      cancelled = true;
     };
   }, [
     cancelFn,
+    clinicName,
     data,
-    data.amount,
-    data.desc,
+    data?.desc,
     isOpen,
     nextFn,
     onClose,
+    payableAmount,
     paymentGetwaysData?.key,
     paymentGetwaysData?.secret,
-    settingsData,
     toast,
     type,
   ]); // Added `isOpen` to dependency array

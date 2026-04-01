@@ -21,6 +21,7 @@ import useCartData from "../Hooks/CartData";
 import user from "../Controllers/user";
 import showToast from "../Controllers/ShowToast";
 import ErrorPage from "./ErrorPage";
+import NotAvailable from "../Components/NotAvailable";
 
 export default function LabTests() {
   const { cartData, cartLoading } = useCartData();
@@ -157,133 +158,148 @@ export default function LabTests() {
             </Text>
             <Box>
               <Box mt={4}>
-                <Grid
-                  templateColumns={{
-                    base: "repeat(1, 1fr)",
-                    md: "repeat(2, 1fr)",
-                    lg: "repeat(3, 1fr)",
-                  }}
-                  gap={6}
-                >
-                  {data?.map((item) => (
-                    <GridItem
-                      key={item.id}
-                      backgroundColor={"#FFF"}
-                      borderRadius={10}
-                      cursor={"pointer"}
-                      boxShadow={"2px 2px 20px 0 rgb(82 66 47 / 12%)"}
-                      _hover={{ border: "1px solid #0032ff" }}
-                      transition={"border 0.1s ease"}
-                      border={"1px solid #fff"}
-                      onClick={() => {
-                        navigate(`/lab-test/${item.id}`);
-                      }}
-                    >
-                      <Box
+                {data?.length ? (
+                  <Grid
+                    templateColumns={{
+                      base: "repeat(1, 1fr)",
+                      md: "repeat(2, 1fr)",
+                      lg: "repeat(3, 1fr)",
+                    }}
+                    gap={6}
+                  >
+                    {data?.map((item) => (
+                      <GridItem
+                        key={item.id}
+                        backgroundColor={"#FFF"}
+                        borderRadius={10}
                         cursor={"pointer"}
-                        gap={3}
-                        boxShadow={"0 1px 4px #00000013!important"}
-                        p={4}
-                        bg={"#fff"}
-                        borderRadius={8}
-                        position={"relative"}
+                        boxShadow={"2px 2px 20px 0 rgb(82 66 47 / 12%)"}
+                        _hover={{ border: "1px solid #0032ff" }}
+                        transition={"border 0.1s ease"}
+                        border={"1px solid #fff"}
+                        onClick={() => {
+                          navigate(`/lab-test/${item.id}`);
+                        }}
                       >
                         <Box
-                          overflow={"hidden"}
-                          h={"150px"}
-                          w={"100%"}
-                          borderRadius={5}
-                          objectFit={"cover"}
-                        >
-                          {" "}
-                          <Image
-                            src={
-                              item.image
-                                ? `${imageBaseURL}/${item.image}`
-                                : "/ctscan.svg"
-                            }
-                            w={"100%"}
-                          />
-                        </Box>
-                        <Box mt={2}>
-                          {" "}
-                          <Text
-                            mt={"2px"}
-                            fontSize={{ base: "16px", md: "28px", lg: "18px" }}
-                            fontWeight={600}
-                            m={0}
-                          >
-                            {item.title}
-                          </Text>
-                          <Text
-                            mt={"2px"}
-                            fontSize={{ base: "14px", md: "14px", lg: "14px" }}
-                            fontWeight={500}
-                            m={0}
-                          >
-                            {item.sub_title}
-                          </Text>
-                          <Text
-                            mt={"2px"}
-                            fontSize={{ base: "16px", md: "16px", lg: "16px" }}
-                            fontWeight={600}
-                            m={0}
-                            color={"primary.text"}
-                          >
-                            Starting From {currency}
-                            {item.price.toFixed(2)}
-                          </Text>
-                          <Button
-                            fontWeight={600}
-                            size={"sm"}
-                            colorScheme="green"
-                            mt={4}
-                            borderRadius={"30"}
-                            minW={200}
-                            onClick={(event) => {
-                              if (!user) {
-                                return showToast(
-                                  toast,
-                                  "error",
-                                  "Please Login First"
-                                );
-                              }
-                              event.stopPropagation();
-                              mutation.mutate(item);
-                            }}
-                          >
-                            {checkCart(item) ? (
-                              <BiCheckCircle
-                                fontSize={20}
-                                style={{ marginRight: "5px" }}
-                              />
-                            ) : (
-                              <BiRightArrowCircle
-                                fontSize={20}
-                                style={{ marginRight: "5px" }}
-                              />
-                            )}
-
-                            {checkCart(item) ? "Added To Cart" : "Add to Cart"}
-                          </Button>
-                        </Box>
-                        <Text
-                          position={"absolute"}
-                          mt={"2px"}
-                          fontSize={{ base: "12px", md: "12px", lg: "12px" }}
-                          fontWeight={500}
-                          padding={"3px 15px"}
-                          background={"primary.100"}
+                          cursor={"pointer"}
+                          gap={3}
+                          boxShadow={"0 1px 4px #00000013!important"}
+                          p={4}
+                          bg={"#fff"}
                           borderRadius={8}
-                          right={2}
-                          top={2}
+                          position={"relative"}
                         >
-                          {item.offer_text}
-                        </Text>
-                      </Box>
-                    </GridItem>
-                  ))}
-                </Grid>
+                          <Box
+                            overflow={"hidden"}
+                            h={"150px"}
+                            w={"100%"}
+                            borderRadius={5}
+                            objectFit={"cover"}
+                          >
+                            {" "}
+                            <Image
+                              src={
+                                item.image
+                                  ? `${imageBaseURL}/${item.image}`
+                                  : "/ctscan.svg"
+                              }
+                              w={"100%"}
+                              alt={item.title}
+                            />
+                          </Box>
+                          <Box mt={2}>
+                            {" "}
+                            <Text
+                              mt={"2px"}
+                              fontSize={{ base: "16px", md: "28px", lg: "18px" }}
+                              fontWeight={600}
+                              m={0}
+                            >
+                              {item.title}
+                            </Text>
+                            <Text
+                              mt={"2px"}
+                              fontSize={{ base: "14px", md: "14px", lg: "14px" }}
+                              fontWeight={500}
+                              m={0}
+                            >
+                              {item.sub_title}
+                            </Text>
+                            <Text
+                              mt={"2px"}
+                              fontSize={{ base: "16px", md: "16px", lg: "16px" }}
+                              fontWeight={600}
+                              m={0}
+                              color={"primary.text"}
+                            >
+                              Starting From {currency}
+                              {item.price.toFixed(2)}
+                            </Text>
+                            <Button
+                              fontWeight={600}
+                              size={"sm"}
+                              colorScheme="green"
+                              mt={4}
+                              borderRadius={"30"}
+                              minW={200}
+                              onClick={(event) => {
+                                if (!user) {
+                                  return showToast(
+                                    toast,
+                                    "error",
+                                    "Please Login First"
+                                  );
+                                }
+                                event.stopPropagation();
+                                mutation.mutate(item);
+                              }}
+                            >
+                              {checkCart(item) ? (
+                                <BiCheckCircle
+                                  fontSize={20}
+                                  style={{ marginRight: "5px" }}
+                                />
+                              ) : (
+                                <BiRightArrowCircle
+                                  fontSize={20}
+                                  style={{ marginRight: "5px" }}
+                                />
+                              )}
+
+                              {checkCart(item) ? "Added To Cart" : "Add to Cart"}
+                            </Button>
+                          </Box>
+                          <Text
+                            position={"absolute"}
+                            mt={"2px"}
+                            fontSize={{ base: "12px", md: "12px", lg: "12px" }}
+                            fontWeight={500}
+                            padding={"3px 15px"}
+                            background={"primary.100"}
+                            borderRadius={8}
+                            right={2}
+                            top={2}
+                          >
+                            {item.offer_text}
+                          </Text>
+                        </Box>
+                      </GridItem>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box mt={6}>
+                    <NotAvailable
+                      name="Lab tests"
+                      text="No lab tests are available right now. Please check back shortly or book a doctor consultation instead."
+                    />
+                    <Box textAlign="center" mt={4}>
+                      <Button onClick={() => navigate("/doctors")} colorScheme="blue" size="sm">
+                        Browse Doctors
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </Box>
           </>

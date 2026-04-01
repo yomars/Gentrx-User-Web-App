@@ -149,7 +149,7 @@ function NewAppointment() {
         showToast(
           toast,
           "error",
-          "Please select a time slot before proceeding."
+          "Please select or add patient details before proceeding."
         );
         return;
       }

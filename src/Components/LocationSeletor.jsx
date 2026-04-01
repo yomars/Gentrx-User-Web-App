@@ -22,6 +22,8 @@ import { useCity } from "../Context/SelectedCity";
 import { motion } from "framer-motion";
 import { setStorageItem } from "../lib/storage";
 
+let lastLocationToastMessage = "";
+
 const LoadingText = () => {
   return (
     <Text>
@@ -100,6 +102,24 @@ const LocationSeletor = ({ type }) => {
 
   const cityList = Array.isArray(cities) ? cities : [];
 
+  const notifyLocationIssue = useCallback(
+    (description, status) => {
+      if (lastLocationToastMessage === description) {
+        return;
+      }
+
+      lastLocationToastMessage = description;
+      toast({
+        title: "Location update",
+        description,
+        status,
+        duration: 2000,
+        isClosable: true,
+      });
+    },
+    [toast]
+  );
+
   const applyFallbackCity = useCallback(() => {
     if (!cityList.length) {
       return false;
@@ -118,7 +138,7 @@ const LocationSeletor = ({ type }) => {
     return true;
   }, [cityList, setSelectedCity]);
 
-  const fetchLocation = useCallback(async () => {
+  const fetchLocation = useCallback(async (notifyUser = false) => {
     setisLoading(true); // Start loading
     try {
       const location = await getCurrentLocation();
@@ -132,37 +152,35 @@ const LocationSeletor = ({ type }) => {
         setSelectedCity(formattedCity);
       } catch (error) {
         const hasFallback = applyFallbackCity();
-        toast({
-          title: "Failed to get city",
-          description: hasFallback
-            ? "Using default city from server settings"
-            : "Please select a city manually",
-          status: hasFallback ? "warning" : "error",
-          duration: 2000,
-          isClosable: true,
-        });
+        if (notifyUser) {
+          notifyLocationIssue(
+            hasFallback
+              ? "Using a nearby default location."
+              : "Unable to detect location. Please choose a city.",
+            hasFallback ? "warning" : "error"
+          );
+        }
         console.error("Error fetching city:", error);
       }
     } catch (error) {
       const hasFallback = applyFallbackCity();
-      toast({
-        title: "Failed to get city",
-        description: hasFallback
-          ? "Location access unavailable. Using default city."
-          : "Please select a city manually",
-        status: hasFallback ? "warning" : "error",
-        duration: 2000,
-        isClosable: true,
-      });
+      if (notifyUser) {
+        notifyLocationIssue(
+          hasFallback
+            ? "Current location unavailable. Using a nearby default location."
+            : "Unable to detect location. Please choose a city.",
+          hasFallback ? "warning" : "error"
+        );
+      }
       console.error("Error fetching location:", error);
     } finally {
       setisLoading(false); // End loading
     }
-  }, [applyFallbackCity, setSelectedCity, toast]);
+  }, [applyFallbackCity, notifyLocationIssue, setSelectedCity]);
 
   useEffect(() => {
     if (!selectedCity) {
-      fetchLocation();
+      fetchLocation(false);
     }
   }, [selectedCity, fetchLocation]);
 
@@ -280,7 +298,7 @@ const LocationSeletor = ({ type }) => {
                   </Text>
                 )}
                 <MenuItem
-                  onClick={fetchLocation}
+                  onClick={() => fetchLocation(true)}
                   color={"primary.text"}
                   fontWeight={600}
                   textAlign={"center"}

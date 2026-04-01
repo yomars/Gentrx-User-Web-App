@@ -2,6 +2,7 @@
 import { GET } from "../Controllers/ApiControllers";
 import {
   Box,
+  Button,
   Flex,
   Grid,
   GridItem,
@@ -19,6 +20,7 @@ import { Link } from "react-router-dom";
 import ErrorPage from "../Pages/ErrorPage";
 import { useCity } from "../Context/SelectedCity";
 import NotAvailable from "../Components/NotAvailable";
+import LocationSeletor from "../Components/LocationSeletor";
 
 export default function Clinics() {
   const { selectedCity } = useCity();
@@ -95,6 +97,11 @@ export default function Clinics() {
           </Grid>
         ) : data ? (
           <>
+            <Flex justify="center" mb={6}>
+              <Box w={{ base: "100%", md: "420px" }}>
+                <LocationSeletor type="search" />
+              </Box>
+            </Flex>
             <Text
               fontSize={{ base: "md", md: "lg" }}
               textAlign="center"
@@ -220,7 +227,17 @@ export default function Clinics() {
                 ))}
               </Grid>
             ) : (
-              <NotAvailable name="Clinics" />
+              <Box mt={6}>
+                <NotAvailable
+                  name="Clinics"
+                  text={`No clinics are currently listed for ${selectedCity?.city || "this location"}. Try another city or browse doctors instead.`}
+                />
+                <Flex justify="center" gap={3} mt={4} wrap="wrap">
+                  <Button as={Link} to="/doctors" colorScheme="blue" size="sm">
+                    Browse Doctors
+                  </Button>
+                </Flex>
+              </Box>
             )}
           </>
         ) : null}

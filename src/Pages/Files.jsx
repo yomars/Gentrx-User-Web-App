@@ -115,7 +115,7 @@ function Files() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.7 }}
                       >
-                        <Card cursor={"pointer"} mb={4} onClick={() => {}}>
+                        <Card mb={4}>
                           <CardBody p={4}>
                             <Flex align={"center"} justify={"space-between"}>
                               <Flex align={"center"} gap={4}>

@@ -1,4 +1,5 @@
-﻿const configured = String(import.meta.env.VITE_API_ADDRESS || "").trim();
+﻿const DEFAULT_API_ADDRESS = "https://api.gentrx.ph";
+const configured = String(import.meta.env.VITE_API_ADDRESS || "").trim();
 
 function isLocalRuntimeHost(host) {
 	return /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(host);
@@ -12,23 +13,18 @@ function getHost(urlString) {
 	}
 }
 
-let apiAddress = configured;
+let apiAddress = configured || DEFAULT_API_ADDRESS;
 
 if (typeof window !== "undefined") {
-	const origin = window.location.origin;
 	const originHost = window.location.host.toLowerCase();
-	const configuredHost = getHost(configured);
+	const configuredHost = getHost(apiAddress);
 
-	// Use same-origin for localhost and for the public gentrx.ph frontend so /api and
-	// /storage can be proxied through the frontend host. Direct host access is kept for
-	// any explicitly configured external backend domain.
-	if (
-		!configured ||
-		!configuredHost ||
-		isLocalRuntimeHost(originHost) ||
-		(originHost.endsWith("gentrx.ph") && configuredHost.endsWith("gentrx.ph"))
-	) {
-		apiAddress = origin;
+	// Use same-origin only for localhost development where Vite proxy can forward
+	// /api and /storage. Production must use the explicit API domain.
+	if (isLocalRuntimeHost(originHost)) {
+		apiAddress = window.location.origin;
+	} else if (!configuredHost) {
+		apiAddress = DEFAULT_API_ADDRESS;
 	}
 }
 

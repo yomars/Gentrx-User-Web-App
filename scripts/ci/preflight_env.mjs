@@ -51,8 +51,8 @@ function validateFrontend(errors) {
       return;
     }
 
-    if (!host.endsWith("gentrx.ph")) {
-      errors.push("[frontend] VITE_API_ADDRESS must target gentrx.ph.");
+    if (host !== "api.gentrx.ph") {
+      errors.push("[frontend] VITE_API_ADDRESS must be https://api.gentrx.ph.");
     }
   }
 }

@@ -1,5 +1,5 @@
 ﻿import { lazy, startTransition, Suspense, useEffect, useMemo } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Box } from "@chakra-ui/react";
 import Footer from "./Foorter";
 import Loading from "../Components/Loading";
@@ -9,6 +9,7 @@ import TopbarNew from "./TopbarNew";
 import StripePaymentProcess from "../Pages/StripePaymentProcess";
 import ContactMarqee from "../Components/ContactMarqee";
 import useSettingsData from "../Hooks/SettingData";
+import { getStorageJSON } from "../lib/storage";
 
 // Lazy load the components
 const HomePage = lazy(() => import("../Pages/HomePage"));
@@ -46,6 +47,17 @@ const TechnicalError = lazy(() => import("../Pages/TechnicalIssue"));
 const Search = lazy(() => import("../Pages/SearchPage"));
 const Clinic = lazy(() => import("../Pages/Clinic"));
 const Clinics = lazy(() => import("../Pages/Clinics"));
+const Sitemap = lazy(() => import("../Pages/Sitemap"));
+
+function ProtectedRoute({ children }) {
+  const currentUser = getStorageJSON("user");
+
+  if (!currentUser?.id) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 export default function Main() {
   const location = useLocation();
@@ -129,10 +141,21 @@ export default function Main() {
                 <Route path="/lab-tests" element={<LabTests />} />{" "}
                 <Route path="/lab-test/:id" element={<LabTestDetails />} />
                 {/* appointments */}
-                <Route path="/appointments" element={<Appointments />} />
+                <Route
+                  path="/appointments"
+                  element={
+                    <ProtectedRoute>
+                      <Appointments />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/appointment/:id"
-                  element={<AppointmentDetails />}
+                  element={
+                    <ProtectedRoute>
+                      <AppointmentDetails />
+                    </ProtectedRoute>
+                  }
                 />
                 {/* cart */}
                 <Route path="/cart" element={<Cart />} />
@@ -140,31 +163,126 @@ export default function Main() {
                 <Route path="/products" element={<Products />} />
                 <Route path="/product/:name/:id" element={<ProductDetails />} />
                 {/* vitals */}
-                <Route path="/vitals" element={<Vitals />} />
+                <Route
+                  path="/vitals"
+                  element={
+                    <ProtectedRoute>
+                      <Vitals />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/vitals/blood-pressure"
-                  element={<BloodPressure />}
+                  element={
+                    <ProtectedRoute>
+                      <BloodPressure />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="/vitals/blood-sugar" element={<Vitals />} />
-                <Route path="/vitals/weight" element={<Vitals />} />
-                <Route path="/vitals/temperature" element={<Vitals />} />
-                <Route path="/vitals/spo2" element={<Vitals />} />
+                <Route
+                  path="/vitals/blood-sugar"
+                  element={
+                    <ProtectedRoute>
+                      <Vitals />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vitals/weight"
+                  element={
+                    <ProtectedRoute>
+                      <Vitals />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vitals/temperature"
+                  element={
+                    <ProtectedRoute>
+                      <Vitals />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vitals/spo2"
+                  element={
+                    <ProtectedRoute>
+                      <Vitals />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* orders */}
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/order/:id" element={<OrderDetails />} />
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <Orders />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/order/:id"
+                  element={
+                    <ProtectedRoute>
+                      <OrderDetails />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* not found */}
-                <Route path="/profile" element={<Profile />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* family */}
-                <Route path="/family-members" element={<FamilyMembers />} />
-                <Route path="/family-member/:id" element={<FamilyMember />} />
+                <Route
+                  path="/family-members"
+                  element={
+                    <ProtectedRoute>
+                      <FamilyMembers />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/family-member/:id"
+                  element={
+                    <ProtectedRoute>
+                      <FamilyMember />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="*" element={<NotFoundPage />} />
                 {/* login signup */}
                 <Route path="/Login" element={<Login relode={true} />} />
                 <Route path="/signup" element={<Signup relode={true} />} />
                 <Route path="/contact-us" element={<ContactUs />} />
-                <Route path="/files" element={<Files />} />
-                <Route path="/prescriptions" element={<Prescriptions />} />
-                <Route path="/laboratory-requests" element={<LaboratoryRequests />} />
+                <Route
+                  path="/files"
+                  element={
+                    <ProtectedRoute>
+                      <Files />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/prescriptions"
+                  element={
+                    <ProtectedRoute>
+                      <Prescriptions />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/laboratory-requests"
+                  element={
+                    <ProtectedRoute>
+                      <LaboratoryRequests />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* stripe payment wallet */}
                 <Route
                   path="/stripe-payment"
@@ -172,7 +290,9 @@ export default function Main() {
                 />
                 {/*web pages */}
                 <Route path="/about-us" element={<AboutUs />} />
+                <Route path="/privacy-and-policy" element={<Webpage id={2} />} />
                 <Route path="/privacy-policy" element={<Webpage id={2} />} />
+                <Route path="/terms" element={<Webpage id={3} />} />
                 <Route
                   path="/terms-and-conditions"
                   element={<Webpage id={3} />}
@@ -184,6 +304,7 @@ export default function Main() {
                 <Route path="/search" element={<Search />} />
                 <Route path="/clinics" element={<Clinics />} />
                 <Route path="/clinic/:name/:id" element={<Clinic />} />
+                <Route path="/sitemap" element={<Sitemap />} />
               </Routes>
             </Suspense>
           </Box>

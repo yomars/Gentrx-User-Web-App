@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { GET } from "../Controllers/ApiControllers";
 import {
   Box,
+  Button,
   Flex,
   Image,
   Skeleton,
@@ -131,6 +132,7 @@ export default function Doctors() {
             <InputLeftElement children={<SearchIcon />} />
             <Input
               placeholder="Search doctors..."
+              aria-label="Search doctors"
               variant="outline"
               w={500}
               maxW={"100vw"}
@@ -352,7 +354,29 @@ export default function Doctors() {
                     ))}
                   </Grid>
                 ) : (
-                  <NotAvailable name={"Doctors"} />
+                  <Box mt={6}>
+                    <NotAvailable
+                      name={"Doctors"}
+                      text={`No doctors are currently listed for ${selectedCity?.city || "this location"}. Try another city or browse partner clinics while availability updates.`}
+                    />
+                    <Flex justify="center" gap={3} mt={4} wrap="wrap">
+                      <Button
+                        as={Link}
+                        to="/clinics"
+                        colorScheme="blue"
+                        size="sm"
+                      >
+                        Browse Clinics
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSearchChange("")}
+                      >
+                        Clear Search
+                      </Button>
+                    </Flex>
+                  </Box>
                 )}
               </Box>
             </Box>

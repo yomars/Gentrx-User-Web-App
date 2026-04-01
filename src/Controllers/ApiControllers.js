@@ -4,6 +4,30 @@ import api from "./api";
 import { removeStorageItem } from "../lib/storage";
 
 const handleSessionExpiration = (error) => {
+  const isSessionExpired =
+    error?.response?.status === 401 ||
+    (error?.response?.data?.response === 401 &&
+      error?.response?.data?.status === false &&
+      typeof error?.response?.data?.message === "string" &&
+      error.response.data.message.toLowerCase().includes("session expired"));
+
+  if (isSessionExpired) {
+    console.error(error?.response?.data?.message || "Session expired");
+
+    removeStorageItem("user");
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
+
+    return new Error("Session expired. Please log-in again.");
+  }
+
+  return error instanceof Error
+    ? error
+    : new Error(error?.response?.data?.message || "Request failed");
+};
+
+const handleMutationError = (error) => {
   if (
     error.response &&
     error.response.data &&
@@ -22,7 +46,7 @@ const handleSessionExpiration = (error) => {
       message: "Session expired. Please log-in again.",
     };
   }
-  throw error;
+  throw handleSessionExpiration(error);
 };
 
 const GET = async (endPoint) => {
@@ -36,7 +60,7 @@ const GET = async (endPoint) => {
     return response.data;
   } catch (error) {
     console.error(error);
-    throw new Error(error);
+    throw handleSessionExpiration(error);
   }
 };
 
@@ -57,7 +81,7 @@ const ADD = async (token, endPoint, data) => {
     return response.data;
   } catch (error) {
     console.error(error);
-    return handleSessionExpiration(error);
+    return handleMutationError(error);
   }
 };
 const ADDMulti = async (token, url, data) => {
@@ -77,7 +101,7 @@ const ADDMulti = async (token, url, data) => {
     return response.data;
   } catch (error) {
     console.error(error);
-    return handleSessionExpiration(error);
+    return handleMutationError(error);
   }
 };
 
@@ -97,7 +121,7 @@ const UPDATE = async (token, endPoint, data) => {
     return response.data;
   } catch (error) {
     console.error(error);
-    return handleSessionExpiration(error);
+    return handleMutationError(error);
   }
 };
 
@@ -117,7 +141,7 @@ const DELETE = async (token, endPoint, data) => {
     return response.data;
   } catch (error) {
     console.error(error);
-    return handleSessionExpiration(error);
+    return handleMutationError(error);
   }
 };
 
@@ -138,7 +162,7 @@ const UPLOAD = async (token, url, data) => {
     return response.data;
   } catch (error) {
     console.error(error);
-    return handleSessionExpiration(error);
+    return handleMutationError(error);
   }
 };
 

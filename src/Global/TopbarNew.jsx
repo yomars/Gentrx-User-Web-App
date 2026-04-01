@@ -198,6 +198,7 @@ export default function TopbarNew() {
                 bg: "none",
               }}
               icon={<SearchIcon color={"#111827"} />}
+              aria-label={"Search doctors and services"}
               onClick={() => {
                 navigate("/search");
               }}

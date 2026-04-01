@@ -11,6 +11,7 @@ import {
   Link,
   Text,
 } from "@chakra-ui/react";
+import { Link as RouterLink } from "react-router-dom";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTiktok } from "react-icons/fa";
 import { FaCirclePlay } from "react-icons/fa6";
 import useSettingsData from "../Hooks/SettingData";
@@ -53,7 +54,7 @@ const linkColumns = [
       { label: "Cookie Privacy", href: "#" },
       { label: "Privacy Policy", href: "#" },
       { label: "Other Disclosures", href: "#" },
-      { label: "Sitemap", href: "#" },
+      { label: "Sitemap", href: "/sitemap" },
     ],
   },
 ];
@@ -136,7 +137,9 @@ export default function Footer() {
                 {column.items.map((item, itemIndex) => (
                   <Link
                     key={`${column.title}-${item.label}-${itemIndex}`}
-                    href={item.href}
+                    as={item.href.startsWith("/") ? RouterLink : "a"}
+                    href={item.href.startsWith("/") ? undefined : item.href}
+                    to={item.href.startsWith("/") ? item.href : undefined}
                     fontSize={{ base: "md", md: "xl" }}
                     color="rgba(255,255,255,0.88)"
                     _hover={{ color: "white", textDecoration: "underline" }}

@@ -25,6 +25,7 @@ import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useState } from "react";
 import defaultISD from "../Controllers/defaultISD";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import { setStorageItem } from "../lib/storage";
 
 const Signup = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -86,7 +87,7 @@ const Signup = () => {
       const res = await ADD("", "add_user", data);
       if (res.status === true) {
         const user = { ...res.data, token: res.token };
-        localStorage.setItem("user", JSON.stringify(user));
+        setStorageItem("user", JSON.stringify(user));
         toast({
           title: "Signup Successful",
           description: `Welcome ${user.f_name} ${user.l_name}`,
@@ -363,7 +364,6 @@ const Signup = () => {
           >
             <Image
               src="/images/signup-hero.png"
-              fallbackSrc="/doctor-2.png"
               alt="Doctor"
               w={{ base: "90%", md: "100%" }}
               maxH="600px"

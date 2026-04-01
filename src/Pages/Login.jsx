@@ -137,7 +137,6 @@ const FirebaseLogin = ({ redirectLocation }) => {
           >
             <Image
               src="/images/login-hero.png"
-              fallbackSrc="/doctor-2.png"
               alt="GentRx Login Hero"
               width="100%"
               maxH={{ base: "320px", md: "400px", lg: "480px" }}
@@ -206,6 +205,8 @@ const FirebaseLogin = ({ redirectLocation }) => {
                 <Input
                   type="tel"
                   value={phoneNumber}
+                  placeholder="Enter mobile number"
+                  aria-label="Mobile number"
                   h="52px"
                   bg="#dbe2ed"
                   borderColor="#bec8d8"
@@ -220,7 +221,8 @@ const FirebaseLogin = ({ redirectLocation }) => {
               <InputGroup size={"lg"} mb="4">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••"
+                  placeholder="Enter your 4-digit PIN or password"
+                  aria-label="PIN or password"
                   value={password}
                   h="52px"
                   bg="#dbe2ed"

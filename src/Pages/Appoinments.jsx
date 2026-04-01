@@ -11,6 +11,7 @@ import {
   Alert,
   AlertIcon,
   AlertTitle,
+  AlertDescription,
   Spacer,
 } from "@chakra-ui/react";
 import Loading from "../Components/Loading";
@@ -383,12 +384,34 @@ const Appointments = () => {
                     transition={{ duration: 0.5 }}
                     style={{ minWidth: "100%" }}
                   >
-                    {filteredData.map((appointment) => (
-                      <AppointmentCard
-                        key={appointment.id}
-                        appointment={appointment}
-                      />
-                    ))}
+                    {filteredData.length ? (
+                      filteredData.map((appointment) => (
+                        <AppointmentCard
+                          key={appointment.id}
+                          appointment={appointment}
+                        />
+                      ))
+                    ) : (
+                      <Box bg="white" borderWidth="1px" borderRadius="lg" p={5}>
+                        <Alert status="info" borderRadius="md" alignItems="start">
+                          <AlertIcon mt={1} />
+                          <Box>
+                            <AlertTitle>No appointments in this view</AlertTitle>
+                            <AlertDescription>
+                              There are no appointments under the selected filter yet. Switch to All to review your full history or book a new visit.
+                            </AlertDescription>
+                          </Box>
+                        </Alert>
+                        <Flex gap={3} mt={4} wrap="wrap">
+                          <Button size="sm" colorScheme="blue" onClick={() => setCurrentStep(1)}>
+                            View All Appointments
+                          </Button>
+                          <Button size="sm" variant="outline" as={Link} to="/doctors">
+                            Book Appointment
+                          </Button>
+                        </Flex>
+                      </Box>
+                    )}
                   </motion.div>
                 </VStack>
               </Flex>
