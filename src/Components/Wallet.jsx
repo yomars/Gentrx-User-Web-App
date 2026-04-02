@@ -40,11 +40,17 @@ import { setStorageItem } from "../lib/storage";
 
 const getTransaction = async () => {
   let url = `get_all_transaction?user_id=${user?.id}&is_wallet_txn=1`;
-  const trasection = await GET(url);
-  if (trasection.response != 200) {
-    throw Error(trasection.messege);
+  try {
+    const trasection = await GET(url);
+    if (trasection.response != 200) {
+      throw Error(trasection.messege || "Failed to fetch transactions");
+    }
+    return trasection.data || [];
+  } catch (error) {
+    console.error("Transaction fetch error:", error);
+    // Return empty array instead of throwing to prevent infinite loading
+    return [];
   }
-  return trasection.data;
 };
 
 function WalletModel({ isModalOpen, closeModal, openModal }) {
@@ -59,42 +65,10 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
   const cancelRef = useRef();
   const [isMobile] = useMediaQuery("(max-width: 600px)");
 
-  const reLogin = async () => {
-    let data = {
-      phone: user?.phone,
-    };
-    const login = await ADD(user.token, "re_login_phone", data);
-    if (login.response === 200) {
-      setStorageItem("user", JSON.stringify({ ...login.data, token: user.token }));
-      return login.data;
-    } else if (login.response === 201) {
-      toast({
-        title: login.messege,
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-    } else {
-      toast({
-        title: "Something Went Wrong",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-    }
-  };
-
-  const { isLoading: isUserLoading, data: userData } = useQuery({
-    queryKey: ["user"],
-    queryFn: reLogin,
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    refetchOnMount: true, // Refetch when the component mounts
-    staleTime: 0,
-  });
-
-  if (isUserLoading) return <Loading />;
+  // Use existing user data from context instead of refetching re_login_phone
+  // (which is currently broken on backend and returns HTML redirect)
+  const userData = user;
+  const isUserLoading = false;
 
   return (
     <>
@@ -252,13 +226,16 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
 export default WalletModel;
 
 const Transection = () => {
-  const { isLoading, data } = useQuery({
+  const { isLoading, data, error } = useQuery({
     queryKey: ["transactions"],
     queryFn: getTransaction,
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    refetchOnMount: true, // Refetch when the component mounts
-    staleTime: 0,
+    refetchOnWindowFocus: false, // Disable auto-refetch to prevent constant loading
+    refetchOnMount: true,
+    staleTime: 60000, // Cache for 1 minute to reduce API calls
+    retry: 1, // Only retry once to prevent infinite loading
+    retryDelay: 1000, // Wait 1 second before retry
   });
+  
   if (isLoading) {
     return (
       <Box py={5} px={1}>
@@ -271,6 +248,17 @@ const Transection = () => {
           <Skeleton h={2}></Skeleton>
           <Skeleton h={2}></Skeleton>
         </Box>
+      </Box>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Box px={1} mt={5}>
+        <Alert status="warning">
+          <AlertIcon />
+          Failed to load transactions. Please refresh the page.
+        </Alert>
       </Box>
     );
   }

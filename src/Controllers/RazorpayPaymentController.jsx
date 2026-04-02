@@ -17,6 +17,15 @@ import currency_name from "./CurrName";
 import PaymentGetwayData from "../Hooks/Paymntgetways";
 import useSettingsData from "../Hooks/SettingData";
 
+const withTimeout = (promise, timeoutMs, timeoutMessage) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+    }),
+  ]);
+};
+
 const loadRazorpaySdk = () => {
   return new Promise((resolve, reject) => {
     if (typeof window === "undefined") {
@@ -62,6 +71,8 @@ const RazorpayPaymentController = ({
   const toast = useToast();
   const razorpayRef = useRef(null);
   const hasStartedCheckoutRef = useRef(false);
+  const paymentDescriptionRef = useRef("Test Transaction");
+  const paymentPayloadRef = useRef("{}");
   const { settingsData } = useSettingsData();
   const payableAmount = Number(
     type === "Wallet" ? data?.amount : data?.total_amount ?? data?.amount
@@ -69,6 +80,14 @@ const RazorpayPaymentController = ({
   const clinicName = settingsData?.find(
     (value) => value.id_name === "clinic_name"
   )?.value;
+
+  useEffect(() => {
+    if (!isOpen || hasStartedCheckoutRef.current) {
+      return;
+    }
+    paymentDescriptionRef.current = data?.desc || "Test Transaction";
+    paymentPayloadRef.current = JSON.stringify(data || {});
+  }, [data, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -85,7 +104,10 @@ const RazorpayPaymentController = ({
       return;
     }
 
-    if (!paymentGetwaysData?.key || !paymentGetwaysData?.secret) {
+    if (!paymentGetwaysData?.key) {
+      showToast(toast, "error", "Razorpay key is missing. Please check payment setup.");
+      cancelFn && cancelFn();
+      onClose();
       return;
     }
 
@@ -125,9 +147,17 @@ const RazorpayPaymentController = ({
     const placeOrder = async (order_id) => {
       if (cancelled || razorpayRef.current) return;
       try {
-        await loadRazorpaySdk();
-      } catch {
-        showToast(toast, "error", "Razorpay SDK failed to load.");
+        await withTimeout(
+          loadRazorpaySdk(),
+          15000,
+          "Razorpay SDK timed out. Please check your connection and retry."
+        );
+      } catch (error) {
+        showToast(
+          toast,
+          "error",
+          error?.message || "Razorpay SDK failed to load."
+        );
         handleCancel();
         return;
       }
@@ -137,7 +167,7 @@ const RazorpayPaymentController = ({
         amount: Math.round((Number.isFinite(payableAmount) ? payableAmount : 0) * 100),
         currency: currency_name,
         name: clinicName,
-        description: data.desc || "Test Transaction",
+        description: paymentDescriptionRef.current,
         order_id: order_id,
         handler: function (response) {
           handleSuccess(response.razorpay_payment_id);
@@ -180,24 +210,62 @@ const RazorpayPaymentController = ({
     };
 
     const RazorPayOrder = async () => {
+      // NOTE: key is included so the backend knows which gateway is in use;
+      // secret is intentionally NOT forwarded — the backend must read it from
+      // its own stored credentials, never from a client-supplied value.
       let formData = {
         amount: payableAmount,
         key: paymentGetwaysData?.key,
-        secret: paymentGetwaysData?.secret,
         type: type,
-        payload: JSON.stringify(data),
+        payload: paymentPayloadRef.current,
       };
+
+      // Temporary compatibility path for test mode only.
+      // Some legacy backends still expect `secret` from request payload.
+      if (paymentGetwaysData?.is_test_mode && paymentGetwaysData?.secret) {
+        formData.secret = paymentGetwaysData.secret;
+      }
 
       try {
         setisPaymentLoading(true);
-        const response = await ADD(user.token, "create_rz_order", formData);
+        const response = await withTimeout(
+          ADD(user.token, "create_rz_order", formData),
+          20000,
+          "Payment request timed out. Please try again."
+        );
 
         if (cancelled) {
           return;
         }
 
+        // Handle HTTP error responses (e.g., 400 validation errors from backend)
+        if (response?.response >= 400) {
+          let errorMsg = response?.message || "";
+          
+          // Provide helpful guidance for common errors
+          if (response?.response === 400) {
+            errorMsg =
+              errorMsg && errorMsg.toLowerCase() !== "error"
+                ? errorMsg
+                : "Payment setup is incomplete. Please contact support or try again later.";
+          } else {
+            errorMsg =
+              errorMsg && errorMsg.toLowerCase() !== "error"
+                ? errorMsg
+                : `Request failed with status ${response.response}. Please check your details and try again.`;
+          }
+          
+          throw new Error(errorMsg);
+        }
+
         if (!response?.id) {
-          throw new Error(response?.message || "Failed to create Razorpay order.");
+          // Provide a meaningful message — backend may return a generic "error" string
+          const rawMsg = response?.message || "";
+          const friendlyMsg =
+            rawMsg && rawMsg.toLowerCase() !== "error"
+              ? rawMsg
+              : "Unable to start payment. Please try again or contact support.";
+          throw new Error(friendlyMsg);
         }
 
         setisPaymentLoading(false);
@@ -208,11 +276,10 @@ const RazorpayPaymentController = ({
         }
         setisPaymentLoading(false);
         hasStartedCheckoutRef.current = false;
-        showToast(
-          toast,
-          "error",
-          error?.message || "Unable to start Razorpay checkout."
-        );
+        const errorMsg =
+          error?.message ||
+          "Unable to start Razorpay checkout. Please contact support.";
+        showToast(toast, "error", errorMsg);
         handleCancel();
       }
     };
@@ -222,17 +289,18 @@ const RazorpayPaymentController = ({
     // Cleanup function to reset references when component unmounts or `isOpen` changes
     return () => {
       cancelled = true;
+      setisPaymentLoading(false);
+      hasStartedCheckoutRef.current = false;
     };
   }, [
     cancelFn,
     clinicName,
-    data,
-    data?.desc,
     isOpen,
     nextFn,
     onClose,
     payableAmount,
     paymentGetwaysData?.key,
+    paymentGetwaysData?.is_test_mode,
     paymentGetwaysData?.secret,
     toast,
     type,

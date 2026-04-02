@@ -41,6 +41,26 @@ import {
 // Stripe initialization
 const getStripePromise = (key) => loadStripe(key);
 
+const resolveStripeReturnBaseUrl = () => {
+  const configuredFrontendOrigin = String(
+    import.meta.env.VITE_FRONTEND_ORIGIN || import.meta.env.VITE_APP_ORIGIN || ""
+  ).trim();
+
+  if (configuredFrontendOrigin) {
+    return configuredFrontendOrigin.replace(/\/+$/, "");
+  }
+
+  if (typeof window === "undefined") {
+    return "https://gentrx.ph";
+  }
+
+  if (window.location.hostname.toLowerCase() === "api.gentrx.ph") {
+    return "https://gentrx.ph";
+  }
+
+  return window.location.origin;
+};
+
 const formattedData = (data) => {
   return {
     family_member_id: data.family_member_id,
@@ -118,7 +138,7 @@ const CheckoutForm = ({ onSuccess, onCancel, type, data }) => {
         {
           elements,
           confirmParams: {
-            return_url: `${window.location.origin}/stripe-payment?source=${type.toLowerCase()}`,
+            return_url: `${resolveStripeReturnBaseUrl()}/stripe-payment?source=${type.toLowerCase()}`,
           },
         }
       );

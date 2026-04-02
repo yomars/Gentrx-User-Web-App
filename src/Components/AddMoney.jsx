@@ -18,17 +18,15 @@ import {
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ADD } from "../Controllers/ApiControllers";
-import Loading from "./Loading";
 import currency from "../Controllers/currency";
 import user from "../Controllers/user";
 import showToast from "../Controllers/ShowToast";
 import StripePaymentController from "../Controllers/StripePayController";
 import RazorpayPaymentController from "../Controllers/RazorpayPaymentController";
 import PaymentGetwayData from "../Hooks/Paymntgetways"; // Import icons if needed
-import { setStorageItem } from "../lib/storage";
 let minAmount = 100;
 
 const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
@@ -43,78 +41,69 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
     onOpen: paymentOpen,
     onClose: paymentClose,
   } = useDisclosure();
+  const normalizedPaymentMethod = `${paymentMethod || ""}`.trim().toLowerCase();
 
   useEffect(() => {
     if (paymentGetwaysData) {
-      setPaymentMethod(paymentGetwaysData.title.toLowerCase());
+      setPaymentMethod(`${paymentGetwaysData.title || ""}`.trim().toLowerCase());
     }
   }, [paymentGetwaysData]);
+
+  useEffect(() => {
+    if (!paymentIsOpen) {
+      return;
+    }
+
+    const method = `${paymentMethod || ""}`.trim().toLowerCase();
+    if (method === "stripe" || method === "razorpay") {
+      return;
+    }
+
+    setisPaymentLoading(false);
+    paymentClose();
+    showToast(toast, "error", "Payment method is unavailable. Please try again.");
+  }, [paymentIsOpen, paymentMethod, paymentClose, toast]);
 
   const paymentData = {
     amount: parseFloat(amount).toFixed(2),
     user_id: user.id,
     desc: `Wallet Recharge Transaction for userid -  ${user.id}`,
-    method: paymentMethod,
+    method: normalizedPaymentMethod,
     payment_method: "Online",
     transaction_type: "Credited",
     description: "Amount credited to user wallet",
     name: `${user.f_name} ${user.l_name}`,
   };
 
-  const reLogin = async () => {
-    let data = { phone: user?.phone };
-    let token = user.token;
-    const login = await ADD(token, "re_login_phone", data);
-    if (login.response === 200) {
-      setStorageItem("user", JSON.stringify({ ...login.data, token: user.token }));
-      return login.data;
-    } else {
-      toast({
-        title: login.message || "Something went wrong",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-    }
-  };
-
-  const rzpNextFn = async () => {
-    let data = { phone: user?.phone };
-    let token = user.token;
+  // Razorpay success callback — credit the wallet then reopen the wallet modal
+  const rzpNextFn = async (paymentId) => {
+    const creditData = {
+      user_id: user.id,
+      amount: amount,
+      payment_transaction_id: paymentId || "Razorpay",
+      payment_method: "razorpay",
+      transaction_type: "Credited",
+      description: "Amount credited to user wallet",
+    };
     setisPaymentLoading(true);
-    const login = await ADD(token, "re_login_phone", data);
-    setisPaymentLoading(false);
-    if (login.response === 200) {
-      setStorageItem("user", JSON.stringify({ ...login.data, token: user.token }));
-      toast({
-        title: "Success",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-      openModal();
-    } else {
-      toast({
-        title: login.message || "Something went wrong",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
+    try {
+      const res = await ADD(user.token, "add_wallet_money", creditData);
+      setisPaymentLoading(false);
+      if (res.response === 200) {
+        showToast(toast, "success", "Wallet loaded successfully!");
+        queryClient.invalidateQueries({ queryKey: ["user"] });
+        queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        openModal();
+      } else {
+        showToast(toast, "error", res.message || "Failed to credit wallet.");
+      }
+    } catch (error) {
+      setisPaymentLoading(false);
+      showToast(toast, "error", "Something went wrong!");
     }
   };
 
-  const { isLoading: isUserLoading } = useQuery({
-    queryKey: ["user"],
-    queryFn: reLogin,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    staleTime: 0,
-  });
-
-  if (isUserLoading || paymentGetwaysLoading) return <Loading />;
+  const isPaymentButtonLoading = paymentGetwaysLoading || isPaymentLoading;
 
   const handleChange = (e) => {
     const numericValue = e.target.value.replace(/[^0-9]/g, "");
@@ -158,6 +147,22 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
         position: "top",
       });
     }
+
+    const normalizedMethod = normalizedPaymentMethod;
+    const isSupportedMethod =
+      normalizedMethod === "stripe" || normalizedMethod === "razorpay";
+
+    if (!isSupportedMethod) {
+      return toast({
+        title: "Unsupported payment method.",
+        description: "Please contact support or refresh the page.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+    }
+
     if (amount < 100) {
       toast({
         title: `Make sure the amount is ${currency} 100  or above`,
@@ -167,9 +172,13 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
         position: "top",
       });
     } else {
-      setisPaymentLoading(true);
-      onClose();
-      closeModal();
+      setisPaymentLoading(false);
+      onClose(); // always close the AddMoney dialog
+      // Only close wallet modal for Stripe (which redirects away).
+      // For Razorpay the wallet stays open – user can retry if payment fails.
+      if (normalizedMethod === "stripe") {
+        closeModal();
+      }
       paymentOpen();
     }
   };
@@ -235,11 +244,7 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
                 onClick={handleSubmit}
                 ml={3}
                 w={"120px"}
-                isLoading={
-                  isUserLoading ||
-                  paymentGetwaysLoading ||
-                  (paymentMethod === "razorpay" && isPaymentLoading)
-                }
+                isLoading={isPaymentButtonLoading}
               >
                 Add
               </Button>
@@ -251,7 +256,7 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
       {/* Payment Controllers based on selected payment method */}
       {paymentIsOpen && (
         <>
-          {paymentMethod === "stripe" && (
+          {normalizedPaymentMethod === "stripe" && (
             <StripePaymentController
               isOpen={paymentIsOpen}
               onClose={paymentClose}
@@ -261,13 +266,18 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
               type={"Wallet"}
             />
           )}
-          {paymentMethod === "razorpay" && (
+          {normalizedPaymentMethod === "razorpay" && (
             <RazorpayPaymentController
               isOpen={paymentIsOpen}
               onClose={paymentClose}
               nextFn={rzpNextFn}
               data={paymentData}
-              cancelFn={() => setisPaymentLoading(false)}
+              cancelFn={() => {
+                // Reset loading. The wallet modal is still open so the user
+                // can see their balance and hit "Add Money" again to retry.
+                setisPaymentLoading(false);
+                paymentClose();
+              }}
               type={"Wallet"}
             />
           )}
