@@ -1,7 +1,9 @@
 param(
   [switch]$SkipRemote,
   [string]$Server = "149.28.145.80",
-  [string]$User = "root"
+  [string]$User = "root",
+  [switch]$AllowInteractive,
+  [switch]$AllowMutatingCrudCheck
 )
 
 $ErrorActionPreference = "Continue"
@@ -9,7 +11,7 @@ $ErrorActionPreference = "Continue"
 function Run-Step([string]$name, [scriptblock]$action) {
   Write-Host "`n=== $name ===" -ForegroundColor Cyan
   try {
-    & $action
+    & $action | ForEach-Object { Write-Host $_ }
     $code = $LASTEXITCODE
     if ($null -eq $code) { $code = 0 }
     Write-Host "[$name] exit=$code" -ForegroundColor Yellow
@@ -25,16 +27,22 @@ $summary = [ordered]@{
   remoteResync = -1
   postDepartmentReport = -1
   crudIntegrity = -1
+  allowInteractive = [bool]$AllowInteractive
+  allowMutatingCrudCheck = [bool]$AllowMutatingCrudCheck
   overall = "UNKNOWN"
 }
 
 $summary.preDepartmentReport = Run-Step "Pre Department Report" {
-  powershell -ExecutionPolicy Bypass -File scripts/backend/department_image_integrity_report.ps1
+  pwsh -ExecutionPolicy Bypass -File scripts/backend/department_image_integrity_report.ps1
 }
 
 if (-not $SkipRemote) {
   $summary.remoteResync = Run-Step "Remote Department Resync" {
-    powershell -ExecutionPolicy Bypass -File scripts/backend/run_department_resync_on_prod.ps1 -Server $Server -User $User
+    if ($AllowInteractive) {
+      pwsh -ExecutionPolicy Bypass -File scripts/backend/run_department_resync_on_prod.ps1 -Server $Server -User $User -AllowInteractive
+    } else {
+      pwsh -ExecutionPolicy Bypass -File scripts/backend/run_department_resync_on_prod.ps1 -Server $Server -User $User
+    }
   }
 } else {
   Write-Host "Skipping remote resync by request." -ForegroundColor Yellow
@@ -42,11 +50,15 @@ if (-not $SkipRemote) {
 }
 
 $summary.postDepartmentReport = Run-Step "Post Department Report" {
-  powershell -ExecutionPolicy Bypass -File scripts/backend/department_image_integrity_report.ps1
+  pwsh -ExecutionPolicy Bypass -File scripts/backend/department_image_integrity_report.ps1
 }
 
 $summary.crudIntegrity = Run-Step "CRUD Integrity Check" {
-  powershell -ExecutionPolicy Bypass -File scripts/backend/image_crud_integrity_check.ps1 -EnforceBlockCompatiblePrefix
+  if ($AllowMutatingCrudCheck) {
+    pwsh -ExecutionPolicy Bypass -File scripts/backend/image_crud_integrity_check.ps1 -EnforceBlockCompatiblePrefix
+  } else {
+    pwsh -ExecutionPolicy Bypass -File scripts/backend/image_crud_integrity_check.ps1 -ReadOnlySafeMode -EnforceBlockCompatiblePrefix
+  }
 }
 
 if ($summary.postDepartmentReport -eq 0 -and $summary.crudIntegrity -eq 0) {
