@@ -56,10 +56,14 @@ async function main() {
   };
 
   const outputPath = path.join(process.cwd(), "dist", "version.json");
+  const liveOutputPath = path.join(process.cwd(), "dist", "version-live.json");
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, `${JSON.stringify(metadata, null, 2)}\n`, "utf8");
+  const body = `${JSON.stringify(metadata, null, 2)}\n`;
+  await fs.writeFile(outputPath, body, "utf8");
+  await fs.writeFile(liveOutputPath, body, "utf8");
 
   console.log(`Build metadata written to ${outputPath}`);
+  console.log(`Build metadata written to ${liveOutputPath}`);
   console.log(`Build SHA: ${metadata.gitSha}`);
 }
 

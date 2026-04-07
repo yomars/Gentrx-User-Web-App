@@ -73,6 +73,7 @@ async function main() {
   const timeoutMs = Number(read("VERIFY_TIMEOUT_MS", read("SMOKE_TIMEOUT_MS", "20000")));
   const maxAttempts = Number(read("VERIFY_MAX_ATTEMPTS", "8"));
   const retryDelayMs = Number(read("VERIFY_RETRY_DELAY_MS", "15000"));
+  const versionPath = read("VERIFY_VERSION_PATH", "version-live.json").replace(/^\/+/, "");
 
   if (!targetUrlRaw) {
     throw new Error("Missing required env var: VERIFY_TARGET_URL or SMOKE_TARGET_URL");
@@ -85,7 +86,7 @@ async function main() {
   }
 
   const expectedRepo = detectExpectedRepo();
-  const versionUrl = new URL("version.json", targetUrl);
+  const versionUrl = new URL(versionPath, targetUrl);
   let lastError = "";
   let version = null;
   let deployedSha = "";

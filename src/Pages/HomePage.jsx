@@ -1,6 +1,7 @@
 import { FaCalendarAlt, FaHospitalAlt, FaUserMd } from "react-icons/fa";
 import { MdBiotech, MdHealthAndSafety } from "react-icons/md";
 import { Box, Button, Flex, Grid, GridItem, Heading, Image, Text } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 import Departments from "../Components/Departments";
 import useSettingsData from "../Hooks/SettingData";
 import { BsPrescription } from "react-icons/bs";
@@ -28,6 +29,31 @@ export default function HomePage() {
   const playStoreHref = playStoreLink?.value || "#";
   const appStoreHref = appStoreLink?.value || "#";
   const appGalleryHref = appGalleryLink?.value || "#";
+  const heroImageSrc = "/both-doctors.png";
+  const [isHeroImageLoaded, setIsHeroImageLoaded] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const preloader = new window.Image();
+
+    preloader.onload = () => {
+      if (isMounted) {
+        setIsHeroImageLoaded(true);
+      }
+    };
+
+    preloader.onerror = () => {
+      if (isMounted) {
+        setIsHeroImageLoaded(true);
+      }
+    };
+
+    preloader.src = heroImageSrc;
+
+    return () => {
+      isMounted = false;
+    };
+  }, [heroImageSrc]);
 
   const quickAccessItems = [
     { label: "Appointment", icon: <FaCalendarAlt fontSize={26} />, to: "/doctors" },
@@ -116,7 +142,14 @@ export default function HomePage() {
                 </Button>
               </Flex>
             </Box>
-            <Image src="/both-doctors.png" fallbackSrc="/doctor-2.png" w={{ base: "90%", md: "48%" }} flex={1} />
+            <Image
+              src={heroImageSrc}
+              w={{ base: "90%", md: "48%" }}
+              flex={1}
+              opacity={isHeroImageLoaded ? 1 : 0}
+              transition="opacity 180ms ease"
+              loading="eager"
+            />
           </Flex>
 
           <Grid
