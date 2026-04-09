@@ -1,5 +1,13 @@
 /* eslint-env node */
 /** @type {import('tailwindcss').Config} */
+let tailwindAnimatePlugin = null;
+
+try {
+  tailwindAnimatePlugin = require("tailwindcss-animate");
+} catch (_error) {
+  // Keep Tailwind functional even when optional animation plugin is unavailable.
+}
+
 module.exports = {
   darkMode: ["class"],
   content: [
@@ -34,5 +42,5 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindAnimatePlugin].filter(Boolean),
 }
