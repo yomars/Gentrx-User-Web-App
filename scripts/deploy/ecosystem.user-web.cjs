@@ -3,8 +3,8 @@ module.exports = {
     {
       name: "gentrx-user-web",
       cwd: "/var/www/gentrx-user-web",
-      script: "npx",
-      args: "serve -s dist -l 4000",
+      script: "serve",
+      args: "-s dist -l 4000",
       interpreter: "none",
       env: {
         NODE_ENV: "production",

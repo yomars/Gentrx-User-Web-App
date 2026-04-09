@@ -5,9 +5,14 @@ REPO="${REPO:-yomars/Gentrx-User-Web-App}"
 WORKFLOW_FILE="${WORKFLOW_FILE:-dist-artifact.yml}"
 ARTIFACT_NAME="${ARTIFACT_NAME:-gentrx-user-web-dist}"
 BRANCH="${BRANCH:-main}"
-DEPLOY_DIR="${DEPLOY_DIR:-/var/www/gentrx-user-web}"
-PM2_APP_NAME="${PM2_APP_NAME:-gentrx-user-web}"
-SITE_NAME="${SITE_NAME:-gentrx-user-web}"
+DEPLOY_DIR="${DEPLOY_DIR:-/var/www/gentrx-user-web-app}"
+PM2_APP_NAME="${PM2_APP_NAME:-gentrx-main}"
+APP_PORT="${APP_PORT:-3000}"
+APPLY_NGINX_CONFIG="${APPLY_NGINX_CONFIG:-0}"
+SITE_NAME="${SITE_NAME:-gentrx-user}"
+VERIFY_HOST="${VERIFY_HOST:-gentrx.ph}"
+ENFORCE_LOCAL_HASH_MATCH="${ENFORCE_LOCAL_HASH_MATCH:-1}"
+CHECK_PUBLIC_HASH="${CHECK_PUBLIC_HASH:-1}"
 
 if [[ -z "${GITHUB_TOKEN:-}" ]]; then
   echo "ERROR: GITHUB_TOKEN is required (must have actions:read and contents:read)."
@@ -121,22 +126,47 @@ if [[ ! -f "$DEPLOY_DIR/scripts/deploy/gentrx-user-web.nginx.conf" ]]; then
 fi
 
 log "Restarting PM2 app"
-pm2 describe "$PM2_APP_NAME" >/dev/null 2>&1 || pm2 start "$DEPLOY_DIR/scripts/deploy/ecosystem.user-web.cjs"
-pm2 restart "$PM2_APP_NAME"
+pm2 delete ecosystem.user-web >/dev/null 2>&1 || true
+pm2 delete gentrx-user-web >/dev/null 2>&1 || true
+if pm2 describe "$PM2_APP_NAME" >/dev/null 2>&1; then
+  pm2 restart "$PM2_APP_NAME" --update-env
+else
+  pm2 start serve --name "$PM2_APP_NAME" --cwd "$DEPLOY_DIR" -- -s dist -l "$APP_PORT"
+fi
 pm2 save
 
 NGINX_TARGET="/etc/nginx/sites-available/${SITE_NAME}.conf"
 NGINX_ENABLED="/etc/nginx/sites-enabled/${SITE_NAME}.conf"
 
-log "Updating Nginx site config"
-cp "$DEPLOY_DIR/scripts/deploy/gentrx-user-web.nginx.conf" "$NGINX_TARGET"
-ln -sfn "$NGINX_TARGET" "$NGINX_ENABLED"
+if [[ "$APPLY_NGINX_CONFIG" == "1" ]]; then
+  log "Updating Nginx site config"
+  cp "$DEPLOY_DIR/scripts/deploy/gentrx-user-web.nginx.conf" "$NGINX_TARGET"
+  ln -sfn "$NGINX_TARGET" "$NGINX_ENABLED"
 
-log "Validating and reloading Nginx"
-nginx -t
-systemctl reload nginx
+  log "Validating and reloading Nginx"
+  nginx -t
+  systemctl reload nginx
+else
+  log "Skipping Nginx config update (APPLY_NGINX_CONFIG=$APPLY_NGINX_CONFIG)"
+fi
 
 log "Deployment completed successfully"
+
+DEPLOY_HASH="$(sha256sum "$DEPLOY_DIR/dist/index.html" | awk '{print $1}')"
+LOCAL_HOST_HASH="$(curl -fsSL -H "Host: $VERIFY_HOST" http://127.0.0.1/ | sha256sum | awk '{print $1}')"
+log "DEPLOY_HASH=$DEPLOY_HASH"
+log "LOCAL_HOST_HASH=$LOCAL_HOST_HASH"
+
+if [[ "$ENFORCE_LOCAL_HASH_MATCH" == "1" && "$DEPLOY_HASH" != "$LOCAL_HOST_HASH" ]]; then
+  echo "ERROR: Local host-route hash mismatch after deploy."
+  exit 1
+fi
+
+if [[ "$CHECK_PUBLIC_HASH" == "1" ]]; then
+  PUBLIC_HASH="$(curl -fsSL "https://$VERIFY_HOST/?ts=$(date +%s)" | sha256sum | awk '{print $1}')"
+  log "PUBLIC_HASH=$PUBLIC_HASH"
+fi
+
 log "Health checks:"
-log "- curl -I http://127.0.0.1:4000/"
+log "- curl -I http://127.0.0.1:$APP_PORT/"
 log "- curl -I https://www.gentrx.ph/"

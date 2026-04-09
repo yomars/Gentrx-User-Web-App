@@ -19,16 +19,14 @@ if (typeof window !== "undefined") {
 	const originHost = window.location.host.toLowerCase();
 	const configuredHost = getHost(configured);
 
-	// Use same-origin for localhost and for the public gentrx.ph frontend so /api and
-	// /storage can be proxied through the frontend host. Direct host access is kept for
-	// any explicitly configured external backend domain.
-	if (
-		!configured ||
-		!configuredHost ||
-		isLocalRuntimeHost(originHost) ||
-		(originHost.endsWith("gentrx.ph") && configuredHost.endsWith("gentrx.ph"))
-	) {
+	// Local dev relies on same-origin so Vite/Nginx proxies can handle /api and /storage.
+	// In hosted environments, always prefer an explicit API host when configured.
+	if (isLocalRuntimeHost(originHost)) {
 		apiAddress = origin;
+	} else if (!configured || !configuredHost) {
+		apiAddress = originHost.endsWith("gentrx.ph")
+			? "https://api.gentrx.ph"
+			: origin;
 	}
 }
 
