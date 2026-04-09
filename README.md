@@ -103,6 +103,44 @@ Trigger via:
 - push to `main`
 - manual `workflow_dispatch`
 
+## Release workflow (tag -> GitHub Release assets)
+
+Workflow [Release Dist Bundle](.github/workflows/release-dist-bundle.yml) runs on tags matching `v*`.
+
+Example:
+
+git tag v1.0.0
+git push origin v1.0.0
+
+Release assets include:
+- dist tarball (`artifacts/*.tar.gz`)
+- SHA256 checksum (`artifacts/*.tar.gz.sha256`)
+- metadata (`dist/version.json`, `dist/version-live.json`)
+
+## One-command server deploy from GitHub Actions artifact
+
+Script: [scripts/deploy/deploy-from-github-actions.sh](scripts/deploy/deploy-from-github-actions.sh)
+
+Required token scope:
+- `actions:read`
+- `contents:read`
+
+Example on server:
+
+export GITHUB_TOKEN=<github_pat_with_actions_read>
+sudo REPO=yomars/Gentrx-User-Web-App \
+	WORKFLOW_FILE=dist-artifact.yml \
+	ARTIFACT_NAME=gentrx-user-web-dist \
+	BRANCH=main \
+	DEPLOY_DIR=/var/www/gentrx-user-web \
+	bash scripts/deploy/deploy-from-github-actions.sh
+
+The script performs in one run:
+- download latest successful workflow artifact
+- extract bundle to deployment directory
+- PM2 restart
+- Nginx config update + reload
+
 ## Optional Vercel support
 
 Vercel deployment is optional. The app now has a first-class portable build/deploy path that does not require Vercel.
