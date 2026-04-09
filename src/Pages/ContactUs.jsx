@@ -3,22 +3,21 @@
   Heading,
   Text,
   SimpleGrid,
-  GridItem,
   FormControl,
-  FormLabel,
   Input,
   Textarea,
   Button,
   Icon,
   useToast,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
+  Flex,
+  Checkbox,
+  Container,
+  Image,
 } from "@chakra-ui/react";
 import { BiLocationPlus } from "react-icons/bi";
 import { FaEnvelope } from "react-icons/fa";
 import { IoMdCall } from "react-icons/io";
+import { BsChatDots } from "react-icons/bs";
 import useSettingsData from "../Hooks/SettingData";
 import user from "../Controllers/user";
 import { ADD } from "../Controllers/ApiControllers";
@@ -26,6 +25,7 @@ import { useMutation } from "@tanstack/react-query";
 import showToast from "../Controllers/ShowToast";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
+import MobileAppSection from "@/Components/MobileAppSection";
 
 const addContactForm = async (data) => {
   const res = await ADD(user?.token || "", "add_contact_us_form_data", data);
@@ -43,13 +43,10 @@ export default function ContactUs() {
   );
   const email = settingsData?.find((value) => value.id_name === "email");
   const address = settingsData?.find((value) => value.id_name === "address");
-  const addressValue = address?.value || "Address not specified";
-  const phone1Value = phone1?.value || "N/A";
-  const phone2Value = phone2?.value || "";
-  const emailValue = email?.value || "N/A";
 
   const toast = useToast();
   const [showMsg, setshowMsg] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
 
   const {
     register,
@@ -61,16 +58,14 @@ export default function ContactUs() {
   const mutation = useMutation({
     mutationFn: async (data) => {
       setshowMsg(false);
-      let formData = {
-        ...data,
-      };
+      let formData = { ...data };
       await addContactForm(formData);
-  
     },
     onSuccess: () => {
       showToast(toast, "success", "Success");
       setshowMsg(true);
       reset();
+      setAgreeTerms(false);
       setTimeout(() => {
         setshowMsg(false);
       }, 5000);
@@ -79,195 +74,301 @@ export default function ContactUs() {
       showToast(toast, "error", error.message);
     },
   });
+
   const onSubmit = (data) => {
     mutation.mutate(data);
   };
 
-  
   return (
-    <Box>
-      {" "}
-      <Box
-        bg="#eafaf7"
-        p={4}
-        py={{ base: "4", md: "20" }}
-        border="1px solid"
-        borderColor="#d6f1eb"
-      >
-        <Box className="container">
-          <Text
-            fontFamily={"Quicksand, sans-serif"}
-            fontSize={{ base: 20, md: 32 }}
-            fontWeight={700}
-            textAlign={"center"}
-            mt={0}
-            color={"#1d8f7a"}
+    <Box bg="white">
+      {/* Hero Section */}
+      <Box className="container" pt={{ base: 4, md: 10 }} px={{ base: 4, md: 8 }}>
+        <Flex
+          direction={{ base: "column", lg: "row" }}
+          gap={8}
+          align="center"
+          position="relative"
+        >
+          {/* Hero Image */}
+          <Box flex={1} position="relative" w="full">
+            <Image
+              src="/images/contact-hero.png"
+              alt="Contact Us"
+              w="full"
+              h={{ base: "180px", md: "300px", lg: "431px" }}
+              objectFit="contain"
+              borderRadius="15px"
+            />
+          </Box>
+
+          {/* Green overlay card */}
+          <Box
+            position={{ base: "relative", lg: "absolute" }}
+            right={{ base: 0, lg: "120px" }}
+            top={{ base: 0, lg: "50%" }}
+            transform={{ base: "none", lg: "translateY(50%)" }}
+            bg="#64b981"
+            borderRadius="15px"
+            p={{ base: 4, md: 5 }}
+            w={{ base: "full", lg: "354px" }}
+            mt={{ base: -10, lg: 0 }}
+          >
+            <Text
+              fontFamily="Plus Jakarta Sans, sans-serif"
+              fontSize={{ base: "14px", md: "20px" }}
+              fontWeight="700"
+              color="white"
+              lineHeight="1.25"
+            >
+              We are ready to serve you and respond to your questions, concerns,
+              and appointment needs.
+            </Text>
+          </Box>
+        </Flex>
+      </Box>
+
+      {/* Title and Description */}
+      <Box className="container" px={{ base: 4, md: 8 }} pt={{ base: 10, md: 16 }}>
+        <Box textAlign="center" maxW="1200px" mx="auto">
+          <Heading
+            as="h1"
+            fontFamily="Plus Jakarta Sans, sans-serif"
+            fontSize={{ base: "28px", md: "34px" }}
+            fontWeight="700"
+            color="#0c8f3a"
+            mb={6}
           >
             We Are Here to Assist You With Any Inquiry
-          </Text>
-
+          </Heading>
           <Text
-            fontFamily={"Quicksand, sans-serif"}
-            fontSize={{ base: 12, md: 16 }}
-            fontWeight={500}
-            textAlign={"center"}
-            mt={0}
-            color={"#4f6787"}
+            fontFamily="Plus Jakarta Sans, sans-serif"
+            fontSize={{ base: "16px", md: "20px" }}
+            fontWeight="400"
+            color="rgba(0,0,0,0.75)"
+            lineHeight="1.5"
           >
-            If you have questions about appointments, services, or patient
-            care, reach out to us. Our team is ready to help and ensure you
-            get the support you need.
+            If you have questions about appointments, services, or patient care,
+            reach out to us. Our team is ready to help and ensure you get the
+            support you need.
           </Text>
         </Box>
-      </Box>{" "}
-      <Box p={[4, 6, 8]} maxW="1200px" mx="auto">
-        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
-          <Box
-            p={6}
-            boxShadow="md"
-            borderRadius="md"
-            textAlign="center"
-            bg="white"
-          >
-            <Icon as={BiLocationPlus} boxSize={8} mb={4} color="blue.500" />
-            <Heading as="h3" size="md" mb={2}>
-              We are located at
-            </Heading>
-            <Text>{addressValue}</Text>
-          </Box>
+      </Box>
 
-          <Box
-            p={6}
-            boxShadow="md"
-            borderRadius="md"
-            textAlign="center"
-            bg="white"
-          >
-            <Icon as={IoMdCall} boxSize={8} mb={4} color="blue.500" />
-            <Heading as="h3" size="md" mb={2}>
-              Contact Number
-            </Heading>
-            <Text>{phone1Value}</Text>
-            <Text>{phone2Value}</Text>
-          </Box>
-
-          <Box
-            p={6}
-            boxShadow="md"
-            borderRadius="md"
-            textAlign="center"
-            bg="white"
-          >
-            <Icon as={FaEnvelope} boxSize={8} mb={4} color="blue.500" />
-            <Heading as="h3" size="md" mb={2}>
-              Customer Support
-            </Heading>
-            <Text>{emailValue}</Text>
-          </Box>
-        </SimpleGrid>
-
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-          <GridItem>
+      {/* Contact Info Boxes and Form */}
+      <Box className="container" px={{ base: 4, md: 8 }} py={{ base: 10, md: 16 }}>
+        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
+          {/* Left — Contact Info Cards */}
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+            {/* Contact Number */}
             <Box
-              as="iframe"
-              src={`https://www.google.com/maps?q=${encodeURIComponent(addressValue)}&hl=es;z=14&output=embed`}
-              width="100%"
-              height="400"
-              frameBorder="0"
-              style={{ border: 0 }}
-              allowFullScreen=""
-              aria-hidden="false"
-              tabIndex="0"
-            />
-          </GridItem>
-          <GridItem>
-            <Box p={6} boxShadow="md" borderRadius="md" bg="white">
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <SimpleGrid columns={2} spacing={4}>
-                  <FormControl isInvalid={errors.name}>
-                    <FormLabel>Your Name</FormLabel>
-                    <Input
-                      type="text"
-                      placeholder="Your Name"
-                      {...register("name", { required: "Name is required" })}
-                    />
-                  </FormControl>
-
-                  <FormControl isInvalid={errors.email}>
-                    <FormLabel>Your Email</FormLabel>
-                    <Input
-                      type="email"
-                      placeholder="Your Email"
-                      {...register("email", {
-                        required: "Email is required",
-                        pattern: {
-                          value: /^\S+@\S+\.\S+$/,
-                          message: "Invalid email format",
-                        },
-                      })}
-                    />
-                  </FormControl>
-                </SimpleGrid>
-
-                <FormControl mt={4} isInvalid={errors.subject}>
-                  <FormLabel>Subject</FormLabel>
-                  <Input
-                    type="text"
-                    placeholder="Subject"
-                    {...register("subject", {
-                      required: "Subject is required",
-                    })}
-                  />
-                </FormControl>
-
-                <FormControl mt={4} isInvalid={errors.message}>
-                  <FormLabel>Message</FormLabel>
-                  <Textarea
-                    placeholder="Message"
-                    {...register("message", {
-                      required: "Message is required",
-                    })}
-                  />
-                </FormControl>
-
-                <Text mt={3} fontSize={13} color="gray.600">
-                  I agree to our privacy policy and terms and conditions
-                </Text>
-
-                {showMsg ? (
-                  <Alert
-                    mt={4}
-                    status="success"
-                    variant="subtle"
-                    flexDirection="column"
-                    alignItems="center"
-                    justifyContent="center"
-                    textAlign="center"
-                  >
-                    <AlertIcon boxSize="20px" mr={0} />
-                    <AlertTitle mt={2} fontSize="md">
-                      Message Recived!
-                    </AlertTitle>
-                    <AlertDescription maxWidth="sm">
-                      We have received your message and will get back to you
-                      soon.
-                    </AlertDescription>
-                  </Alert>
-                ) : null}
-                <Button
-                  colorScheme="green"
-                  mt={4}
-                  width="full"
-                  type="submit"
-                  isLoading={mutation.isPending}
-                >
-                  Submit
-                </Button>
-              </form>
+              bg="#64b981"
+              p={6}
+              borderRadius="10px"
+              color="white"
+              display="flex"
+              flexDirection="column"
+              justifyContent="center"
+              minH="220px"
+            >
+              <Icon as={IoMdCall} boxSize={10} mb={4} />
+              <Heading
+                as="h3"
+                fontSize="18px"
+                fontWeight="700"
+                mb={2}
+                fontFamily="Plus Jakarta Sans, sans-serif"
+              >
+                Contact Number
+              </Heading>
+              <Text fontSize="14px" fontWeight="500">{phone1?.value}</Text>
+              <Text fontSize="14px" fontWeight="500">{phone2?.value}</Text>
             </Box>
-          </GridItem>
+
+            {/* Customer Support */}
+            <Box
+              bg="#64b981"
+              p={6}
+              borderRadius="10px"
+              color="white"
+              display="flex"
+              flexDirection="column"
+              justifyContent="center"
+              minH="220px"
+            >
+              <Icon as={FaEnvelope} boxSize={10} mb={4} />
+              <Heading
+                as="h3"
+                fontSize="18px"
+                fontWeight="700"
+                mb={2}
+                fontFamily="Plus Jakarta Sans, sans-serif"
+              >
+                Customer Support
+              </Heading>
+              <Text fontSize="14px" fontWeight="500">{email?.value}</Text>
+            </Box>
+
+            {/* Location */}
+            <Box
+              bg="#64b981"
+              p={6}
+              borderRadius="10px"
+              color="white"
+              display="flex"
+              flexDirection="column"
+              justifyContent="center"
+              minH="220px"
+            >
+              <Icon as={BiLocationPlus} boxSize={10} mb={4} />
+              <Heading
+                as="h3"
+                fontSize="18px"
+                fontWeight="700"
+                mb={2}
+                fontFamily="Plus Jakarta Sans, sans-serif"
+              >
+                We are located at
+              </Heading>
+              <Text fontSize="14px" fontWeight="500">{address?.value}</Text>
+            </Box>
+
+            {/* Chat with us */}
+            <Box
+              bg="#64b981"
+              p={6}
+              borderRadius="10px"
+              color="white"
+              display="flex"
+              flexDirection="column"
+              justifyContent="center"
+              minH="220px"
+            >
+              <Icon as={BsChatDots} boxSize={10} mb={4} />
+              <Heading
+                as="h3"
+                fontSize="18px"
+                fontWeight="700"
+                mb={2}
+                fontFamily="Plus Jakarta Sans, sans-serif"
+              >
+                Chat with us
+              </Heading>
+              <Text fontSize="14px" fontWeight="500">Facebook Page</Text>
+              <Text fontSize="14px" fontWeight="500">Instagram Page</Text>
+            </Box>
+          </SimpleGrid>
+
+          {/* Right — Contact Form */}
+          <Box>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <FormControl mb={4} isInvalid={errors.name}>
+                <Input
+                  type="text"
+                  placeholder="Full Name"
+                  h="55px"
+                  borderColor="#c3c3c3"
+                  borderRadius="5px"
+                  fontSize="16px"
+                  color="#6a6a6a"
+                  _placeholder={{ color: "#6a6a6a" }}
+                  {...register("name", { required: "Name is required" })}
+                />
+              </FormControl>
+
+              <FormControl mb={4} isInvalid={errors.email}>
+                <Input
+                  type="email"
+                  placeholder="Email Address"
+                  h="55px"
+                  borderColor="#c3c3c3"
+                  borderRadius="5px"
+                  fontSize="16px"
+                  color="#6a6a6a"
+                  _placeholder={{ color: "#6a6a6a" }}
+                  {...register("email", {
+                    required: "Email is required",
+                    pattern: {
+                      value: /^\S+@\S+\.\S+$/,
+                      message: "Invalid email format",
+                    },
+                  })}
+                />
+              </FormControl>
+
+              <FormControl mb={4} isInvalid={errors.subject}>
+                <Input
+                  type="text"
+                  placeholder="Contact Number"
+                  h="55px"
+                  borderColor="#c3c3c3"
+                  borderRadius="5px"
+                  fontSize="16px"
+                  color="#6a6a6a"
+                  _placeholder={{ color: "#6a6a6a" }}
+                  {...register("subject", {
+                    required: "Contact number is required",
+                  })}
+                />
+              </FormControl>
+
+              <FormControl mb={4} isInvalid={errors.message}>
+                <Textarea
+                  placeholder="Message"
+                  h="119px"
+                  borderColor="#c3c3c3"
+                  borderRadius="5px"
+                  fontSize="16px"
+                  color="#6a6a6a"
+                  _placeholder={{ color: "#6a6a6a" }}
+                  {...register("message", {
+                    required: "Message is required",
+                  })}
+                />
+              </FormControl>
+
+              <Checkbox
+                isChecked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                mb={4}
+                fontSize="16px"
+                color="rgba(0,0,0,0.75)"
+              >
+                I agree to our privacy policy and terms and conditions
+              </Checkbox>
+
+              <Button
+                type="submit"
+                bg="#1243f0"
+                color="white"
+                h="50px"
+                w="210px"
+                borderRadius="100px"
+                fontSize="14px"
+                fontWeight="500"
+                isLoading={mutation.isPending}
+                _hover={{ bg: "#0d32c0" }}
+                boxShadow="0px 1px 2px 0px rgba(0,0,0,0.05)"
+              >
+                Submit
+              </Button>
+
+              {showMsg && (
+                <Box mt={4} p={4} bg="green.50" borderRadius="md" color="green.700">
+                  <Text fontWeight="600">Message Received!</Text>
+                  <Text fontSize="sm">
+                    We have received your message and will get back to you soon.
+                  </Text>
+                </Box>
+              )}
+            </form>
+          </Box>
         </SimpleGrid>
       </Box>
+
+      {/* Mobile App Section */}
+      <Container maxW="1500px" px={{ base: 4, md: "96px" }} pt={{ base: 10, md: 20 }} pb={{ base: 10, md: 20 }}>
+        <MobileAppSection />
+      </Container>
     </Box>
   );
 }

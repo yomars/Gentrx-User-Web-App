@@ -226,3 +226,117 @@
     transform: none !important;
   }
 }
+
+/* ── Wide grid modifier (no max-width cap, used on Doctors page) ── */
+.ds-grid--wide {
+  max-width: none;
+}
+
+/* ── Compact card variant (Doctors list page) ──
+   Image is ~30% shorter than the home page 4:5 portrait.
+────────────────────────────────────────────── */
+.ds-card--compact .ds-card__img-wrap {
+  aspect-ratio: 4 / 3.5;
+}
+
+/* Compact nameplate */
+.ds-card--compact .ds-card__nameplate {
+  padding: 12px 14px 14px;
+}
+
+.ds-card--compact .ds-card__nameplate .ds-np-divider {
+  height: 1px;
+  background: #eee;
+  margin: 6px 0;
+}
+
+.ds-card--compact .ds-card__nameplate .ds-np-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-family: "Quicksand", sans-serif;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 3px;
+  line-height: 1.4;
+}
+
+.ds-card--compact .ds-card__nameplate .ds-np-social {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.ds-card--compact .ds-card__nameplate .ds-np-social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: #718096;
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+}
+
+.ds-card--compact .ds-card__nameplate .ds-np-social a:hover {
+  background: #f0fff4;
+  color: #34C38F;
+}
+
+.ds-card--compact .ds-card__nameplate .ds-np-stop-booking {
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #c53030;
+  font-family: "Figtree", sans-serif;
+}
+
+/* ── Compact overlay extras ── */
+.ds-card__overlay-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: "Figtree", sans-serif;
+}
+
+.ds-card__overlay-stop {
+  margin: 6px 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #fc8181;
+  font-family: "Figtree", sans-serif;
+}
+
+.ds-card__overlay-social {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ds-card__overlay-social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.ds-card__overlay-social a:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

@@ -5,24 +5,13 @@ import {
   Box,
   Button,
   Flex,
-  Image,
   Skeleton,
   Text,
-  Grid,
-  GridItem,
-  Divider,
-  IconButton,
-  HStack,
-  Alert,
-  AlertIcon,
-  AlertTitle,
   InputGroup,
   InputLeftElement,
   Input,
 } from "@chakra-ui/react";
 import imageBaseURL from "./../Controllers/image";
-import "swiper/css";
-import "swiper/css/pagination";
 import Loading from "../Components/Loading";
 import RatingStars from "../Hooks/RatingStars";
 import {
@@ -32,7 +21,7 @@ import {
   FaYoutube,
   FaUserAlt,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ErrorPage from "./ErrorPage";
 import { SearchIcon } from "@chakra-ui/icons";
 import { useCity } from "../Context/SelectedCity";
@@ -41,9 +30,11 @@ import { ImLocation } from "react-icons/im";
 import NotAvailable from "../Components/NotAvailable";
 import LocationSeletor from "../Components/LocationSeletor";
 import useSearchFilter from "../Hooks/UseSearchFilter";
+import "../Components/DoctorsSection.css";
 
 export default function Doctors() {
   const { selectedCity } = useCity();
+  const navigate = useNavigate();
 
   const getData = async () => {
     const res = await GET(
@@ -96,7 +87,7 @@ export default function Doctors() {
             </Text>
           </Text>
         </Box>
-      </Box>{" "}
+      </Box>
       <Box
         mt={{ base: 0, md: 0 }}
         className="container"
@@ -116,14 +107,8 @@ export default function Doctors() {
         <Flex
           justifyContent={"center"}
           w={"100%"}
-          flexDir={{
-            base: "column",
-            md: "row",
-          }}
-          gap={{
-            base: 4,
-            md: 0,
-          }}
+          flexDir={{ base: "column", md: "row" }}
+          gap={{ base: 4, md: 0 }}
           mt={5}
         >
           {" "}
@@ -145,214 +130,155 @@ export default function Doctors() {
             />
           </InputGroup>
         </Flex>
+
         {filteredData ? (
           <>
             {" "}
             <Box>
               <Box mt={4}>
                 {filteredData?.length ? (
-                  <Grid
-                    templateColumns={{
-                      base: "repeat(1, 1fr)",
-                      md: "repeat(2, 1fr)",
-                      lg: "repeat(3, 1fr)",
-                    }}
-                    gap={6}
-                  >
-                    {filteredData?.map((item) => (
-                      <GridItem
-                        key={item.id}
-                        backgroundColor={"#FFF"}
-                        borderRadius={10}
-                        cursor={"pointer"}
-                        boxShadow={"2px 2px 20px 0 rgb(82 66 47 / 12%)"}
-                        _hover={{ border: "1px solid #0032ff" }}
-                        transition={"border 0.1s ease"}
-                        border={"1px solid #fff"}
-                        as={Link}
-                        to={`/doctor/${item.user_id}`}
-                      >
-                        <Box cursor={"pointer"} padding={5}>
-                          {" "}
-                          <Flex gap={{ base: 3, md: 5 }} align="center">
-                            <Box
-                              flexShrink={0}
-                              overflow="hidden"
-                              h={{ base: "80px", md: "90px", lg: "100px" }} // Responsive height
-                              w={{ base: "80px", md: "90px", lg: "100px" }} // Responsive width
-                              borderRadius="15%" // Consistent, modern radius
-                              border={item.image ? "4px solid #fff" : "none"} // Thinner border
-                              boxShadow="0px 0px 10px rgba(0,0,0,0.1)" // Subtle shadow
-                            >
-                              <Image
-                                src={
-                                  item.image
-                                    ? `${imageBaseURL}/${item.image}`
-                                    : "https://plus.unsplash.com/premium_photo-1661764878654-3d0fc2eefcca?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fGRvY3RvcnxlbnwwfHwwfHx8MA%3D%3D"
-                                }
-                                objectFit="cover"
-                                w="100%"
-                                h="100%"
+                  <div className="ds-grid ds-grid--wide">
+                    {filteredData.map((item) => {
+                      const imageSrc = item.image
+                        ? `${imageBaseURL}/${item.image}`
+                        : "https://plus.unsplash.com/premium_photo-1661764878654-3d0fc2eefcca?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fGRvY3RvcnxlbnwwfHwwfHx8MA%3D%3D";
+                      return (
+                        <article
+                          key={item.id}
+                          className="ds-card ds-card--compact"
+                          aria-label={`Dr. ${item.f_name} ${item.l_name} - ${item.specialization}`}
+                          onClick={(e) => {
+                            const isMobile = window.matchMedia(
+                              "(hover: none)"
+                            ).matches;
+                            if (isMobile) {
+                              e.preventDefault();
+                              e.currentTarget.classList.toggle(
+                                "ds-card--active"
+                              );
+                            } else {
+                              navigate(`/doctor/${item.user_id}`);
+                            }
+                          }}
+                        >
+                          {/* Portrait image — links to doctor profile */}
+                          <Link
+                            to={`/doctor/${item.user_id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ display: "block" }}
+                          >
+                            <div className="ds-card__img-wrap">
+                              <img
+                                className="ds-card__img"
+                                src={imageSrc}
                                 alt={`Dr. ${item.f_name} ${item.l_name}`}
+                                loading="lazy"
                               />
-                            </Box>
-                            <Box>
-                              {" "}
-                              <Text
-                                mt={5}
-                                fontSize={15}
-                                fontWeight={700}
-                                m={0}
-                                noOfLines={1}
-                              >
+                            </div>
+                          </Link>
+
+                          {/* Always-visible nameplate: name + spec only */}
+                          <div className="ds-card__nameplate">
+                            <p className="ds-card__name">
+                              Dr. {item.f_name} {item.l_name}
+                            </p>
+                            <p className="ds-card__spec">
+                              {item.department_name} &bull; {item.specialization}
+                            </p>
+                          </div>
+
+                          {/* Hover overlay covers entire card — slides up on hover */}
+                          <div className="ds-card__overlay" aria-hidden="true">
+                            <div className="ds-card__overlay-inner">
+                              <p className="ds-card__overlay-name">
                                 Dr. {item.f_name} {item.l_name}
-                              </Text>
-                              <Text
-                                fontSize={{ base: "sm", md: "md" }}
-                                color="gray.600"
-                                fontWeight="medium"
-                                noOfLines={1}
-                              >
-                                {item.department_name} • {item.specialization}
-                              </Text>
-                              <Text
-                                as={"span"}
-                                display={"flex"}
-                                gap={1}
-                                alignItems={"center"}
-                              >
-                                <RatingStars rating={item.average_rating} />{" "}
-                                <Text
-                                  as={"span"}
-                                  mb={0}
-                                  color={"#000"}
-                                  fontSize={12}
-                                >
-                                  {parseFloat(item.average_rating).toFixed(1)} (
-                                  {item.number_of_reviews})
-                                </Text>
-                              </Text>
-                              <Text
-                                as={"span"}
-                                display={"flex"}
-                                gap={1}
-                                alignItems={"center"}
-                                fontSize={14}
-                                color={"#000"}
-                                fontWeight={700}
-                              >
-                                Exp {item.ex_year}+ Years
-                              </Text>
-                            </Box>
-                          </Flex>
-                          <Divider my={2} />
-                          <Box>
-                            <Text
-                              fontSize={13}
-                              fontFamily={"Quicksand, sans-serif"}
-                              fontWeight={600}
-                              color={"gray.700"}
-                              display={"flex"}
-                              align={"center"}
-                              gap={2}
-                            >
-                              <BsHospitalFill /> {item.clinic_title}
-                            </Text>
-                            <Text
-                              fontSize={13}
-                              fontFamily={"Quicksand, sans-serif"}
-                              fontWeight={600}
-                              color={"gray.700"}
-                              display={"flex"}
-                              align={"left"}
-                              gap={2}
-                            >
-                              <ImLocation fontSize={16} />{" "}
-                              {item.clinics_address}
-                            </Text>
-                          </Box>
-                          <Flex justify={"space-between"} mt={1}>
-                            <Text
-                              fontSize={12}
-                              fontFamily={"Quicksand, sans-serif"}
-                              fontWeight={600}
-                              color={"gray.500"}
-                              display={"flex"}
-                              align={"center"}
-                              gap={2}
-                            >
-                              <FaUserAlt fontSize={12} />{" "}
-                              <Text mt={-0.5}>
+                              </p>
+                              <p className="ds-card__overlay-spec">
+                                {item.specialization}
+                              </p>
+
+                              {/* Rating */}
+                              <span className="ds-card__overlay-rating">
+                                <RatingStars rating={item.average_rating} />
+                                <span>
+                                  {parseFloat(item.average_rating).toFixed(1)} ({item.number_of_reviews})
+                                </span>
+                              </span>
+
+                              {item.ex_year ? (
+                                <p className="ds-card__overlay-exp">
+                                  {item.ex_year}+ years experience
+                                </p>
+                              ) : null}
+
+                              {item.clinic_title ? (
+                                <p className="ds-card__overlay-clinic">
+                                  <BsHospitalFill style={{ display: "inline", marginRight: 4 }} />
+                                  {item.clinic_title}
+                                </p>
+                              ) : null}
+
+                              {item.clinics_address ? (
+                                <p className="ds-card__overlay-clinic">
+                                  <ImLocation style={{ display: "inline", marginRight: 4 }} />
+                                  {item.clinics_address}
+                                </p>
+                              ) : null}
+
+                              <p className="ds-card__overlay-exp">
+                                <FaUserAlt style={{ display: "inline", marginRight: 4 }} />
                                 {item.total_appointment_done} Appointments Done
-                              </Text>
-                            </Text>
-                          </Flex>
-                          {item?.stop_booking === 1 && (
-                            <Alert
-                              status="error"
-                              size={"xs"}
-                              py={1}
-                              px={1}
-                              mt={4}
-                            >
-                              <AlertIcon />
-                              <AlertTitle fontSize={"xs"}>
-                                {" "}
-                                Currently Not Accepting Appointments
-                              </AlertTitle>
-                            </Alert>
-                          )}
-                          <Divider my={2} />
-                          <HStack spacing={2}>
-                            <IconButton
-                              as="a"
-                              href={item.insta_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label="Instagram"
-                              icon={<FaInstagram />}
-                              variant="ghost"
-                              colorScheme="pink"
-                              onClick={(e) => e.stopPropagation()}
-                            />{" "}
-                            <IconButton
-                              as="a"
-                              href={item.fb_linik}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label="Facebook"
-                              icon={<FaFacebook />}
-                              variant="ghost"
-                              colorScheme="facebook"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <IconButton
-                              as="a"
-                              href={item.twitter_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label="Twitter"
-                              icon={<FaTwitter />}
-                              variant="ghost"
-                              colorScheme="twitter"
-                              onClick={(e) => e.stopPropagation()}
-                            />{" "}
-                            <IconButton
-                              as="a"
-                              href={item.you_tube_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label="YouTube"
-                              icon={<FaYoutube />}
-                              variant="ghost"
-                              colorScheme="red"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </HStack>
-                        </Box>
-                      </GridItem>
-                    ))}
-                  </Grid>
+                              </p>
+
+                              {item?.stop_booking === 1 && (
+                                <p className="ds-card__overlay-stop">
+                                  Currently Not Accepting Appointments
+                                </p>
+                              )}
+
+                              {/* Social links */}
+                              <div className="ds-card__overlay-social">
+                                {item.insta_link && (
+                                  <a href={item.insta_link} target="_blank" rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()} aria-label="Instagram">
+                                    <FaInstagram />
+                                  </a>
+                                )}
+                                {item.fb_linik && (
+                                  <a href={item.fb_linik} target="_blank" rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()} aria-label="Facebook">
+                                    <FaFacebook />
+                                  </a>
+                                )}
+                                {item.twitter_link && (
+                                  <a href={item.twitter_link} target="_blank" rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()} aria-label="Twitter">
+                                    <FaTwitter />
+                                  </a>
+                                )}
+                                {item.you_tube_link && (
+                                  <a href={item.you_tube_link} target="_blank" rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()} aria-label="YouTube">
+                                    <FaYoutube />
+                                  </a>
+                                )}
+                              </div>
+
+                              <button
+                                className="ds-card__cta"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/doctor/${item.user_id}`);
+                                }}
+                              >
+                                Book Appointment
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <Box mt={6}>
                     <NotAvailable
