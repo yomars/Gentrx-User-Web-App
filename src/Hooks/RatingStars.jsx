@@ -5,9 +5,10 @@ import PropTypes from "prop-types";
 import { Flex } from "@chakra-ui/react";
 
 const RatingStars = ({ rating }) => {
+  const numericRating = Number(rating) || 0;
   const MAX_STARS = 5;
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
+  const fullStars = Math.floor(numericRating);
+  const hasHalfStar = numericRating % 1 >= 0.5;
   const emptyStars = MAX_STARS - fullStars - (hasHalfStar ? 1 : 0);
 
   const stars = [];
@@ -31,7 +32,7 @@ const RatingStars = ({ rating }) => {
 };
 
 RatingStars.propTypes = {
-  rating: PropTypes.number.isRequired,
+  rating: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
 };
 
 export default RatingStars;

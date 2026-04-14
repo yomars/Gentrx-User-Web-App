@@ -19,7 +19,7 @@ const getData = async () => {
 
 function Testimonials() {
   const { data, isLoading, error } = useQuery({
-    queryKey: "testimonials",
+    queryKey: ["testimonials"],
     queryFn: getData,
   });
   const testimonials = Array.isArray(data) ? data : [];

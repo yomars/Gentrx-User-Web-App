@@ -35,6 +35,10 @@ import {
 import defaultISD from "../Controllers/defaultISD";
 import { setStorageItem } from "../lib/storage";
 import useSettingsData from "../Hooks/SettingData";
+import {
+  ensurePatientAuthBackendReady,
+  getAuthEndpoint,
+} from "../Controllers/authConfig";
 
 const FirebaseLogin = ({ redirectLocation }) => {
   const [isd_code, setIsd_code] = useState(defaultISD);
@@ -85,11 +89,15 @@ const FirebaseLogin = ({ redirectLocation }) => {
     
     setisLoading(true);
     try {
+      await ensurePatientAuthBackendReady();
+
       let data = {
         phone: phoneNumber,
         password: password,
       };
-      const res = await ADD("", "login_phone", data);
+      // Use configurable endpoint (patient/login or legacy login_phone)
+      const endpoint = getAuthEndpoint('login');
+      const res = await ADD("", endpoint, data);
       
       if (res.status === true) {
         const user = { ...res.data, token: res.token };

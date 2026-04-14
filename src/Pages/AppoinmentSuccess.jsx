@@ -9,10 +9,13 @@ import {
   Badge,
   Divider,
   Button,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react";
-import { GET } from "../Controllers/ApiControllers";
-import { useParams } from "react-router-dom";
+import { GET_AUTH } from "../Controllers/ApiControllers";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import user from "../Controllers/user";
 import Loading from "../Components/Loading";
 import {
   createGoogleCalendarUrl,
@@ -23,14 +26,25 @@ import QRCodeComponent from "../Components/QRcode";
 import MeetingQR from "../Components/MeeitngQR";
 
 const AppointmentSuccess = () => {
+  const navigate = useNavigate();
   const { id } = useParams();
   const getData = async () => {
-    const res = await GET(`get_appointment/${id}`);
+    if (!user?.token) {
+      return null;
+    }
+    const res = await GET_AUTH(user.token, `get_appointment/${id}`);
+    if (res?.response !== 200) {
+      throw new Error(res?.message || "Failed to fetch appointment details");
+    }
     return res.data;
   };
-  const { isLoading, data, error } = useQuery({
+  const { isLoading, data, error, isFetching, refetch } = useQuery({
     queryKey: ["appoinment", id],
     queryFn: getData,
+    enabled: !!user?.token,
+    retry: 5,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    staleTime: 0,
   });
 
   const typeToBadgeColor = {
@@ -38,6 +52,35 @@ const AppointmentSuccess = () => {
     "Video Consultant": "blue",
     Emergency: "red",
   };
+  const statusToBadgeColor = {
+    Confirmed: "green",
+    Pending: "orange",
+    Completed: "green",
+    Cancelled: "red",
+    Rejected: "red",
+    Rescheduled: "purple",
+    Visited: "teal",
+  };
+  const paymentToBadgeColor = {
+    Paid: "green",
+    Unpaid: "orange",
+    Failed: "red",
+    Refunded: "purple",
+  };
+  const savedStatus = data?.status || "Unknown";
+  const savedPaymentStatus = data?.payment_status || "Unknown";
+  const confirmationTitle =
+    savedStatus === "Pending"
+      ? "Appointment submitted"
+      : savedStatus === "Confirmed"
+      ? "Appointment confirmed"
+      : "Appointment recorded";
+  const confirmationDescription =
+    savedStatus === "Pending" || savedPaymentStatus === "Unpaid"
+      ? "Your booking was saved and is currently pending. Payment is due at the hospital unless advised otherwise."
+      : data?.type === "OPD"
+      ? "Visit the clinic and scan the provided QR code to instantly generate your appointment queue number"
+      : "Click join meeting or scan the QR code to join the meeting.";
 
   const event = {
     title: `Appointment with Dr. ${data?.doct_f_name} ${data?.doct_l_name}`,
@@ -58,7 +101,79 @@ const AppointmentSuccess = () => {
   };
 
   if (isLoading) return <Loading />;
-  if (error) return <ErrorPage />;
+
+  if (!user?.token)
+    return (
+      <Box w="800px" maxW={"95vw"} mx="auto" mt={10}>
+        <Alert status="warning" borderRadius="md">
+          <AlertIcon />
+          Your booking is recorded. Reference: #{id}. Please log in to view full
+          appointment details.
+        </Alert>
+        <Flex mt={4} gap={3} justify="center" flexWrap="wrap">
+          <Button
+            colorScheme="blue"
+            size="sm"
+            onClick={() => {
+              navigate("/login");
+            }}
+          >
+            Login
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigate("/");
+            }}
+          >
+            Back to Home
+          </Button>
+        </Flex>
+      </Box>
+    );
+
+  if (error)
+    return (
+      <Box w="800px" maxW={"95vw"} mx="auto" mt={10}>
+        <Alert status="error" borderRadius="md">
+          <AlertIcon />
+          We could not load appointment #{id} yet. It may still be syncing.
+        </Alert>
+        <Flex mt={4} gap={3} justify="center" flexWrap="wrap">
+          <Button
+            colorScheme="green"
+            size="sm"
+            onClick={() => {
+              refetch();
+            }}
+            isLoading={isFetching}
+          >
+            Retry Fetch
+          </Button>
+          <Button
+            colorScheme="blue"
+            size="sm"
+            onClick={() => {
+              navigate("/login");
+            }}
+          >
+            Login
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigate("/appointments");
+            }}
+          >
+            View Appointments
+          </Button>
+        </Flex>
+      </Box>
+    );
+
+  if (!data) return <ErrorPage />;
 
   return (
     <Box
@@ -79,19 +194,37 @@ const AppointmentSuccess = () => {
           src="/confirm.png" // Add your own success icon here
           alt="Success"
         />
-        <Heading size="sm">Appointment ID: #{data.id}</Heading>
+        <Heading size="sm">Appointment ID: #{data?.id || id}</Heading>
         <Badge
           size="sm"
           p={2}
           fontWeight={800}
-          colorScheme={typeToBadgeColor[data.type]}
+          colorScheme={typeToBadgeColor[data?.type] || "gray"}
           minW={100}
           textAlign={"center"}
           fontSize={12}
           letterSpacing={1}
         >
-          {data.type}
+          {data?.type || "Unknown"}
         </Badge>
+        <Flex gap={2} flexWrap="wrap" justify="center">
+          <Badge
+            size="sm"
+            p={2}
+            fontWeight={700}
+            colorScheme={statusToBadgeColor[savedStatus] || "gray"}
+          >
+            Status: {savedStatus}
+          </Badge>
+          <Badge
+            size="sm"
+            p={2}
+            fontWeight={700}
+            colorScheme={paymentToBadgeColor[savedPaymentStatus] || "gray"}
+          >
+            Payment: {savedPaymentStatus}
+          </Badge>
+        </Flex>
 
         {data?.type === "OPD" ? (
           <QRCodeComponent data={appointmentData} />
@@ -125,7 +258,7 @@ const AppointmentSuccess = () => {
           mb={-2}
           textAlign={"center"}
         >
-          Your Appointment Booked successfully!
+          {confirmationTitle}
         </Heading>
         <Text
           mt={0}
@@ -134,9 +267,7 @@ const AppointmentSuccess = () => {
           textAlign={"center"}
           fontSize={{ base: "14px", md: "16px" }}
         >
-          {data.type === "OPD"
-            ? "Visit the clinic and scan the provided QR code to instantly generate your appointment queue number"
-            : "Click join meeting or scan the QR code to join the meeting."}
+          {confirmationDescription}
         </Text>
 
         <Flex
@@ -151,7 +282,7 @@ const AppointmentSuccess = () => {
               Doctor
             </Text>
             <Text fontSize={14}>
-              Dr. {data.doct_f_name} {data.doct_l_name}
+              Dr. {data?.doct_f_name} {data?.doct_l_name}
             </Text>
           </Box>
           <Box>
@@ -159,7 +290,7 @@ const AppointmentSuccess = () => {
               Date & Time
             </Text>
             <Text fontSize={14}>
-              {new Date(data.date).toLocaleDateString()} {data.time_slots}
+              {new Date(data?.date).toLocaleDateString()} {data?.time_slots}
             </Text>
           </Box>
           <Box>
@@ -167,7 +298,7 @@ const AppointmentSuccess = () => {
               Patient Name
             </Text>
             <Text fontSize={14}>
-              {data.patient_f_name} {data.patient_l_name}
+              {data?.patient_f_name} {data?.patient_l_name}
             </Text>
           </Box>
         </Flex>

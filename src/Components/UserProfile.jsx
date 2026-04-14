@@ -82,7 +82,7 @@ const UserProfile = () => {
     onSuccess: () => {
       showToast(toast, "success", "User Details Updated");
       queryClient.invalidateQueries("user");
-      updateUserLocalStorage(user.phone)
+      updateUserLocalStorage();
     },
     onError: (error) => {
       showToast(toast, "error", error.message);

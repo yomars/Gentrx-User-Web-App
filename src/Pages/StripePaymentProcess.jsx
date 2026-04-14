@@ -11,9 +11,12 @@ import PaymentGetwayData from "../Hooks/Paymntgetways";
 import Loading from "../Components/Loading";
 import user from "../Controllers/user";
 import {
+  clearPendingAppointmentPayment,
+  getPendingAppointmentPayment,
   clearPendingWalletTopup,
   getPendingWalletTopup,
   saveWalletTopupResult,
+  updatePendingAppointmentPayment,
   updatePendingWalletTopup,
 } from "../lib/walletTopup";
 
@@ -146,6 +149,76 @@ function StripePaymentProcess() {
       setMessage(response?.message || "Unable to credit your wallet.");
     };
 
+    const finalizeAppointment = async () => {
+      const pendingAppointment = getPendingAppointmentPayment();
+
+      if (!pendingAppointment || !user?.id || !user?.token) {
+        setStatus("error");
+        setMessage("Unable to restore your appointment payment session.");
+        return;
+      }
+
+      if (
+        pendingAppointment.status === "completed" &&
+        pendingAppointment.paymentTransactionId === paymentIntentId &&
+        pendingAppointment.appointmentId
+      ) {
+        redirectWithResult(
+          `/appointment-success/${pendingAppointment.appointmentId}`,
+          null
+        );
+        return;
+      }
+
+      if (
+        pendingAppointment.status === "creating" &&
+        pendingAppointment.paymentTransactionId === paymentIntentId
+      ) {
+        setMessage("Finalizing your appointment. Please wait...");
+        return;
+      }
+
+      updatePendingAppointmentPayment({
+        status: "creating",
+        paymentTransactionId: paymentIntentId,
+        creatingAt: Date.now(),
+      });
+
+      const response = await ADD(user.token, "add_appointment", {
+        ...pendingAppointment.appointment,
+        payment_status: "Paid",
+        status: "Confirmed",
+        payment_transaction_id: paymentIntentId || "Stripe",
+        payment_method:
+          pendingAppointment.paymentMethod ||
+          pendingAppointment.appointment?.payment_method ||
+          "stripe",
+      });
+
+      if (response?.response === 200) {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["appointments"] }),
+          queryClient.invalidateQueries({ queryKey: ["bookedslotes"] }),
+          queryClient.invalidateQueries({ queryKey: ["timeslotes"] }),
+          queryClient.invalidateQueries({ queryKey: ["user"] }),
+        ]);
+
+        updatePendingAppointmentPayment({
+          status: "completed",
+          appointmentId: response.id,
+          completedAt: Date.now(),
+        });
+        clearPendingAppointmentPayment();
+        setStatus("success");
+        setMessage("Appointment booked successfully.");
+        redirectWithResult(`/appointment-success/${response.id}`, null);
+        return;
+      }
+
+      setStatus("error");
+      setMessage(response?.message || "Unable to finalize your appointment.");
+    };
+
     const processStripeReturn = async () => {
       try {
         const stripeStatus = await resolveStripeStatus();
@@ -165,6 +238,11 @@ function StripePaymentProcess() {
 
         if (resolvedSource === "wallet") {
           await finalizeWalletTopup();
+          return;
+        }
+
+        if (resolvedSource === "appointment") {
+          await finalizeAppointment();
           return;
         }
 

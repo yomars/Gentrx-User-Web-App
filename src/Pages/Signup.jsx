@@ -20,12 +20,16 @@
 import { useForm } from "react-hook-form";
 import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import showToast from "../Controllers/ShowToast";
-import { ADD } from "../Controllers/ApiControllers";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import defaultISD from "../Controllers/defaultISD";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { setStorageItem } from "../lib/storage";
+import api from "../Controllers/api";
+import {
+  ensurePatientAuthBackendReady,
+  getAuthEndpoint,
+} from "../Controllers/authConfig";
 
 const Signup = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -34,6 +38,29 @@ const Signup = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [clinics, setClinics] = useState([]);
+  const [clinicsLoading, setClinicsLoading] = useState(true);
+
+  // Fetch active clinics for the signup dropdown on mount
+  useEffect(() => {
+    let cancelled = false;
+    const fetchClinics = async () => {
+      try {
+        const res = await fetch(`${api}/patient/clinics`);
+        if (!res.ok) throw new Error('Failed to load clinics');
+        const json = await res.json();
+        const list = json?.data ?? json ?? [];
+        if (!cancelled) setClinics(Array.isArray(list) ? list : []);
+      } catch {
+        // Non-fatal: form validation will catch an empty selection
+        if (!cancelled) setClinics([]);
+      } finally {
+        if (!cancelled) setClinicsLoading(false);
+      }
+    };
+    fetchClinics();
+    return () => { cancelled = true; };
+  }, []);
 
   const {
     handleSubmit,
@@ -45,25 +72,86 @@ const Signup = () => {
 
   const password = watch("password");
 
+  const postAuthJson = async (endpoint, payload) => {
+    const response = await fetch(`${api}/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    let body = null;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+
+    if (!response.ok) {
+      const message =
+        body?.message ||
+        body?.error ||
+        `Request failed with status code ${response.status}`;
+      throw new Error(message);
+    }
+
+    return body || {};
+  };
+
   const checkMobileExists = async (number) => {
     // Ensure we have a valid phone number
-    if (!number || number.trim() === "") {
+    const normalizedPhone = String(number || "").trim();
+    if (!normalizedPhone) {
       throw new Error("Phone number is required");
     }
-    const res = await ADD("", "re_login_phone", { phone: number });
-    if (res.response === 200) {
-      return res.status;
-    } else {
-      throw new Error("Something went wrong");
+
+    const checkEndpoint = getAuthEndpoint('checkPhone');
+    const res = await postAuthJson(checkEndpoint, { phone: normalizedPhone });
+
+    const available =
+      typeof res?.available === "boolean"
+        ? res.available
+        : typeof res?.data?.available === "boolean"
+        ? res.data.available
+        : null;
+
+    if (available !== null) {
+      return !available;
     }
+
+    const exists =
+      typeof res?.exists === "boolean"
+        ? res.exists
+        : typeof res?.data?.exists === "boolean"
+        ? res.data.exists
+        : null;
+
+    if (exists !== null) {
+      return exists;
+    }
+
+    if (typeof res?.message === "string") {
+      const msg = res.message.toLowerCase();
+      if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
+        return true;
+      }
+    }
+
+    // Safe fallback: avoid blocking new signups when backend omits availability fields.
+    return false;
   };
 
   const onSubmit = async (values) => {
     const { f_name, l_name, phone, gender, email, password } = values;
+    const fullName = [f_name, l_name].filter(Boolean).join(" ").trim();
+    const normalizedPhone = String(phone || "").trim();
 
     try {
+      await ensurePatientAuthBackendReady();
+
       // Check if phone number already exists
-      if ((await checkMobileExists(phone)) === true) {
+      if ((await checkMobileExists(normalizedPhone)) === true) {
         return toast({
           title: "Phone number already exists!",
           status: "error",
@@ -75,24 +163,33 @@ const Signup = () => {
 
       // Directly create user without OTP
       const data = {
+        name: fullName,
         f_name,
         l_name,
-        phone,
+        phone: normalizedPhone,
         isd_code,
         gender,
         email,
         password,
+        clinic_id: values.clinic_id,
       };
 
-      const res = await ADD("", "add_user", data);
-      if (res.status === true) {
-        const user = { ...res.data, token: res.token };
+      // Use configurable endpoint (patient/signup or legacy add_user)
+      const signupEndpoint = getAuthEndpoint('signup');
+      const res = await postAuthJson(signupEndpoint, data);
+      const isSignupSuccess =
+        res?.status === true || res?.success === true || res?.response === 201;
+
+      if (isSignupSuccess) {
+        const token = res?.token || res?.data?.token;
+        const user = { ...res.data, token };
         setStorageItem("user", JSON.stringify(user));
+        const patientCode = res.data?.patient_code || res?.patient_code;
         toast({
           title: "Signup Successful",
-          description: `Welcome ${user.f_name} ${user.l_name}`,
+          description: `Welcome ${user.f_name} ${user.l_name}${patientCode ? ` • Patient ID: ${patientCode}` : ""}`,
           status: "success",
-          duration: 3000,
+          duration: 5000,
           isClosable: true,
           position: "top",
         });
@@ -245,6 +342,24 @@ const Signup = () => {
                   _focus={{ borderColor: "#34C38F", boxShadow: "0 0 0 1px #34C38F" }}
                 />
                 <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
+              </FormControl>
+
+              {/* Clinic selection — used to generate the Patient ID server-side */}
+              <FormControl isInvalid={errors.clinic_id} mb="4">
+                <Select
+                  placeholder={clinicsLoading ? "Loading clinics\u2026" : "Select your clinic"}
+                  {...register("clinic_id", { required: "Please select a clinic" })}
+                  borderColor="#ddd"
+                  _focus={{ borderColor: "#34C38F", boxShadow: "0 0 0 1px #34C38F" }}
+                  disabled={clinicsLoading}
+                >
+                  {clinics.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </Select>
+                <FormErrorMessage>{errors.clinic_id?.message}</FormErrorMessage>
               </FormControl>
 
               {/* PIN - 4 digits */}

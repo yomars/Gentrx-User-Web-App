@@ -34,7 +34,9 @@ import Loading from "../Components/Loading";
 import ISD_CODES from "./ISDCODES";
 import showToast from "./ShowToast";
 import {
+  clearPendingAppointmentPayment,
   clearPendingWalletTopup,
+  savePendingAppointmentPayment,
   savePendingWalletTopup,
 } from "../lib/walletTopup";
 
@@ -132,6 +134,14 @@ const CheckoutForm = ({ onSuccess, onCancel, type, data }) => {
           status: "pending",
           userId: user?.id,
         });
+      } else if (type === "Appointment") {
+        savePendingAppointmentPayment({
+          appointment: data,
+          paymentMethod: "stripe",
+          source: "appointment",
+          status: "pending",
+          userId: user?.id,
+        });
       }
 
       const { error: stripeError, paymentIntent } = await stripe.confirmPayment(
@@ -146,6 +156,8 @@ const CheckoutForm = ({ onSuccess, onCancel, type, data }) => {
       if (stripeError) {
         if (type === "Wallet") {
           clearPendingWalletTopup();
+        } else if (type === "Appointment") {
+          clearPendingAppointmentPayment();
         }
         setError(stripeError.message);
         showToast(toast, "error", stripeError.message);
@@ -159,6 +171,8 @@ const CheckoutForm = ({ onSuccess, onCancel, type, data }) => {
     } catch (err) {
       if (type === "Wallet") {
         clearPendingWalletTopup();
+      } else if (type === "Appointment") {
+        clearPendingAppointmentPayment();
       }
       setError(err.message);
       showToast(toast, "error", err.message);

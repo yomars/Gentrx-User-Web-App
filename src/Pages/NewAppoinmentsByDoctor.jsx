@@ -26,10 +26,11 @@ import {
   RadioGroup,
   Stack,
   Select,
+  Badge,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ADD, GET } from "../Controllers/ApiControllers";
+import { ADD, GET, GET_AUTH } from "../Controllers/ApiControllers";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Loading from "../Components/Loading";
 import { AnimatePresence, motion } from "framer-motion";
@@ -45,6 +46,7 @@ import "swiper/swiper-bundle.css";
 import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import PaymentGetwayData from "../Hooks/Paymntgetways";
 import StripePaymentController from "../Controllers/StripePayController";
+import { clearPendingAppointmentPayment } from "../lib/walletTopup";
 
 const steps = [
   {
@@ -90,6 +92,17 @@ const feeData = [
     updated_at: "2024-08-10 13:29:39",
   },
 ];
+
+const bookingUI = {
+  pageBg: "#f8f8f8",
+  surface: "#ffffff",
+  border: "#E2E8F0",
+  muted: "gray.600",
+  title: "tiber.main",
+  accent: "primary.bg",
+  accentSoft: "blue.50",
+  primaryBtn: "primary.bg",
+};
 
 function NewAppoinmentsByDoctor() {
   const toast = useToast();
@@ -157,7 +170,7 @@ function NewAppoinmentsByDoctor() {
         showToast(
           toast,
           "error",
-          "Please select a time slot before proceeding."
+          "Please select or add patient details before proceeding."
         );
         return;
       }
@@ -206,11 +219,16 @@ function NewAppoinmentsByDoctor() {
   };
 
   return (
-    <Box>
-      <Box bg={"primary.main"} p={4} py={{ base: "4", md: "10" }}>
+    <Box bg={bookingUI.pageBg} pb={{ base: 8, md: 12 }}>
+      <Box
+        bgGradient={"linear(to-r, tiber.main, primary.bg)"}
+        p={4}
+        py={{ base: "8", md: "12" }}
+        borderBottomRadius={{ base: "2xl", md: "3xl" }}
+      >
         <Box className="container">
           <Text
-            fontFamily={"Quicksand, sans-serif"}
+            fontFamily={"Figtree, sans-serif"}
             fontSize={{ base: 24, md: 32 }}
             fontWeight={700}
             textAlign={"center"}
@@ -219,55 +237,67 @@ function NewAppoinmentsByDoctor() {
           >
             Book Appointment
           </Text>
+          <Text
+            fontSize={{ base: 13, md: 15 }}
+            color={"whiteAlpha.900"}
+            textAlign={"center"}
+            mt={2}
+            fontWeight={500}
+          >
+            Fast, secure, and guided scheduling in just a few steps.
+          </Text>
         </Box>
       </Box>
       <Box className="container">
         <Flex justify={"center"}>
           <Box maxW={"100vw"} w={"1000px"}>
-            <Flex mt={10} gap={10} flexDir={{ base: "column", md: "row" }}>
+            <Flex mt={{ base: 6, md: 10 }} gap={6} flexDir={{ base: "column", md: "row" }}>
               <Box
                 w={{ base: "100%", md: "30%" }}
                 border={"1px solid"}
-                borderColor={"gray.200"}
+                borderColor={bookingUI.border}
                 p={4}
-                borderRadius={4}
-                bg={"#fff"}
+                borderRadius={14}
+                bg={bookingUI.surface}
                 h={"fit-content"}
                 display={{ base: "flex", md: "block" }}
                 justifyContent={{ base: "space-between" }}
+                boxShadow={"0 10px 30px rgba(7,51,47,0.08)"}
               >
                 {steps.map((item) => (
                   <Flex
                     key={item.Name}
                     align={"center"}
-                    gap={2}
+                    gap={3}
                     mb={3}
                     cursor={"pointer"}
                     onClick={() => {
                       handleNextStep(item.step);
                     }}
-                    transition={"0.3s ease"}
+                    transition={"0.25s ease"}
                     flexDir={{ base: "column", md: "Row" }}
+                    p={{ base: 2, md: 3 }}
+                    borderRadius={12}
+                    bg={step === item.step ? bookingUI.accentSoft : "transparent"}
+                    _hover={{ bg: step === item.step ? bookingUI.accentSoft : "gray.50" }}
                   >
                     <Box
-                      p={2}
+                      p={2.5}
                       border={"1px solid"}
-                      borderColor={
-                        step === item.step ? "primary.text" : "gray.200"
-                      }
-                      borderRadius={4}
+                      borderColor={step === item.step ? bookingUI.accent : bookingUI.border}
+                      borderRadius={10}
                       fontSize={18}
-                      color={step === item.step ? "#fff" : "#000"}
-                      bg={step === item.step ? "primary.text" : "transparent"}
-                      transition={"0.3s ease"}
+                      color={step === item.step ? "#fff" : bookingUI.title}
+                      bg={step === item.step ? bookingUI.accent : "transparent"}
+                      transition={"0.25s ease"}
                     >
                       {item.icon}
                     </Box>
                     <Text
                       fontSize={14}
                       fontWeight={step === item.step ? "700" : "600"}
-                      color={step === item.step ? "primary.text" : "gray.600"}
-                      transition={"0.3s ease"}
+                      color={step === item.step ? bookingUI.accent : bookingUI.muted}
+                      transition={"0.25s ease"}
                     >
                       {item.Name}
                     </Text>
@@ -277,12 +307,12 @@ function NewAppoinmentsByDoctor() {
               <Box
                 w={{ base: "100%", md: "70%" }}
                 border={"1px solid"}
-                borderColor={"gray.200"}
-                p={3}
-                px={4}
-                borderRadius={4}
-                bg={"#fff"}
+                borderColor={bookingUI.border}
+                p={{ base: 4, md: 5 }}
+                borderRadius={14}
+                bg={bookingUI.surface}
                 h={"fit-content"}
+                boxShadow={"0 12px 30px rgba(0,0,0,0.05)"}
               >
                 {ShowPage(step)}
               </Box>
@@ -392,7 +422,12 @@ const Step2 = ({
   };
 
   const { isLoading: bookedSlotesLoading, data: bookedSlotes } = useQuery({
-    queryKey: ["bookedslotes", selectedDate, Doctordetails.user_id],
+    queryKey: [
+      "bookedslotes",
+      selectedDate,
+      Doctordetails.user_id,
+      appoinmentType?.title,
+    ],
     queryFn: getBookedSlotes,
     enabled: !!selectedDate,
   });
@@ -440,7 +475,7 @@ const Step2 = ({
       <Text fontSize={17} fontWeight={600} mb={3}>
         Date & Time
       </Text>{" "}
-      <Divider mb={5} />
+      <Divider mb={5} borderColor={"gray.200"} />
       <Box maxW={"100%"} overflow={"hidden"}>
         {" "}
         <Swiper
@@ -457,30 +492,30 @@ const Step2 = ({
               >
                 {" "}
                 <Box
-                  bg={
-                    selectedDate === moment(day).format("YYYY-MM-DD")
-                      ? "primary.text"
-                      : "blue.700"
-                  }
+                  bg={selectedDate === moment(day).format("YYYY-MM-DD") ? "primary.bg" : "gray.50"}
                   mr={3}
-                  borderRadius={5}
-                  color={"#fff"}
-                  p={1}
+                  borderRadius={12}
+                  color={selectedDate === moment(day).format("YYYY-MM-DD") ? "#fff" : "tiber.main"}
+                  p={2}
                   cursor={"pointer"}
+                  border={"1px solid"}
+                  borderColor={selectedDate === moment(day).format("YYYY-MM-DD") ? "primary.bg" : "gray.200"}
+                  transition={"all 0.2s ease"}
+                  _hover={{ transform: "translateY(-1px)", borderColor: "primary.bg" }}
                 >
                   <Text
                     fontSize="xs"
                     fontWeight="bold"
-                    color="gray.100"
+                    color={selectedDate === moment(day).format("YYYY-MM-DD") ? "whiteAlpha.900" : "gray.500"}
                     textAlign="center"
                     m={0}
                   >
                     {getFormattedDate(day).month}
                   </Text>
                   <Text
-                    fontSize="md"
+                    fontSize="lg"
                     fontWeight="700"
-                    color="green.100"
+                    color={selectedDate === moment(day).format("YYYY-MM-DD") ? "#fff" : "tiber.main"}
                     textAlign="center"
                     m={0}
                   >
@@ -489,7 +524,7 @@ const Step2 = ({
                   <Text
                     fontSize="xs"
                     fontWeight="bold"
-                    color="gray.100"
+                    color={selectedDate === moment(day).format("YYYY-MM-DD") ? "whiteAlpha.900" : "gray.500"}
                     textAlign="center"
                     m={0}
                   >
@@ -507,8 +542,9 @@ const Step2 = ({
             mt={5}
             border={"1px solid"}
             borderColor={"gray.200"}
-            p={2}
-            borderRadius={4}
+            p={3}
+            borderRadius={12}
+            bg={"gray.50"}
           >
             <Text textAlign={"left"} fontWeight={600} fontSize={16} mb={1}>
               Time Slotes
@@ -523,14 +559,40 @@ const Step2 = ({
                       size="sm"
                       fontSize="xs"
                       fontWeight={600}
-                      colorScheme={
+                      borderRadius={10}
+                      border={"1px solid"}
+                      borderColor={
                         !getSlotStatus(slot)
-                          ? "red"
+                          ? "red.200"
                           : slot === selectedSlot
-                          ? "blue"
-                          : "green"
+                          ? "primary.bg"
+                          : "gray.300"
                       }
-                      variant="solid"
+                      color={
+                        !getSlotStatus(slot)
+                          ? "red.600"
+                          : slot === selectedSlot
+                          ? "#fff"
+                          : "tiber.main"
+                      }
+                      bg={
+                        !getSlotStatus(slot)
+                          ? "red.50"
+                          : slot === selectedSlot
+                          ? "primary.bg"
+                          : "#fff"
+                      }
+                      _hover={{
+                        bg:
+                          !getSlotStatus(slot) || slot === selectedSlot
+                            ? undefined
+                            : "blue.50",
+                        borderColor:
+                          !getSlotStatus(slot) || slot === selectedSlot
+                            ? undefined
+                            : "primary.bg",
+                      }}
+                      _active={{ transform: "scale(0.98)" }}
                       onClick={() => {
                         if (!getSlotStatus(slot)) {
                           return;
@@ -540,7 +602,8 @@ const Step2 = ({
                       }}
                       isDisabled={!getSlotStatus(slot)}
                       _disabled={{
-                        backgroundColor: "red.500",
+                        opacity: 0.9,
+                        cursor: "not-allowed",
                       }}
                     >
                       {slot.time_start} - {slot.time_end}
@@ -598,7 +661,7 @@ const Step3 = ({ setPatientDetails, setStep }) => {
       const res = await ADD(user.token, "add_family_member", apiData);
 
       showToast(toast, "success", "Success");
-      QueryClient.invalidateQueries("patients");
+      QueryClient.invalidateQueries({ queryKey: ["family-members", user?.id] });
       setaddNew(false);
       setPatientDetails({ ...data, id: res.id });
       setStep(4);
@@ -688,7 +751,9 @@ const Step3 = ({ setPatientDetails, setStep }) => {
               <Button
                 w={"40%"}
                 size={"sm"}
-                colorScheme="green"
+                bg={"primary.bg"}
+                color={"#fff"}
+                _hover={{ bg: "blue.700" }}
                 type="submit"
                 isLoading={isUserAddLoading}
               >
@@ -700,7 +765,7 @@ const Step3 = ({ setPatientDetails, setStep }) => {
       ) : (
         <Box>
           <Text fontSize={17} fontWeight={600} mb={3}>
-            Family Member
+            Who is this appointment for?
           </Text>{" "}
           <Box>
             <AnimatePresence>
@@ -711,29 +776,45 @@ const Step3 = ({ setPatientDetails, setStep }) => {
                 transition={{ duration: 0.2 }}
               >
                 {" "}
-                <Button
-                  align="center"
-                  leftIcon={<BsPersonAdd fontSize={20} />}
-                  colorScheme="green"
-                  size={"sm"}
-                  w={"100%"}
-                  onClick={() => {
-                    setaddNew(true);
-                  }}
+                <motion.div
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  Add Family Member
-                </Button>
-                {patientData && (
+                  <Card
+                    cursor={"pointer"}
+                    mb={4}
+                    borderColor={"primary.bg"}
+                    borderWidth={1}
+                    bg={"blue.50"}
+                    boxShadow={"0 8px 20px rgba(72,94,196,0.12)"}
+                    onClick={() => {
+                      setPatientDetails({ ...user, selectionType: "self" });
+                      setStep(4);
+                    }}
+                  >
+                    <CardBody p={4}>
+                      <Flex align={"center"} gap={4}>
+                        <FaUser fontSize={24} color="#485EC4" />
+                        <Box>
+                          <Flex align={"center"} gap={2}>
+                            <Text fontSize={14} fontWeight={600} mb={0}>
+                              {user?.f_name} {user?.l_name}
+                            </Text>
+                            <Badge bg={"primary.bg"} color={"#fff"} fontSize={11}>
+                              You
+                            </Badge>
+                          </Flex>
+                          <Text fontSize={14} fontWeight={600}>
+                            {user?.phone}
+                          </Text>
+                        </Box>
+                      </Flex>
+                    </CardBody>
+                  </Card>
+                </motion.div>
+                {patientData && patientData.length > 0 && (
                   <Box>
-                    <Text
-                      fontSize={14}
-                      fontWeight={600}
-                      mb={3}
-                      textAlign={"center"}
-                      my={2}
-                    >
-                      OR
-                    </Text>{" "}
                     {patientData.map((patient) => (
                       <motion.div
                         key={patient.id}
@@ -744,6 +825,11 @@ const Step3 = ({ setPatientDetails, setStep }) => {
                         <Card
                           cursor={"pointer"}
                           mb={4}
+                          border={"1px solid"}
+                          borderColor={"gray.200"}
+                          borderRadius={12}
+                          transition={"all 0.2s ease"}
+                          _hover={{ borderColor: "primary.bg", transform: "translateY(-1px)" }}
                           onClick={() => {
                             setPatientDetails(patient);
                             setStep(4);
@@ -768,6 +854,21 @@ const Step3 = ({ setPatientDetails, setStep }) => {
                     ))}
                   </Box>
                 )}
+                <Button
+                  align="center"
+                  leftIcon={<BsPersonAdd fontSize={20} />}
+                  bg={"primary.bg"}
+                  color={"#fff"}
+                  _hover={{ bg: "blue.700" }}
+                  size={"sm"}
+                  w={"100%"}
+                  mt={2}
+                  onClick={() => {
+                    setaddNew(true);
+                  }}
+                >
+                  Add Family Member
+                </Button>
               </motion.div>
             </AnimatePresence>
           </Box>
@@ -783,14 +884,11 @@ const Step3 = ({ setPatientDetails, setStep }) => {
 };
 
 const getUserDetails = async () => {
-  const data = {
-    phone: user?.phone,
-  };
-  const user = await ADD(user.token, "re_login_phone", data);
-  if (user.response !== 200) {
-    throw new Error(user.message);
+  const userRes = await GET_AUTH(user.token, "patient/me");
+  if (userRes.response !== 200 || userRes.status !== true) {
+    throw new Error(userRes.message || "Failed to fetch patient profile");
   }
-  return user.data;
+  return userRes.data;
 };
 
 const Step4 = ({
@@ -872,31 +970,46 @@ const Step4 = ({
   });
 
   const getfee = (type, doc) => {
+    const feeSource = doc || {};
     switch (type) {
       case "OPD":
-        return doc.opd_fee;
+        return Number(feeSource.opd_fee) || 0;
       case "Video Consultant":
-        return doc.video_fee;
+        return Number(feeSource.video_fee) || 0;
       case "Emergency":
-        return doc.emg_fee;
+        return Number(feeSource.emg_fee) || 0;
       default:
-        return doc.emg_fee;
+        return Number(feeSource.emg_fee) || 0;
     }
   };
 
   const taxAmount = (amount) => {
-    return (amount * Doctordetails?.clinic_tax) / 100;
+    return (Number(amount) * (Number(Doctordetails?.clinic_tax) || 0)) / 100;
   };
   const discountAmount = (amount, value) => {
     if (value) {
-      return (amount * value) / 100;
+      return (Number(amount) * Number(value)) / 100;
     } else {
       return 0;
     }
   };
   const getTotal = (amount, taxAmount, discount) => {
-    return amount - discount + taxAmount;
+    return Number(amount) - Number(discount) + Number(taxAmount);
   };
+
+  const feeAmount = Number(getfee(appoinmentType.title, Doctordetails)) || 0;
+  const unitTaxAmount = taxAmount(feeAmount);
+  const couponOffAmount = discountAmount(feeAmount, SelectedCoupon?.value);
+  const unitTotalAmount = getTotal(feeAmount, unitTaxAmount, 0);
+
+  const payableTotal = getTotal(
+    feeAmount,
+    unitTaxAmount,
+    couponOffAmount
+  );
+
+  const walletAvailable = Number(userData?.wallet_amount || 0);
+  const isWalletInsufficient = payableTotal > walletAvailable;
 
   const ValidateCoupon = async () => {
     try {
@@ -925,10 +1038,17 @@ const Step4 = ({
     }
   };
 
-  const addAppointment = async () => {
-    const appointmentDetails = {
+  const buildAppointmentDetails = ({
+    selectedMethod = Number(method),
+    paymentStatusOverride,
+    appointmentStatusOverride,
+    paymentMethodOverride,
+    paymentTransactionId,
+  } = {}) => ({
       family_member_id: patientDetails.id,
-      status: "Confirmed",
+      status:
+        appointmentStatusOverride ||
+        (selectedMethod === 2 ? "Pending" : "Confirmed"),
       date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
       time_slots: selectedSlot
         ? selectedSlot.time_start
@@ -936,38 +1056,48 @@ const Step4 = ({
       doct_id: Doctordetails.user_id,
       dept_id: Doctordetails.department,
       type: appoinmentType.title,
-      payment_status: method == 2 ? "Unpaid" : "Paid",
-      fee: getfee(appoinmentType.title, Doctordetails),
+      payment_status:
+        paymentStatusOverride || (selectedMethod === 2 ? "Unpaid" : "Paid"),
+      fee: feeAmount,
       service_charge: 0,
       tax: Doctordetails?.clinic_tax,
-      unit_tax_amount: taxAmount(getfee(appoinmentType.title, Doctordetails)),
-      total_amount: getTotal(
-        getfee(appoinmentType.title, Doctordetails).toFixed(2),
-        taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-        discountAmount(
-          getfee(appoinmentType.title, Doctordetails),
-          SelectedCoupon?.value
-        )
-      ),
-      unit_total_amount: getTotal(
-        getfee(appoinmentType.title, Doctordetails).toFixed(2),
-        taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-        0
-      ),
+      unit_tax_amount: unitTaxAmount,
+      total_amount: payableTotal,
+      unit_total_amount: unitTotalAmount,
       invoice_description: appoinmentType.title,
       user_id: user.id,
-      payment_method: method == 1 ? "Online" : method == 3 ? "Wallet" : null,
-      payment_transaction_id: method == 1 ? "" : method == 3 ? "Wallet" : null,
-      is_wallet_txn: method == 3 ? 1 : 0,
+      payment_method:
+        paymentMethodOverride ||
+        (selectedMethod === 1
+          ? "Online"
+          : selectedMethod === 3
+          ? "Wallet"
+          : null),
+      payment_transaction_id:
+        paymentTransactionId || (selectedMethod === 3 ? "Wallet" : null),
+      is_wallet_txn:
+        (paymentMethodOverride || (selectedMethod === 3 ? "Wallet" : "")) ===
+        "Wallet"
+          ? 1
+          : 0,
       source: "Web",
       coupon_id: SelectedCoupon?.id,
       coupon_title: SelectedCoupon?.title,
       coupon_value: SelectedCoupon?.value,
-      coupon_off_amount: discountAmount(
-        getfee(appoinmentType.title, Doctordetails),
-        SelectedCoupon?.value
-      ),
-    };
+      coupon_off_amount: couponOffAmount,
+    });
+
+  const addAppointment = async (options = {}) => {
+    if (!patientDetails?.id || !Doctordetails?.user_id || !selectedSlot?.time_start) {
+      showToast(
+        toast,
+        "error",
+        "Booking details are incomplete. Please reselect date, slot, and patient."
+      );
+      return null;
+    }
+
+    const appointmentDetails = buildAppointmentDetails(options);
 
     try {
       setisLoading(true);
@@ -975,21 +1105,54 @@ const Step4 = ({
 
       setisLoading(false);
       if (res.response === 200) {
-        showToast(toast, "success", "Appointment Booked Successfully!");
+        const appointmentId =
+          res?.id || res?.data?.id || res?.appointment?.id || null;
+        const savedStatus =
+          res?.data?.status || res?.appointment?.status || appointmentDetails.status;
+        const savedPaymentStatus =
+          res?.data?.payment_status ||
+          res?.appointment?.payment_status ||
+          appointmentDetails.payment_status;
+        const successMessage =
+          savedStatus === "Pending" || savedPaymentStatus === "Unpaid"
+            ? "Appointment submitted. Status: Pending. Payment is due at the hospital."
+            : "Appointment booked successfully. Status: Confirmed.";
+
+        if (!appointmentId) {
+          showToast(
+            toast,
+            "warning",
+            "Booking may be saved, but appointment ID was not returned. Please check your appointments list."
+          );
+          setAllNull();
+          queryClient.invalidateQueries({ queryKey: ["timeslotes"] });
+          queryClient.invalidateQueries({ queryKey: ["bookedslotes"] });
+          queryClient.invalidateQueries({ queryKey: ["appointments"] });
+          queryClient.invalidateQueries({ queryKey: ["user"] });
+          navigate("/appointments");
+          return res;
+        }
+
+        clearPendingAppointmentPayment();
+        showToast(toast, "success", successMessage);
         setAllNull();
-        queryClient.invalidateQueries("timeslotes");
-        queryClient.invalidateQueries("bookedslotes");
-        queryClient.invalidateQueries("user");
-        navigate(`/appointment-success/${res.id}`);
+        queryClient.invalidateQueries({ queryKey: ["timeslotes"] });
+        queryClient.invalidateQueries({ queryKey: ["bookedslotes"] });
+        queryClient.invalidateQueries({ queryKey: ["appointments"] });
+        queryClient.invalidateQueries({ queryKey: ["user"] });
+        navigate(`/appointment-success/${appointmentId}`);
+        return res;
       } else {
-        showToast(toast, "error", res.message);
-        queryClient.invalidateQueries("timeslotes");
-        queryClient.invalidateQueries("bookedslotes");
-        queryClient.invalidateQueries("user");
+        showToast(toast, "error", res?.message || "Unable to save appointment");
+        queryClient.invalidateQueries({ queryKey: ["timeslotes"] });
+        queryClient.invalidateQueries({ queryKey: ["bookedslotes"] });
+        queryClient.invalidateQueries({ queryKey: ["user"] });
+        return null;
       }
     } catch (error) {
       setisLoading(false);
-      showToast(toast, "error", "something went wrong!");
+      showToast(toast, "error", error?.message || "something went wrong!");
+      return null;
     }
   };
 
@@ -1004,29 +1167,14 @@ const Step4 = ({
     dept_id: String(Doctordetails.department), // Convert to string
     type: appoinmentType.title,
     payment_status: "Paid",
-    fee: String(getfee(appoinmentType.title, Doctordetails).toFixed(2)), // Convert to string
+    fee: String(feeAmount.toFixed(2)), // Convert to string
     service_charge: "0.0", // Ensure this is a string with decimal
     tax: String(Doctordetails?.clinic_tax), // Convert to string
     unit_tax_amount: String(
-      taxAmount(getfee(appoinmentType.title, Doctordetails)).toFixed(2)
+      unitTaxAmount.toFixed(2)
     ), // String and formatted
-    total_amount: String(
-      getTotal(
-        getfee(appoinmentType.title, Doctordetails).toFixed(2),
-        taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-        discountAmount(
-          getfee(appoinmentType.title, Doctordetails),
-          SelectedCoupon?.value
-        )
-      ).toFixed(2)
-    ), // Ensure string and formatted
-    unit_total_amount: String(
-      getTotal(
-        getfee(appoinmentType.title, Doctordetails).toFixed(2),
-        taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-        0
-      ).toFixed(2)
-    ), // String and formatted
+    total_amount: String(payableTotal.toFixed(2)), // Ensure string and formatted
+    unit_total_amount: String(unitTotalAmount.toFixed(2)), // String and formatted
     invoice_description: appoinmentType.title,
     user_id: String(user.id), // Convert to string
     payment_method: "Online",
@@ -1035,24 +1183,20 @@ const Step4 = ({
     coupon_id: SelectedCoupon?.id ? String(SelectedCoupon?.id) : "", // Ensure it's a string or empty
     coupon_title: SelectedCoupon?.title || "", // Ensure it's a string or empty
     coupon_value: SelectedCoupon?.value ? String(SelectedCoupon?.value) : "", // String or empty
-    coupon_off_amount: String(
-      discountAmount(
-        getfee(appoinmentType.title, Doctordetails),
-        SelectedCoupon?.value
-      ).toFixed(2)
-    ), // Ensure string and formatted
+    coupon_off_amount: String(couponOffAmount.toFixed(2)), // Ensure string and formatted
     name: `${patientDetails.f_name} ${patientDetails.l_name}`,
     desc: "Appointment",
   };
 
   // add appoinment
-  const nextfn = async () => {
-    showToast(toast, "success", "Appointment Booked Successfully!");
-    setAllNull();
-    queryClient.invalidateQueries("timeslotes");
-    queryClient.invalidateQueries("bookedslotes");
-    queryClient.invalidateQueries("user");
-    navigate(`/appointments`);
+  const nextfn = async (paymentId) => {
+    await addAppointment({
+      selectedMethod: 1,
+      paymentStatusOverride: "Paid",
+      appointmentStatusOverride: "Confirmed",
+      paymentMethodOverride: "Online",
+      paymentTransactionId: paymentId || "",
+    });
   };
 
   // payment data
@@ -1066,14 +1210,21 @@ const Step4 = ({
         {" "}
         <Image src="/appoinment.png" w={100} />
       </Flex>
-      <Text fontSize={14} fontWeight={500} textAlign={"center"}>
+      <Text fontSize={14} fontWeight={600} textAlign={"center"} color={"tiber.main"}>
         Only One Step Away
       </Text>{" "}
-      <Text fontSize={14} fontWeight={500} textAlign={"center"}>
+      <Text fontSize={14} fontWeight={500} textAlign={"center"} color={"gray.600"}>
         Pay And Book your Appointment
       </Text>{" "}
-      <Divider my={2} />
-      <Box w={{ base: "100%", md: "100%" }}>
+      <Divider my={3} borderColor={"gray.200"} />
+      <Box
+        w={{ base: "100%", md: "100%" }}
+        border={"1px solid"}
+        borderColor={"gray.200"}
+        borderRadius={12}
+        p={3}
+        bg={"gray.50"}
+      >
         <Flex justify={"space-between"} mb={1}>
           {" "}
           <Text
@@ -1110,6 +1261,11 @@ const Step4 = ({
             color={"gray.600"}
           >
             {patientDetails.f_name} {patientDetails.l_name}
+            {patientDetails.selectionType === "self" && (
+              <Badge colorScheme="blue" ml={1} fontSize={11}>
+                You
+              </Badge>
+            )}
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1234,7 +1390,7 @@ const Step4 = ({
           </Text>{" "}
         </Flex>
       </Box>
-      <Divider my={1} />
+      <Divider my={2} borderColor={"gray.200"} />
       <Box w={{ base: "100%", md: "100%" }}>
         <Flex justify={"space-between"} mb={1}>
           {" "}
@@ -1252,14 +1408,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.800"}
           >
-            {getTotal(
-              getfee(appoinmentType.title, Doctordetails).toFixed(2),
-              taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-              discountAmount(
-                getfee(appoinmentType.title, Doctordetails),
-                SelectedCoupon?.value
-              )
-            )}{" "}
+            {payableTotal}{" "}
             {currency}
           </Text>{" "}
         </Flex>
@@ -1269,18 +1418,27 @@ const Step4 = ({
             gap={5}
             mt={5}
             justifyContent={{ base: "space-between", md: "left" }}
+            flexDir={{ base: "column", md: "row" }}
           >
             <Input
               placeholder="Appu Coupon"
-              w={250}
+              w={{ base: "100%", md: 250 }}
               size={"sm"}
-              borderRadius={8}
+              borderRadius={10}
+              borderColor={"gray.300"}
+              _focus={{ borderColor: "primary.bg", boxShadow: "0 0 0 1px #485EC4" }}
               onChange={(e) => {
                 setcoupon(e.target.value);
               }}
               value={coupon}
             />
-            <Button size={"sm"} onClick={ValidateCoupon}>
+            <Button
+              size={"sm"}
+              bg={"tiber.main"}
+              color={"#fff"}
+              _hover={{ bg: "#0b4a45" }}
+              onClick={ValidateCoupon}
+            >
               Apply
             </Button>
           </Flex>
@@ -1314,10 +1472,7 @@ const Step4 = ({
               <Radio
                 value={"3"}
                 fontWeight={700}
-                isDisabled={
-                  getfee(appoinmentType.title, Doctordetails).toFixed(2) >
-                  userData?.wallet_amount
-                }
+                isDisabled={isWalletInsufficient}
                 onChange={(e) => {
                   setMethod(e.target.value);
                 }}
@@ -1332,7 +1487,11 @@ const Step4 = ({
         <Button
           size={"sm"}
           w={"100%"}
-          colorScheme="green"
+          bg={"primary.bg"}
+          color={"#fff"}
+          _hover={{ bg: "blue.700" }}
+          _active={{ transform: "scale(0.99)" }}
+          borderRadius={10}
           mt={5}
           onClick={() => {
             if (!getSlotStatus(selectedSlot)) {
@@ -1352,6 +1511,15 @@ const Step4 = ({
               return;
             }
 
+            if (method == 3 && isWalletInsufficient) {
+              showToast(
+                toast,
+                "error",
+                "Insufficient wallet balance for this appointment total"
+              );
+              return;
+            }
+
             if (method == 1) {
               onOpen();
             } else {
@@ -1360,14 +1528,7 @@ const Step4 = ({
           }}
         >
           Pay {currency}
-          {getTotal(
-            getfee(appoinmentType.title, Doctordetails).toFixed(2),
-            taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-            discountAmount(
-              getfee(appoinmentType.title, Doctordetails),
-              SelectedCoupon?.value
-            )
-          ).toFixed(2)}
+          {payableTotal.toFixed(2)}
         </Button>
       </Box>
       {isOpen ? (

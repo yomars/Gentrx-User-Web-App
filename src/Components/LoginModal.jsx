@@ -24,7 +24,6 @@ import {
 import { useState } from "react";
 import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import showToast from "../Controllers/ShowToast";
-import { ADD } from "../Controllers/ApiControllers";
 import {
   getAuth,
   RecaptchaVerifier,
@@ -68,26 +67,15 @@ function LoginModal({ isModalOpen, onModalClose }) {
       showToast(toast, "error", "please enter phone number");
       return;
     }
-    setisLoading(true);
-    try {
-      let data = {
-        phone: phoneNumber,
-      };
-      const res = await ADD("", "re_login_phone", data);
-      if (res.status === false) {
-        showToast(toast, "error", "Phone Number Not Exist! , Please Signup");
-        setisLoading(false);
-      } else if (res.status === true) {
-        if (phoneNumber == "1234567890") {
-          ConfirmLogin();
-        } else {
-          handleSendCode();
-        }
-      }
-    } catch (error) {
-      showToast(toast, "error", error.message);
-      setisLoading(false);
-    }
+    // OTP modal still targets legacy auth endpoints; route users to patient password login.
+    showToast(
+      toast,
+      "info",
+      "Continue in patient login page to sign in with your PIN/password"
+    );
+    setTimeout(() => {
+      window.location.href = `/login?phone=${encodeURIComponent(phoneNumber)}`;
+    }, 500);
   };
 
   const handleSendCode = async () => {
@@ -155,29 +143,13 @@ function LoginModal({ isModalOpen, onModalClose }) {
   };
 
   const ConfirmLogin = async () => {
-    try {
-      let data = {
-        phone: phoneNumber,
-      };
-      const res = await ADD("", "login_phone", data);
-      if (res.status === true) {
-        setisLoading(false);
-        const user = { ...res.data, token: res.token };
-        setStorageItem("user", JSON.stringify(user));
-        toast({
-          title: "Login Success",
-          description: `Welcome ${user.f_name} ${user.l_name}`,
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-          position: "top",
-        });
-        window.location.reload();
-      }
-    } catch (error) {
-      showToast(toast, "error", error.message);
-      setisLoading(false);
-    }
+    showToast(
+      toast,
+      "info",
+      "OTP flow is disabled for patient auth. Please use password login."
+    );
+    setisLoading(false);
+    window.location.href = `/login?phone=${encodeURIComponent(phoneNumber || "")}`;
   };
   return (
     <Modal

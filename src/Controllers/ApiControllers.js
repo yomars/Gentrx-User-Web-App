@@ -1,10 +1,12 @@
 ﻿import axios from "axios";
 import GenerateToken from "./token";
 import api from "./api";
-import { removeStorageItem } from "../lib/storage";
 import { normalizeMediaPayload } from "../lib/media";
 
 const handleSessionExpiration = (error) => {
+  const reqMethod = String(error?.config?.method || "").toUpperCase();
+  const reqUrl = error?.config?.url || "";
+  const status = error?.response?.status;
   const isSessionExpired =
     error?.response?.status === 401 ||
     (error?.response?.data?.response === 401 &&
@@ -14,13 +16,13 @@ const handleSessionExpiration = (error) => {
 
   if (isSessionExpired) {
     console.error(error?.response?.data?.message || "Session expired");
-
-    removeStorageItem("user");
-    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-      window.location.href = "/login";
-    }
-
     return new Error("Session expired. Please log-in again.");
+  }
+
+  if (status === 405) {
+    return new Error(
+      `Method Not Allowed (405): ${reqMethod} ${reqUrl}. Backend route/method is not enabled.`
+    );
   }
 
   return error instanceof Error
@@ -37,10 +39,6 @@ const handleMutationError = (error) => {
     error.response.data.message === "Session expired. Please log in again."
   ) {
     console.error(error.response.data.message);
-    setTimeout(() => {
-      removeStorageItem("user");
-      window.location.href = "/login";
-    }, 2000);
 
     return {
       sessionExpired: true,
@@ -55,6 +53,24 @@ const GET = async (endPoint) => {
     method: "get",
     maxBodyLength: Infinity,
     url: `${api}/${endPoint}`,
+  };
+  try {
+    const response = await axios(config);
+    return normalizeMediaPayload(response.data);
+  } catch (error) {
+    console.error(error);
+    throw handleSessionExpiration(error);
+  }
+};
+
+const GET_AUTH = async (token, endPoint) => {
+  var config = {
+    method: "get",
+    maxBodyLength: Infinity,
+    url: `${api}/${endPoint}`,
+    headers: {
+      Authorization: GenerateToken(token),
+    },
   };
   try {
     const response = await axios(config);
@@ -164,4 +180,4 @@ const UPLOAD = async (token, url, data) => {
   }
 };
 
-export { GET, ADD, DELETE, UPDATE, UPLOAD, ADDMulti };
+export { GET, GET_AUTH, ADD, DELETE, UPDATE, UPLOAD, ADDMulti };

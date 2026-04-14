@@ -218,36 +218,46 @@ const Appointments = () => {
   });
 
   const filterData = (appointments, filter) => {
-    const today = new Date();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    if (!Array.isArray(appointments)) {
+      return [];
+    }
 
     return appointments
       .filter((appointment) => {
         const appointmentDate = new Date(appointment.date);
+        const status = String(appointment.status || "").trim();
+
+        if (Number.isNaN(appointmentDate.getTime())) {
+          return false;
+        }
 
         switch (filter) {
           case 1: // All
             return true; // Show all appointments
           case 2: // Upcoming
             return (
-              appointmentDate > today &&
-              appointment.status !== "Completed" &&
-              appointment.status !== "Cancelled" &&
-              appointment.status !== "Rejected"
+              appointmentDate >= todayStart &&
+              status !== "Completed" &&
+              status !== "Cancelled" &&
+              status !== "Rejected"
             );
           case 3: // Pending
-            return appointment.status === "Pending";
+            return status === "Pending";
           case 4: // Confirmed
-            return appointment.status === "Confirmed";
+            return status === "Confirmed";
           case 5: // Rejected
-            return appointment.status === "Rejected";
+            return status === "Rejected";
           case 6: // Completed
-            return appointment.status === "Completed";
+            return status === "Completed";
           case 7: // Rescheduled
-            return appointment.status === "Rescheduled";
+            return status === "Rescheduled";
           case 8: // Cancelled
-            return appointment.status === "Cancelled";
+            return status === "Cancelled";
           case 9: // Visited
-            return appointment.status === "Visited";
+            return status === "Visited";
           default:
             return true; // Default case to show all if no valid filter
         }
