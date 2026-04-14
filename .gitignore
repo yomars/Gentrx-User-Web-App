@@ -26,5 +26,6 @@ dist-ssr
 # Generated media artifacts (large binaries)
 artifacts/legacy-video-frames/
 artifacts/newsite-video-frames/
+artifacts/*.tar.gz
 .vercel
 .env*.local
