@@ -1,7 +1,7 @@
 # GentRx User Web App
 
 This project is a Vite + React frontend that builds into a portable `dist` bundle.
-It can be deployed without Vercel using PM2 + Nginx (same deployment style used in the Vultr-oriented admin repo).
+It deploys directly to the production Vultr server using PM2 + Nginx.
 
 ## Local development
 
@@ -28,7 +28,7 @@ It can be deployed without Vercel using PM2 + Nginx (same deployment style used 
   - `dist/version.json`
   - `dist/version-live.json`
 
-## Non-Vercel deployment (Vultr/Ubuntu)
+## Deployment (Vultr/Ubuntu)
 
 ### 1) Build and package on your local machine
 
@@ -158,6 +158,3 @@ The script performs in one run:
 - PM2 restart
 - Nginx config update + reload
 
-## Optional Vercel support
-
-Vercel deployment is optional. The app now has a first-class portable build/deploy path that does not require Vercel.

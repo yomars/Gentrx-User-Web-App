@@ -539,12 +539,9 @@ curl -X POST https://api.gentrx.ph/admin/config \
 # Step 2: Frontend feature flag (clear cache + restart)
 echo "[ROLLBACK] Disabling frontend patient auth flag..."
 if [ -f /opt/gentrx-web/.env.production ]; then
-  sed -i 's/VITE_USE_PATIENT_AUTH=true/VITE_USE_PATIENT_AUTH=false/' \
-    /opt/gentrx-web/.env.production
-  # Trigger frontend rebuild via CI/CD
-  curl -X POST https://api.vercel.com/v1/deployments \
-    -H "Authorization: Bearer $VERCEL_TOKEN" \
-    -d "project=$VERCEL_PROJECT_ID"
+   sed -i 's/VITE_USE_PATIENT_AUTH=true/VITE_USE_PATIENT_AUTH=false/' \
+      /opt/gentrx-web/.env.production
+   pm2 restart gentrx-main --update-env
 fi
 
 # Step 3: Monitor and verify

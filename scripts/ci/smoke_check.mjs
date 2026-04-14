@@ -35,7 +35,7 @@ async function fetchWithTimeout(url, timeoutMs) {
 async function checkFrontend(targetUrl, timeoutMs, targetEnv) {
   const response = await fetchWithTimeout(targetUrl, timeoutMs);
 
-  // Vercel previews may be access-protected and return 401 to anonymous checks.
+  // Non-production targets may be access-protected and return 401 to anonymous checks.
   if (targetEnv === "preview" && response.status === 401) {
     return response.status;
   }

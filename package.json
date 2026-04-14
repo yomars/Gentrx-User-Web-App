@@ -23,7 +23,6 @@
     "check:system": "powershell -ExecutionPolicy Bypass -File scripts/ci/check_system_requirements.ps1",
     "db:schema:dry-run": "node scripts/db-sync/schema_sync.mjs dry-run",
     "db:schema:apply": "node scripts/db-sync/schema_sync.mjs apply",
-    "rollback:vercel": "node scripts/ci/rollback.mjs",
     "branch:protect": "node scripts/ci/configure_branch_protection.mjs"
   },
   "dependencies": {

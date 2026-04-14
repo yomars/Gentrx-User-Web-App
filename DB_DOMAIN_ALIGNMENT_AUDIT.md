@@ -108,9 +108,9 @@ Scope: Full workspace review of runtime code, scripts, configuration, and techni
 - DB script changes are infrastructural/configurational only and do not mutate application business rules.
 - Apply mode still executes SQL transactionally (BEGIN/COMMIT with rollback on failure).
 
-## Required CI/CD and Vercel environment variables
+## Required deployment environment variables
 
-### Frontend (Vercel project: gentrx-user-web-app)
+### Frontend (production Vultr build/runtime)
 
 Required:
 - VITE_API_ADDRESS (set to https://gentrx.ph)

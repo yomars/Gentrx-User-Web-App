@@ -19,7 +19,7 @@ Operationalize the validated alignment by enforcing environment correctness and 
   - preflight:frontend
   - preflight:db
 
-## Required GitHub/Vercel secrets
+## Required deployment secrets
 
 Frontend:
 - VITE_API_ADDRESS
@@ -46,7 +46,7 @@ DB automation:
 
 ## Operator flow
 
-1. Configure/verify all required secrets in repository and Vercel project.
+1. Configure/verify all required secrets in the repository and production server environment.
 2. Trigger GitHub workflow: Migration Preflight.
 3. Run with run_db_apply=false first to validate + dry-run.
 4. Review dry-run output and approved SQL patch.
