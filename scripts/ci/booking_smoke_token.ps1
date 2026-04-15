@@ -1,14 +1,18 @@
 param(
   [string]$Api = "https://api.gentrx.ph/api/v1",
   [int]$UserId = 50,
-  [string]$Token = ""
+  [string]$Token = "",
+  [switch]$RequireBookingNumber
 )
 
 $ErrorActionPreference = "Stop"
 if (-not $Token) { throw "Token is required" }
 
 function Step($m) { Write-Host "`n=== $m ===" -ForegroundColor Cyan }
-$auth = @{ Authorization = "Bearer $Token" }
+function Test-BookingNumberFormat($value) {
+  if (-not $value) { return $false }
+  return [bool]($value -match '^BK-\d{8}-\d{6}$')
+}
 
 function Invoke-FormPost {
   param(
@@ -17,19 +21,19 @@ function Invoke-FormPost {
     [string]$BearerToken
   )
 
-  $args = @(
+  $curlOptions = @(
     "-sS",
     "-X", "POST",
     "-H", "Authorization: Bearer $BearerToken"
   )
 
   foreach ($k in $Fields.Keys) {
-    $args += "-F"
-    $args += ("{0}={1}" -f $k, $Fields[$k])
+    $curlOptions += "-F"
+    $curlOptions += ("{0}={1}" -f $k, $Fields[$k])
   }
 
-  $args += $Uri
-  $raw = & curl.exe @args
+  $curlOptions += $Uri
+  $raw = & curl.exe @curlOptions
   if (-not $raw) { throw "Empty response from $Uri" }
   return ($raw | ConvertFrom-Json)
 }
@@ -163,6 +167,21 @@ if ($appt.response -eq 200 -and $appt.id) {
     $match = $list.data | Where-Object { [int]$_.id -eq $appointmentId } | Select-Object -First 1
   }
 
+  $detailBookingNumber = $detail.data.booking_number
+  $listBookingNumber = $match.booking_number
+  $detailBookingNumberOk = Test-BookingNumberFormat $detailBookingNumber
+  $listBookingNumberOk = Test-BookingNumberFormat $listBookingNumber
+
+  if ($RequireBookingNumber -and -not $detailBookingNumberOk) {
+    throw "booking_number is missing/invalid in get_appointment response. value='$detailBookingNumber'"
+  }
+  if ($RequireBookingNumber -and -not $listBookingNumberOk) {
+    throw "booking_number is missing/invalid in get_appointments response. value='$listBookingNumber'"
+  }
+  if (-not $RequireBookingNumber -and (-not $detailBookingNumberOk -or -not $listBookingNumberOk)) {
+    Write-Host "booking_number not yet fully available/valid. Run with -RequireBookingNumber after backend rollout." -ForegroundColor Yellow
+  }
+
   [pscustomobject]@{
     result = "PASS"
     appointment_id = $appointmentId
@@ -170,6 +189,10 @@ if ($appt.response -eq 200 -and $appt.id) {
     list_ok = ($null -ne $match)
     status = $detail.data.status
     payment_status = $detail.data.payment_status
+    booking_number_detail = $detailBookingNumber
+    booking_number_list = $listBookingNumber
+    booking_number_detail_ok = $detailBookingNumberOk
+    booking_number_list_ok = $listBookingNumberOk
   } | Format-List
 } else {
   [pscustomobject]@{

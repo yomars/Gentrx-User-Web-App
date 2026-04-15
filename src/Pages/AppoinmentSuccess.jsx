@@ -90,8 +90,11 @@ const AppointmentSuccess = () => {
   };
 
   const googleCalendarUrl = createGoogleCalendarUrl(event);
+  const appointmentId = data?.id || id;
+  const bookingNumber = data?.booking_number;
   const QrData = {
-    appointment_id: id,
+    booking_number: bookingNumber || null,
+    appointment_id: appointmentId,
     date: data?.date,
     time: data?.time_slots,
   };
@@ -194,7 +197,8 @@ const AppointmentSuccess = () => {
           src="/confirm.png" // Add your own success icon here
           alt="Success"
         />
-        <Heading size="sm">Appointment ID: #{data?.id || id}</Heading>
+        <Heading size="sm">Booking Number: {bookingNumber || "Pending assignment"}</Heading>
+        <Heading size="xs" color="gray.600">Appointment ID: #{appointmentId}</Heading>
         <Badge
           size="sm"
           p={2}

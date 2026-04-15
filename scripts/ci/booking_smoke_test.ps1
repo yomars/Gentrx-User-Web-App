@@ -1,6 +1,15 @@
+param(
+  [switch]$RequireBookingNumber
+)
+
 $ErrorActionPreference = "Stop"
 $api = "https://api.gentrx.ph/api/v1"
+
 function Write-Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
+function Test-BookingNumberFormat($value) {
+  if (-not $value) { return $false }
+  return [bool]($value -match '^BK-\d{8}-\d{6}$')
+}
 
 Write-Step "1) Fetch clinics"
 # Clinics endpoint is currently rate-limited in repeated smoke runs.
@@ -185,6 +194,11 @@ Write-Host "Appointment created id=$appointmentId"
 Write-Step "7) Verify get_appointment"
 $apptDetailResp = Invoke-RestMethod -Method Get -Uri "$api/get_appointment/$appointmentId"
 if (-not $apptDetailResp.data -or [int]$apptDetailResp.data.id -ne [int]$appointmentId) { throw "get_appointment mismatch: $($apptDetailResp | ConvertTo-Json -Depth 8)" }
+$detailBookingNumber = $apptDetailResp.data.booking_number
+$detailBookingNumberOk = Test-BookingNumberFormat $detailBookingNumber
+if ($RequireBookingNumber -and -not $detailBookingNumberOk) {
+  throw "booking_number is missing/invalid in get_appointment response. value='$detailBookingNumber'"
+}
 Write-Host "Detail ok. status=$($apptDetailResp.data.status) payment_status=$($apptDetailResp.data.payment_status)"
 
 Write-Step "8) Verify get_appointments"
@@ -192,6 +206,14 @@ $listResp = Invoke-RestMethod -Method Get -Uri "$api/get_appointments?user_id=$u
 $match = $null
 if ($listResp.data) { $match = $listResp.data | Where-Object { [int]$_.id -eq [int]$appointmentId } | Select-Object -First 1 }
 if (-not $match) { throw "Appointment id=$appointmentId not found in get_appointments for user_id=$userId" }
+$listBookingNumber = $match.booking_number
+$listBookingNumberOk = Test-BookingNumberFormat $listBookingNumber
+if ($RequireBookingNumber -and -not $listBookingNumberOk) {
+  throw "booking_number is missing/invalid in get_appointments response. value='$listBookingNumber'"
+}
+if (-not $RequireBookingNumber -and (-not $detailBookingNumberOk -or -not $listBookingNumberOk)) {
+  Write-Host "booking_number not yet fully available/valid. Run with -RequireBookingNumber after backend rollout." -ForegroundColor Yellow
+}
 Write-Host "List verification ok. Found id=$appointmentId"
 
 Write-Step "SMOKE TEST PASSED"
@@ -204,4 +226,8 @@ Write-Step "SMOKE TEST PASSED"
   slot = $slotStart
   status = $apptDetailResp.data.status
   payment_status = $apptDetailResp.data.payment_status
+  booking_number_detail = $detailBookingNumber
+  booking_number_list = $listBookingNumber
+  booking_number_detail_ok = $detailBookingNumberOk
+  booking_number_list_ok = $listBookingNumberOk
 } | Format-List

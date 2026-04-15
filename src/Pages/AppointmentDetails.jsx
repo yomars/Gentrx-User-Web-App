@@ -315,9 +315,18 @@ const AppointmentDetails = () => {
 
             <Flex align={"center"} justify={"space-between"} mt={5}>
               {" "}
-              <Text fontWeight="bold" color={"gray.600"}>
-                Appointment #{appointmentData.id}
-              </Text>
+              <Box>
+                <Text fontWeight="bold" color={"gray.600"}>
+                  Appointment #{appointmentData.id}
+                </Text>
+                <Text
+                  fontWeight={600}
+                  color={appointmentData?.booking_number ? "gray.600" : "orange.500"}
+                  fontSize={"sm"}
+                >
+                  Booking No. {appointmentData?.booking_number || "Pending assignment"}
+                </Text>
+              </Box>
               {getStatusBadge(appointmentData?.status)}
             </Flex>
             <Box>

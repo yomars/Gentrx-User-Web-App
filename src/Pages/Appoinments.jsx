@@ -156,6 +156,13 @@ const AppointmentCard = ({ appointment }) => {
             <Text
               fontWeight="bold"
               fontSize={{ base: "sm", md: "sm" }}
+              color={appointment.booking_number ? "gray.700" : "orange.500"}
+            >
+              Booking No. - {appointment.booking_number || "Pending assignment"}
+            </Text>
+            <Text
+              fontWeight="bold"
+              fontSize={{ base: "sm", md: "sm" }}
               color={"gray.700"}
             >
               Time -{" "}
