@@ -30,7 +30,7 @@ import {
   signInWithPhoneNumber,
 } from "firebase/auth";
 import { Link as RouterLink } from "react-router-dom";
-import { app } from "../Controllers/firebase.config";
+import { getFirebaseApp } from "../Controllers/firebase.config";
 import defaultISD from "../Controllers/defaultISD";
 import { setStorageItem } from "../lib/storage";
 
@@ -79,7 +79,7 @@ function LoginModal({ isModalOpen, onModalClose }) {
   };
 
   const handleSendCode = async () => {
-    const auth = getAuth(app);
+    const auth = getAuth(getFirebaseApp());
     window.recaptchaVerifier = new RecaptchaVerifier(
       auth,
       "recaptcha-container",
