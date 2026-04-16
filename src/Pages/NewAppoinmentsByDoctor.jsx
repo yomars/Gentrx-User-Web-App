@@ -31,7 +31,7 @@ import {
   AlertIcon,
   AlertDescription,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ADD, GET, GET_AUTH } from "../Controllers/ApiControllers";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,7 +49,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/swiper-bundle.css";
 import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import PaymentGetwayData from "../Hooks/Paymntgetways";
-import StripePaymentController from "../Controllers/StripePayController";
+const StripePaymentController = lazy(() => import("../Controllers/StripePayController"));
 import { clearPendingAppointmentPayment } from "../lib/walletTopup";
 
 const steps = [
@@ -1581,14 +1581,16 @@ const Step4 = ({
       {isOpen ? (
         <>
           {paymentMethod === "stripe" && (
-            <StripePaymentController
-              isOpen={isOpen}
-              onClose={onClose}
-              nextFn={nextfn}
-              data={paymentData}
-              cancelFn={() => onClose()}
-              type={"Appointment"}
-            />
+            <Suspense fallback={null}>
+              <StripePaymentController
+                isOpen={isOpen}
+                onClose={onClose}
+                nextFn={nextfn}
+                data={paymentData}
+                cancelFn={() => onClose()}
+                type={"Appointment"}
+              />
+            </Suspense>
           )}
           {/* Razorpay is disabled */}
         </>

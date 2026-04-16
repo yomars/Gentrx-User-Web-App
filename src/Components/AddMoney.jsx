@@ -19,12 +19,12 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { ADD } from "../Controllers/ApiControllers";
 import currency from "../Controllers/currency";
 import user from "../Controllers/user";
 import showToast from "../Controllers/ShowToast";
-import StripePaymentController from "../Controllers/StripePayController";
+const StripePaymentController = lazy(() => import("../Controllers/StripePayController"));
 import RazorpayPaymentController from "../Controllers/RazorpayPaymentController";
 import PaymentGetwayData from "../Hooks/Paymntgetways"; // Import icons if needed
 let minAmount = 100;
@@ -256,14 +256,16 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
       {paymentIsOpen && (
         <>
           {normalizedPaymentMethod === "stripe" && (
-            <StripePaymentController
-              isOpen={paymentIsOpen}
-              onClose={paymentClose}
-              nextFn={AddMoney}
-              data={paymentData}
-              cancelFn={() => setisPaymentLoading(false)}
-              type={"Wallet"}
-            />
+            <Suspense fallback={null}>
+              <StripePaymentController
+                isOpen={paymentIsOpen}
+                onClose={paymentClose}
+                nextFn={AddMoney}
+                data={paymentData}
+                cancelFn={() => setisPaymentLoading(false)}
+                type={"Wallet"}
+              />
+            </Suspense>
           )}
           {/* Razorpay is disabled */}
         </>

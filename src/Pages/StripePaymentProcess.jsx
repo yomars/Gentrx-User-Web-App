@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe } from "@stripe/stripe-js/pure";
 import Lottie from "lottie-react";
 import { Box, Button, Flex, Text, useToast } from "@chakra-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
