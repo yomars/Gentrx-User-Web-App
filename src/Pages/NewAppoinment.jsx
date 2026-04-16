@@ -45,6 +45,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import moment from "moment";
 import { useForm } from "react-hook-form";
 import user from "../Controllers/user";
+import logoutFn from "../Controllers/logout";
 import showToast from "../Controllers/ShowToast";
 import currency from "../Controllers/currency";
 import "swiper/swiper-bundle.css";
@@ -1432,7 +1433,7 @@ const Step4 = ({
       } else {
         if (res?.sessionExpired) {
           showToast(toast, "error", "Your session has expired. Please log in again.");
-          setTimeout(() => navigate("/login"), 1500);
+          setTimeout(() => logoutFn(), 1500);
           return null;
         }
         const errMsg = res?.message || "Unable to save appointment. Please try again.";
