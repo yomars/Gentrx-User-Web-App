@@ -12,8 +12,8 @@ export const AUTH_ENDPOINTS = {
   // Patient Signup Endpoints
   signup: 'patient/signup',
   
-  // Patient Login Endpoints
-  login: 'patient/login',
+  // Login via legacy users table — required for add_appointment compatibility
+  login: 'login_phone',
   
   // Pre-check endpoints
   checkPhone: 'patient/check-phone',

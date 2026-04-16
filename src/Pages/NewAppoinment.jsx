@@ -1181,11 +1181,13 @@ const Step3 = ({ setPatientDetails, setStep }) => {
 };
 
 const getUserDetails = async () => {
-  const userRes = await GET_AUTH(user.token, "patient/me");
-  if (userRes.response !== 200 && userRes.status !== true) {
-    throw new Error(userRes.message || "Failed to fetch patient profile");
+  try {
+    const userRes = await GET_AUTH(user.token, "patient/me");
+    if (userRes.response !== 200 && userRes.status !== true) return null;
+    return userRes.data;
+  } catch {
+    return null;
   }
-  return userRes.data;
 };
 
 const Step4 = ({
