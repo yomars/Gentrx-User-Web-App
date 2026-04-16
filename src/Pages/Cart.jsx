@@ -23,12 +23,12 @@ import Loading from "../Components/Loading";
 import imageBaseURL from "../Controllers/image";
 import currency from "../Controllers/currency";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { ADD } from "../Controllers/ApiControllers";
 import user from "../Controllers/user";
 import showToast from "../Controllers/ShowToast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import Address from "../Components/Address";
+const Address = lazy(() => import("../Components/Address"));
 import { BsFillTelephoneFill } from "react-icons/bs";
 
 const removeFromCart = async (id, toast, queryClient) => {
@@ -222,7 +222,9 @@ export default function Cart() {
           </Flex>
         </Box>
       ) : step === 2 ? (
-        <Address setAddress={setAddress} setStep={setstep} />
+        <Suspense fallback={null}>
+          <Address setAddress={setAddress} setStep={setstep} />
+        </Suspense>
       ) : step === 3 ? (
         <Checkout items={productsInCart} address={address} setStep={setstep} />
       ) : null}

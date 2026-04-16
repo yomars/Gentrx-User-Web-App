@@ -35,7 +35,7 @@ import {
   Select,
   Badge,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ADD, GET, GET_AUTH } from "../Controllers/ApiControllers";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -54,7 +54,7 @@ import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import defaultISD from "../Controllers/defaultISD";
 import RazorpayPaymentController from "../Controllers/RazorpayPaymentController";
 import ErrorPage from "./ErrorPage";
-import LoginModal from "../Components/LoginModal";
+const LoginModal = lazy(() => import("../Components/LoginModal"));
 import useSettingsData from "../Hooks/SettingData";
 import PaymentGetwayData from "../Hooks/Paymntgetways";
 import StripePaymentController from "../Controllers/StripePayController";
@@ -657,7 +657,11 @@ const Step1 = ({
         </Box>
       </Box>
 
-      {isOpen && <LoginModal isModalOpen={isOpen} onModalClose={onClose} />}
+      {isOpen && (
+        <Suspense fallback={null}>
+          <LoginModal isModalOpen={isOpen} onModalClose={onClose} />
+        </Suspense>
+      )}
     </Box>
   );
 };
