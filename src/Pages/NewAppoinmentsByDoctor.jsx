@@ -1174,11 +1174,6 @@ const Step4 = ({
     } catch (error) {
       setisLoading(false);
       const errMsg = error?.message || "Something went wrong. Please try again.";
-      if (errMsg.toLowerCase().includes("session expired")) {
-        showToast(toast, "error", "Your session has expired. Please log in again.");
-        setTimeout(() => navigate("/login"), 1500);
-        return null;
-      }
       setBookingError(errMsg);
       showToast(toast, "error", errMsg);
       return null;

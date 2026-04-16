@@ -31,6 +31,7 @@ const handleSessionExpiration = (error) => {
 };
 
 const handleMutationError = (error) => {
+  console.error("[API] mutation error status:", error?.response?.status, "body:", JSON.stringify(error?.response?.data));
   if (
     error.response &&
     error.response.data &&
