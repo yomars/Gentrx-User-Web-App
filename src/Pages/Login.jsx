@@ -100,7 +100,8 @@ const FirebaseLogin = ({ redirectLocation }) => {
       const res = await ADD("", endpoint, data);
       
       if (res.status === true) {
-        const user = { ...res.data, token: res.token };
+        const token = res?.token || res?.data?.token;
+        const user = { ...res.data, token };
         setStorageItem("user", JSON.stringify(user));
         toast({
           title: "Login Success",
