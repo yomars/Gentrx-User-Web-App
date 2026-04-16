@@ -885,7 +885,7 @@ const Step3 = ({ setPatientDetails, setStep }) => {
 
 const getUserDetails = async () => {
   const userRes = await GET_AUTH(user.token, "patient/me");
-  if (userRes.response !== 200 || userRes.status !== true) {
+  if (userRes.response !== 200 && userRes.status !== true) {
     throw new Error(userRes.message || "Failed to fetch patient profile");
   }
   return userRes.data;
@@ -1097,9 +1097,13 @@ const Step4 = ({
       return null;
     }
 
-    const appointmentDetails = buildAppointmentDetails(options);
+    if (!user?.token) {
+      showToast(toast, "error", "Session expired. Please log in and try again.");
+      return null;
+    }
 
     try {
+      const appointmentDetails = buildAppointmentDetails(options);
       setisLoading(true);
       let res = await ADD(user.token, "add_appointment", appointmentDetails);
 
