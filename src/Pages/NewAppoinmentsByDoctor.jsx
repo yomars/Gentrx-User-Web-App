@@ -952,6 +952,7 @@ const Step4 = ({
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     staleTime: 0,
+    retry: false,
   });
 
   // get slot is booked or not

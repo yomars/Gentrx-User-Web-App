@@ -15,7 +15,6 @@ const handleSessionExpiration = (error) => {
       error.response.data.message.toLowerCase().includes("session expired"));
 
   if (isSessionExpired) {
-    console.error(error?.response?.data?.message || "Session expired");
     return new Error("Session expired. Please log-in again.");
   }
 
@@ -31,7 +30,6 @@ const handleSessionExpiration = (error) => {
 };
 
 const handleMutationError = (error) => {
-  console.error("[API] mutation error status:", error?.response?.status, "body:", JSON.stringify(error?.response?.data));
   if (
     error.response &&
     error.response.data &&
@@ -39,8 +37,6 @@ const handleMutationError = (error) => {
     error.response.data.status === false &&
     error.response.data.message === "Session expired. Please log in again."
   ) {
-    console.error(error.response.data.message);
-
     return {
       sessionExpired: true,
       message: "Session expired. Please log-in again.",
@@ -59,7 +55,6 @@ const GET = async (endPoint) => {
     const response = await axios(config);
     return normalizeMediaPayload(response.data);
   } catch (error) {
-    console.error(error);
     throw handleSessionExpiration(error);
   }
 };
@@ -77,7 +72,6 @@ const GET_AUTH = async (token, endPoint) => {
     const response = await axios(config);
     return normalizeMediaPayload(response.data);
   } catch (error) {
-    console.error(error);
     throw handleSessionExpiration(error);
   }
 };
@@ -97,7 +91,6 @@ const ADD = async (token, endPoint, data) => {
     const response = await axios(config);
     return normalizeMediaPayload(response.data);
   } catch (error) {
-    console.error(error);
     return handleMutationError(error);
   }
 };
@@ -116,7 +109,6 @@ const ADDMulti = async (token, url, data) => {
     const response = await axios(config);
     return normalizeMediaPayload(response.data);
   } catch (error) {
-    console.error(error);
     return handleMutationError(error);
   }
 };
@@ -136,7 +128,6 @@ const UPDATE = async (token, endPoint, data) => {
     const response = await axios(config);
     return normalizeMediaPayload(response.data);
   } catch (error) {
-    console.error(error);
     return handleMutationError(error);
   }
 };
@@ -156,7 +147,6 @@ const DELETE = async (token, endPoint, data) => {
     const response = await axios(config);
     return normalizeMediaPayload(response.data);
   } catch (error) {
-    console.error(error);
     return handleMutationError(error);
   }
 };
@@ -176,7 +166,6 @@ const UPLOAD = async (token, url, data) => {
     const response = await axios(config);
     return normalizeMediaPayload(response.data);
   } catch (error) {
-    console.error(error);
     return handleMutationError(error);
   }
 };
