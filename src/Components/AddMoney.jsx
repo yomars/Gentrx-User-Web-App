@@ -55,7 +55,7 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
     }
 
     const method = `${paymentMethod || ""}`.trim().toLowerCase();
-    if (method === "stripe" || method === "razorpay") {
+    if (method === "stripe") {
       return;
     }
 
@@ -149,8 +149,7 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
     }
 
     const normalizedMethod = normalizedPaymentMethod;
-    const isSupportedMethod =
-      normalizedMethod === "stripe" || normalizedMethod === "razorpay";
+    const isSupportedMethod = normalizedMethod === "stripe";
 
     if (!isSupportedMethod) {
       return toast({
@@ -266,21 +265,7 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
               type={"Wallet"}
             />
           )}
-          {normalizedPaymentMethod === "razorpay" && (
-            <RazorpayPaymentController
-              isOpen={paymentIsOpen}
-              onClose={paymentClose}
-              nextFn={rzpNextFn}
-              data={paymentData}
-              cancelFn={() => {
-                // Reset loading. The wallet modal is still open so the user
-                // can see their balance and hit "Add Money" again to retry.
-                setisPaymentLoading(false);
-                paymentClose();
-              }}
-              type={"Wallet"}
-            />
-          )}
+          {/* Razorpay is disabled */}
         </>
       )}
     </>

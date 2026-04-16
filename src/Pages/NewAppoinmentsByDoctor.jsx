@@ -1521,6 +1521,14 @@ const Step4 = ({
             }
 
             if (method == 1) {
+              if (paymentMethod !== "stripe") {
+                showToast(
+                  toast,
+                  "error",
+                  "Online payment is currently unavailable. Please select 'Pay At Hospital' to proceed."
+                );
+                return;
+              }
               onOpen();
             } else {
               addAppointment();
@@ -1543,16 +1551,7 @@ const Step4 = ({
               type={"Appointment"}
             />
           )}
-          {paymentMethod === "razorpay" && (
-            <RazorpayPaymentController
-              isOpen={isOpen}
-              onClose={onClose}
-              nextFn={nextfn}
-              data={paymentData}
-              type={"Appointment"}
-              cancelFn={() => onClose()}
-            />
-          )}
+          {/* Razorpay is disabled */}
         </>
       ) : null}
     </Box>

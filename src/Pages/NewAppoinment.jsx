@@ -1378,9 +1378,14 @@ const Step4 = ({
       let res = await ADD(user.token, "add_appointment", appointmentDetails);
       console.log(res);
       setisLoading(false);
-      if (res.response === 200) {
+      if (res.response === 200 || res?.status === true || res?.success === true) {
         const appointmentId =
-          res?.id || res?.data?.id || res?.appointment?.id || null;
+          res?.id ||
+          res?.appointment_id ||
+          res?.data?.id ||
+          res?.data?.appointment_id ||
+          res?.appointment?.id ||
+          null;
         const savedStatus =
           res?.data?.status || res?.appointment?.status || appointmentDetails.status;
         const savedPaymentStatus =
@@ -1788,6 +1793,14 @@ const Step4 = ({
             }
 
             if (method == 1) {
+              if (paymentMethod !== "stripe") {
+                showToast(
+                  toast,
+                  "error",
+                  "Online payment is currently unavailable. Please select 'Pay At Hospital' to proceed."
+                );
+                return;
+              }
               onOpen();
             } else {
               addAppointment();
@@ -1817,16 +1830,7 @@ const Step4 = ({
               type={"Appointment"}
             />
           )}
-          {paymentMethod === "razorpay" && (
-            <RazorpayPaymentController
-              isOpen={isOpen}
-              onClose={onClose}
-              nextFn={nextfn}
-              data={paymentData}
-              type={"Appointment"}
-              cancelFn={() => onClose()}
-            />
-          )}
+          {/* Razorpay is disabled */}
         </>
       ) : null}
     </Box>

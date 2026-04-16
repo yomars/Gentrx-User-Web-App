@@ -15,7 +15,7 @@ import {
 import { GET_AUTH } from "../Controllers/ApiControllers";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import user from "../Controllers/user";
+import { getStorageJSON } from "../lib/storage";
 import Loading from "../Components/Loading";
 import {
   createGoogleCalendarUrl,
@@ -29,19 +29,21 @@ const AppointmentSuccess = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const getData = async () => {
-    if (!user?.token) {
+    const currentUser = getStorageJSON("user");
+    if (!currentUser?.token) {
       return null;
     }
-    const res = await GET_AUTH(user.token, `get_appointment/${id}`);
+    const res = await GET_AUTH(currentUser.token, `get_appointment/${id}`);
     if (res?.response !== 200) {
       throw new Error(res?.message || "Failed to fetch appointment details");
     }
     return res.data;
   };
+  const currentUser = getStorageJSON("user");
   const { isLoading, data, error, isFetching, refetch } = useQuery({
     queryKey: ["appoinment", id],
     queryFn: getData,
-    enabled: !!user?.token,
+    enabled: !!currentUser?.token,
     retry: 5,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
     staleTime: 0,
@@ -78,7 +80,7 @@ const AppointmentSuccess = () => {
   const confirmationDescription =
     savedStatus === "Pending" || savedPaymentStatus === "Unpaid"
       ? "Your booking was saved and is currently pending. Payment is due at the hospital unless advised otherwise."
-      : data?.type === "OPD"
+      : data?.type?.toUpperCase() === "OPD"
       ? "Visit the clinic and scan the provided QR code to instantly generate your appointment queue number"
       : "Click join meeting or scan the QR code to join the meeting.";
 
@@ -105,7 +107,7 @@ const AppointmentSuccess = () => {
 
   if (isLoading) return <Loading />;
 
-  if (!user?.token)
+  if (!currentUser?.token)
     return (
       <Box w="800px" maxW={"95vw"} mx="auto" mt={10}>
         <Alert status="warning" borderRadius="md">
@@ -230,13 +232,13 @@ const AppointmentSuccess = () => {
           </Badge>
         </Flex>
 
-        {data?.type === "OPD" ? (
+        {data?.type?.toUpperCase() === "OPD" ? (
           <QRCodeComponent data={appointmentData} />
         ) : data?.type === "Video Consultant" ? (
           data?.meeting_link && <MeetingQR data={data?.meeting_link} />
         ) : null}
 
-        {data?.type !== "OPD" ? (
+        {data?.type?.toUpperCase() !== "OPD" ? (
           <Flex>
             <Button
               size={"sm"}
