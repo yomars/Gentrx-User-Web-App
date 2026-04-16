@@ -949,6 +949,7 @@ const Step3 = ({ setPatientDetails, setStep }) => {
   const { isLoading: patientLoading, data: patientData } = useQuery({
     queryKey: ["family-members", user?.id],
     queryFn: getData,
+    enabled: !!user?.id,
   });
 
   if (patientLoading) {
@@ -1452,6 +1453,8 @@ const Step4 = ({
       return null;
     }
   };
+
+  if (!patientDetails) return null;
 
   const paymentData = {
     family_member_id: String(patientDetails.id), // Ensure this is a string
