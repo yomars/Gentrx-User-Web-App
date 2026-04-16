@@ -1104,9 +1104,14 @@ const Step4 = ({
       let res = await ADD(user.token, "add_appointment", appointmentDetails);
 
       setisLoading(false);
-      if (res.response === 200) {
+      if (res.response === 200 || res?.status === true || res?.success === true) {
         const appointmentId =
-          res?.id || res?.data?.id || res?.appointment?.id || null;
+          res?.id ||
+          res?.appointment_id ||
+          res?.data?.id ||
+          res?.data?.appointment_id ||
+          res?.appointment?.id ||
+          null;
         const savedStatus =
           res?.data?.status || res?.appointment?.status || appointmentDetails.status;
         const savedPaymentStatus =
