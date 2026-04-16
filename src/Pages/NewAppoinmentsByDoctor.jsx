@@ -904,7 +904,7 @@ const Step4 = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [method, setMethod] = useState("1");
+  const [method, setMethod] = useState("2");
   const [coupon, setcoupon] = useState();
   const [SelectedCoupon, setSelectedCoupon] = useState();
   const { paymentGetwaysData } = PaymentGetwayData();
@@ -1447,15 +1447,17 @@ const Step4 = ({
         <Box mt={5}>
           <RadioGroup value={method} fontWeight={500} size={"md"}>
             <Stack>
-              <Radio
-                value={"1"}
-                fontWeight={700}
-                onChange={(e) => {
-                  setMethod(e.target.value);
-                }}
-              >
-                Pay Now
-              </Radio>
+              {paymentMethod === "stripe" && (
+                <Radio
+                  value={"1"}
+                  fontWeight={700}
+                  onChange={(e) => {
+                    setMethod(e.target.value);
+                  }}
+                >
+                  Pay Now
+                </Radio>
+              )}
               {appoinmentType.id !== 2 && (
                 <Radio
                   value={"2"}
