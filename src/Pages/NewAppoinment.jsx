@@ -1206,6 +1206,7 @@ const Step4 = ({
   const [method, setMethod] = useState("2");
   const [coupon, setcoupon] = useState();
   const [SelectedCoupon, setSelectedCoupon] = useState();
+  const [bookingError, setBookingError] = useState(null);
   const { paymentGetwaysData } = PaymentGetwayData();
   const [paymentMethod, setPaymentMethod] = useState(null);
   useEffect(() => {
@@ -1380,7 +1381,7 @@ const Step4 = ({
       const appointmentDetails = buildAppointmentDetails(options);
       setisLoading(true);
       let res = await ADD(user.token, "add_appointment", appointmentDetails);
-      console.log(res);
+      console.log("[booking] response:", res);
       setisLoading(false);
       if (res.response === 200 || res?.status === true || res?.success === true) {
         const appointmentId =
@@ -1417,6 +1418,7 @@ const Step4 = ({
         }
 
         clearPendingAppointmentPayment();
+        setBookingError(null);
         showToast(toast, "success", successMessage);
         setAllNull();
         queryClient.invalidateQueries({ queryKey: ["timeslotes"] });
@@ -1426,7 +1428,9 @@ const Step4 = ({
         navigate(`/appointment-success/${appointmentId}`);
         return res;
       } else {
-        showToast(toast, "error", res?.message || "Unable to save appointment");
+        const errMsg = res?.message || "Unable to save appointment. Please try again.";
+        setBookingError(errMsg);
+        showToast(toast, "error", errMsg);
         queryClient.invalidateQueries({ queryKey: ["timeslotes"] });
         queryClient.invalidateQueries({ queryKey: ["bookedslotes"] });
         queryClient.invalidateQueries({ queryKey: ["user"] });
@@ -1434,7 +1438,9 @@ const Step4 = ({
       }
     } catch (error) {
       setisLoading(false);
-      showToast(toast, "error", error?.message || "something went wrong!");
+      const errMsg = error?.message || "Something went wrong. Please try again.";
+      setBookingError(errMsg);
+      showToast(toast, "error", errMsg);
       return null;
     }
   };
@@ -1823,6 +1829,12 @@ const Step4 = ({
             )
           ).toFixed(2)}
         </Button>
+        {bookingError && (
+          <Alert status="error" mt={3} borderRadius={8} fontSize={13}>
+            <AlertIcon />
+            <AlertTitle>{bookingError}</AlertTitle>
+          </Alert>
+        )}
       </Box>
       {isOpen ? (
         <>
