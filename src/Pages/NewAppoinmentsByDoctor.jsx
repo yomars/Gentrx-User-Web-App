@@ -417,12 +417,16 @@ const Step2 = ({
 
   // get doctors booked slotes
   const getBookedSlotes = async () => {
-    const res = await GET(
-      `get_booked_time_slots?doct_id=${Doctordetails.user_id}&date=${moment(
-        selectedDate
-      ).format("YYYY-MM-DD")}&type=${appoinmentType.title}`
-    );
-    return res.data;
+    try {
+      const res = await GET(
+        `get_booked_time_slots?doct_id=${Doctordetails.user_id}&date=${moment(
+          selectedDate
+        ).format("YYYY-MM-DD")}&type=${appoinmentType.title}`
+      );
+      return res.data ?? [];
+    } catch {
+      return [];
+    }
   };
 
   const { isLoading: bookedSlotesLoading, data: bookedSlotes } = useQuery({
@@ -938,12 +942,16 @@ const Step4 = ({
   };
 
   const getBookedSlotes = async () => {
-    const res = await GET(
-      `get_booked_time_slots?doct_id=${Doctordetails.user_id}&date=${moment(
-        selectedDate
-      ).format("YYYY-MM-DD")}&type=${appoinmentType.title}`
-    );
-    return res.data;
+    try {
+      const res = await GET(
+        `get_booked_time_slots?doct_id=${Doctordetails.user_id}&date=${moment(
+          selectedDate
+        ).format("YYYY-MM-DD")}&type=${appoinmentType.title}`
+      );
+      return res.data ?? [];
+    } catch {
+      return [];
+    }
   };
 
   const { isLoading: bookedSlotesLoading, data: bookedSlotes } = useQuery({
