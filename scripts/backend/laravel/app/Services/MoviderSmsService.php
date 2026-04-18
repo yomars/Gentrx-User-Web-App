@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
  */
 class MoviderSmsService
 {
-    private string $baseUrl = 'https://api.movider.net/v1/sms';
+    private string $baseUrl = 'https://api.movider.co/v1/sms';
 
     /**
      * Send an SMS message to the given phone number.
