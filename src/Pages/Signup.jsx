@@ -158,6 +158,9 @@ const Signup = () => {
   };
 
   const onSubmit = async (values) => {
+    // Guard: if OTP step is already showing, do not re-send OTP
+    if (showOtpStep) return;
+
     const { f_name, l_name, phone, gender, email, password } = values;
     const fullName = [f_name, l_name].filter(Boolean).join(" ").trim();
     const normalizedPhone = String(phone || "").trim();
@@ -351,6 +354,7 @@ const Signup = () => {
                   />
 
                   <Button
+                    type="button"
                     bg="#005FCC"
                     color="white"
                     width="100%"
@@ -368,6 +372,7 @@ const Signup = () => {
 
                   <Flex justify="space-between" align="center">
                     <Button
+                      type="button"
                       variant="link"
                       color={resendTimer > 0 ? "#aaa" : "#005FCC"}
                       fontSize="13px"
@@ -377,6 +382,7 @@ const Signup = () => {
                       {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
                     </Button>
                     <Button
+                      type="button"
                       variant="link"
                       color="#999"
                       fontSize="13px"
