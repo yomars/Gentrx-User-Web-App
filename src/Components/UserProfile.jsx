@@ -19,7 +19,7 @@ import { BsPerson, BsEnvelope, BsPhone } from "react-icons/bs";
 import { useForm } from "react-hook-form";
 import user from "../Controllers/user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ADD, GET } from "../Controllers/ApiControllers";
+import { ADD, GET_AUTH } from "../Controllers/ApiControllers";
 import Loading from "./Loading";
 import { useEffect } from "react";
 import ProfilePicture from "./ProfilePicture";
@@ -28,12 +28,12 @@ import ErrorPage from "../Pages/ErrorPage";
 import { updateUserLocalStorage } from "../Controllers/updateUserLocalStorage";
 
 const getData = async () => {
-  const res = await GET(`get_user/${user.id}`);
+  const res = await GET_AUTH(user.token, `patient/me`);
   return res.data;
 };
 
 const handleUpdate = async (data) => {
-  const res = await ADD(user.token, "update_user", data);
+  const res = await ADD(user.token, "patient/update", data);
   if (res.response !== 200) {
     throw new Error(res.message);
   }
@@ -73,10 +73,8 @@ const UserProfile = () => {
 
   const mutation = useMutation({
     mutationFn: async (data) => {
-      let formData = {
-        ...data,
-        id: user.id,
-      };
+      // patient is identified by Bearer token — no need to pass id in body
+      let formData = { ...data };
       await handleUpdate(formData);
     },
     onSuccess: () => {

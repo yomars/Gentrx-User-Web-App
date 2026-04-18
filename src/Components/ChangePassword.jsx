@@ -23,7 +23,7 @@ import user from "../Controllers/user";
 import showToast from "../Controllers/ShowToast";
 
 const handleChangePassword = async (data) => {
-  const res = await ADD(user.token, "change_password", data);
+  const res = await ADD(user.token, "patient/change-password", data);
   if (res.response !== 200) {
     throw new Error(res.message);
   }
@@ -48,8 +48,8 @@ const ChangePassword = () => {
 
   const mutation = useMutation({
     mutationFn: async (data) => {
+      // patient identified by Bearer token — no user_id in body
       let formData = {
-        user_id: user.id,
         old_password: data.old_password,
         new_password: data.new_password,
       };
@@ -101,13 +101,13 @@ const ChangePassword = () => {
           <InputGroup size={"md"}>
             <Input
               type={showOldPassword ? "text" : "password"}
-              placeholder="Enter your old 6-digit PIN"
-              maxLength={6}
+              placeholder="Enter your current 4-digit PIN"
+              maxLength={4}
               {...register("old_password", {
                 required: "Old PIN is required",
                 pattern: {
-                  value: /^[0-9]{6}$/,
-                  message: "PIN must be exactly 6 digits",
+                  value: /^[0-9]{4}$/,
+                  message: "PIN must be exactly 4 digits",
                 },
               })}
               onInput={(e) => {
@@ -135,13 +135,13 @@ const ChangePassword = () => {
           <InputGroup size={"md"}>
             <Input
               type={showNewPassword ? "text" : "password"}
-              placeholder="Enter your new 6-digit PIN"
-              maxLength={6}
+              placeholder="Enter your new 4-digit PIN"
+              maxLength={4}
               {...register("new_password", {
                 required: "New PIN is required",
                 pattern: {
-                  value: /^[0-9]{6}$/,
-                  message: "PIN must be exactly 6 digits",
+                  value: /^[0-9]{4}$/,
+                  message: "PIN must be exactly 4 digits",
                 },
               })}
               onInput={(e) => {
@@ -169,13 +169,13 @@ const ChangePassword = () => {
           <InputGroup size={"md"}>
             <Input
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="Re-enter your new 6-digit PIN"
-              maxLength={6}
+              placeholder="Re-enter your new 4-digit PIN"
+              maxLength={4}
               {...register("confirm_password", {
                 required: "Please confirm your new PIN",
                 pattern: {
-                  value: /^[0-9]{6}$/,
-                  message: "PIN must be exactly 6 digits",
+                  value: /^[0-9]{4}$/,
+                  message: "PIN must be exactly 4 digits",
                 },
                 validate: (value) =>
                   value === newPassword || "PINs do not match",

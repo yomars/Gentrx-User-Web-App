@@ -7,14 +7,19 @@ const handleSessionExpiration = (error) => {
   const reqMethod = String(error?.config?.method || "").toUpperCase();
   const reqUrl = error?.config?.url || "";
   const status = error?.response?.status;
-  const isSessionExpired =
-    error?.response?.status === 401 ||
-    (error?.response?.data?.response === 401 &&
-      error?.response?.data?.status === false &&
-      typeof error?.response?.data?.message === "string" &&
-      error.response.data.message.toLowerCase().includes("session expired"));
 
-  if (isSessionExpired) {
+  // Only treat a 401 as "session expired" when the response body explicitly
+  // carries the session-expired message.  A plain 401 from a legacy endpoint
+  // that doesn't recognise the patient token should NOT be treated as an
+  // expired session — it just means that particular endpoint is incompatible
+  // and should show an error without triggering logout.
+  const hasExplicitSessionExpiredBody =
+    error?.response?.data?.response === 401 &&
+    error?.response?.data?.status === false &&
+    typeof error?.response?.data?.message === "string" &&
+    error.response.data.message.toLowerCase().includes("session expired");
+
+  if (hasExplicitSessionExpiredBody) {
     return new Error("Session expired. Please log-in again.");
   }
 

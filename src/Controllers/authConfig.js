@@ -20,6 +20,10 @@ export const AUTH_ENDPOINTS = {
   
   // Logout
   logout: 'patient/logout',
+
+  // OTP verification (used before signup to confirm phone ownership)
+  sendOtp:   'patient/send-otp',
+  verifyOtp: 'patient/verify-otp',
 };
 
 let patientBackendReadyPromise = null;
@@ -67,6 +71,10 @@ export function getAuthEndpoint(operation) {
       return AUTH_ENDPOINTS.checkPhone;
     case 'logout':
       return AUTH_ENDPOINTS.logout;
+    case 'sendOtp':
+      return AUTH_ENDPOINTS.sendOtp;
+    case 'verifyOtp':
+      return AUTH_ENDPOINTS.verifyOtp;
     default:
       throw new Error(`Unknown auth operation: ${operation}`);
   }

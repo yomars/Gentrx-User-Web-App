@@ -22,12 +22,14 @@ require_file "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/PatientAut
 require_file "$REPO_ROOT/scripts/backend/laravel/app/Models/Patient.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/app/Models/AuthenticationLog.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/app/Http/Middleware/EnforcePatientIdentity.php"
+require_file "$REPO_ROOT/scripts/backend/laravel/app/Services/MoviderSmsService.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/routes/api/patient-auth.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_13_000001_add_patient_auth_columns.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_13_000002_create_authentication_log_table.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_14_000003_add_name_to_patients_table.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_14_000004_add_api_token_to_patients_table.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_14_000005_add_patient_code_to_patients.php"
+require_file "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_19_000001_create_patient_otps_table.php"
 
 if [[ ! -d "$LARAVEL_ROOT" ]]; then
   echo "[patient-auth] ERROR: Laravel root not found: $LARAVEL_ROOT" >&2
@@ -48,6 +50,7 @@ echo "[patient-auth] Using PHP binary: $PHP_CMD"
 mkdir -p "$LARAVEL_ROOT/app/Http/Controllers"
 mkdir -p "$LARAVEL_ROOT/app/Models"
 mkdir -p "$LARAVEL_ROOT/app/Http/Middleware"
+mkdir -p "$LARAVEL_ROOT/app/Services"
 mkdir -p "$LARAVEL_ROOT/routes/api"
 mkdir -p "$LARAVEL_ROOT/database/migrations"
 
@@ -55,12 +58,14 @@ cp "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/PatientAuthControlle
 cp "$REPO_ROOT/scripts/backend/laravel/app/Models/Patient.php" "$LARAVEL_ROOT/app/Models/Patient.php"
 cp "$REPO_ROOT/scripts/backend/laravel/app/Models/AuthenticationLog.php" "$LARAVEL_ROOT/app/Models/AuthenticationLog.php"
 cp "$REPO_ROOT/scripts/backend/laravel/app/Http/Middleware/EnforcePatientIdentity.php" "$LARAVEL_ROOT/app/Http/Middleware/EnforcePatientIdentity.php"
+cp "$REPO_ROOT/scripts/backend/laravel/app/Services/MoviderSmsService.php" "$LARAVEL_ROOT/app/Services/MoviderSmsService.php"
 cp "$REPO_ROOT/scripts/backend/laravel/routes/api/patient-auth.php" "$LARAVEL_ROOT/routes/api/patient-auth.php"
 cp "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_13_000001_add_patient_auth_columns.php" "$LARAVEL_ROOT/database/migrations/2026_04_13_000001_add_patient_auth_columns.php"
 cp "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_13_000002_create_authentication_log_table.php" "$LARAVEL_ROOT/database/migrations/2026_04_13_000002_create_authentication_log_table.php"
 cp "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_14_000003_add_name_to_patients_table.php" "$LARAVEL_ROOT/database/migrations/2026_04_14_000003_add_name_to_patients_table.php"
 cp "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_14_000004_add_api_token_to_patients_table.php" "$LARAVEL_ROOT/database/migrations/2026_04_14_000004_add_api_token_to_patients_table.php"
 cp "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_14_000005_add_patient_code_to_patients.php" "$LARAVEL_ROOT/database/migrations/2026_04_14_000005_add_patient_code_to_patients.php"
+cp "$REPO_ROOT/scripts/backend/laravel/database/migrations/2026_04_19_000001_create_patient_otps_table.php" "$LARAVEL_ROOT/database/migrations/2026_04_19_000001_create_patient_otps_table.php"
 
 ROUTE_INCLUDE_LINE="require __DIR__.'/api/patient-auth.php';"
 if ! grep -Fq "$ROUTE_INCLUDE_LINE" "$LARAVEL_ROOT/routes/api.php"; then
@@ -77,12 +82,12 @@ $PHP_CMD artisan migrate --force
 
 echo "[patient-auth] Verifying required migrations are applied"
 MIGRATION_STATUS="$($PHP_CMD artisan migrate:status || true)"
-if [[ "$MIGRATION_STATUS" != *"2026_04_13_000001_add_patient_auth_columns"* ]] || [[ "$MIGRATION_STATUS" != *"2026_04_13_000002_create_authentication_log_table"* ]] || [[ "$MIGRATION_STATUS" != *"2026_04_14_000003_add_name_to_patients_table"* ]] || [[ "$MIGRATION_STATUS" != *"2026_04_14_000004_add_api_token_to_patients_table"* ]] || [[ "$MIGRATION_STATUS" != *"2026_04_14_000005_add_patient_code_to_patients"* ]]; then
+if [[ "$MIGRATION_STATUS" != *"2026_04_13_000001_add_patient_auth_columns"* ]] || [[ "$MIGRATION_STATUS" != *"2026_04_13_000002_create_authentication_log_table"* ]] || [[ "$MIGRATION_STATUS" != *"2026_04_14_000003_add_name_to_patients_table"* ]] || [[ "$MIGRATION_STATUS" != *"2026_04_14_000004_add_api_token_to_patients_table"* ]] || [[ "$MIGRATION_STATUS" != *"2026_04_14_000005_add_patient_code_to_patients"* ]] || [[ "$MIGRATION_STATUS" != *"2026_04_19_000001_create_patient_otps_table"* ]]; then
   echo "[patient-auth] ERROR: Required patient-auth migrations are missing from migrate:status output." >&2
   echo "$MIGRATION_STATUS" >&2
   exit 1
 fi
-if echo "$MIGRATION_STATUS" | grep -Eq "Pending\s+2026_04_13_000001_add_patient_auth_columns|Pending\s+2026_04_13_000002_create_authentication_log_table|Pending\s+2026_04_14_000003_add_name_to_patients_table|Pending\s+2026_04_14_000004_add_api_token_to_patients_table|Pending\s+2026_04_14_000005_add_patient_code_to_patients"; then
+if echo "$MIGRATION_STATUS" | grep -Eq "Pending\s+2026_04_13_000001_add_patient_auth_columns|Pending\s+2026_04_13_000002_create_authentication_log_table|Pending\s+2026_04_14_000003_add_name_to_patients_table|Pending\s+2026_04_14_000004_add_api_token_to_patients_table|Pending\s+2026_04_14_000005_add_patient_code_to_patients|Pending\s+2026_04_19_000001_create_patient_otps_table"; then
   echo "[patient-auth] ERROR: One or more required patient-auth migrations are still pending." >&2
   echo "$MIGRATION_STATUS" >&2
   exit 1
@@ -94,12 +99,27 @@ $PHP_CMD artisan route:cache
 $PHP_CMD artisan config:cache
 
 echo "[patient-auth] Verifying routes are registered"
-ROUTES_OUTPUT="$($PHP_CMD artisan route:list | grep -E "api/v1/patient/(check-phone|signup|login|me|logout|clinics)" || true)"
+ROUTES_OUTPUT="$($PHP_CMD artisan route:list | grep -E "api/v1/patient/(check-phone|signup|login|me|logout|clinics|send-otp|verify-otp|update|change-password)" || true)"
 if [[ -z "$ROUTES_OUTPUT" ]]; then
   echo "[patient-auth] ERROR: Patient routes are not registered (route:list empty)." >&2
   exit 1
 fi
 echo "$ROUTES_OUTPUT"
+
+echo "[patient-auth] Checking required env vars"
+MISSING_VARS=""
+for VAR in MOVIDER_API_KEY MOVIDER_API_SECRET; do
+  if ! grep -Eq "^${VAR}=.+" .env 2>/dev/null; then
+    MISSING_VARS="$MISSING_VARS $VAR"
+  fi
+done
+if [[ -n "$MISSING_VARS" ]]; then
+  echo "[patient-auth] WARNING: The following env vars are missing from .env:$MISSING_VARS"
+  echo "[patient-auth] Add them to $LARAVEL_ROOT/.env:"
+  echo "  MOVIDER_API_KEY=your_key_here"
+  echo "  MOVIDER_API_SECRET=your_secret_here"
+  echo "  GENTRX_PHONE_VERIFY_REQUIRED=true   # set to false to bypass OTP in dev"
+fi
 
 echo "[patient-auth] Verifying auth guard/provider wiring in config/auth.php"
 if ! grep -Eq "'providers'\s*=>" config/auth.php; then

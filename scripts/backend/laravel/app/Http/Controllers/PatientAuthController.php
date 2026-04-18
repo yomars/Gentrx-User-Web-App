@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\AuthenticationLog;
+use App\Services\MoviderSmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -17,7 +18,27 @@ class PatientAuthController extends Controller
     const MAX_LOGIN_ATTEMPTS = 5;
     const LOCKOUT_MINUTES = 30;
     const TOKEN_EXPIRY_HOURS = 24;
-    const PASSWORD_MIN_LENGTH = 8;
+    const PASSWORD_MIN_LENGTH = 4;
+
+    // -------------------------------------------------------------------------
+    // PRIVATE HELPER: resolve the authenticated Patient from the Bearer token.
+    //
+    // We do a direct DB lookup against patients.api_token rather than relying
+    // on auth('api')->user(), which depends on the Laravel guard configuration
+    // being wired correctly to the patients provider.  This is self-contained
+    // and works regardless of how config/auth.php is configured.
+    // -------------------------------------------------------------------------
+    private function resolvePatientFromToken(Request $request): ?Patient
+    {
+        $token = $request->bearerToken();
+        if (!$token) {
+            return null;
+        }
+
+        return Patient::where('api_token', $token)
+            ->where('auth_status', 'active')
+            ->first();
+    }
 
     /**
      * POST /api/v1/patient/check-phone
@@ -95,13 +116,46 @@ class PatientAuthController extends Controller
     /**
      * POST /api/v1/patient/signup
      * 
-     * Register new patient with phone + password
-     * Creates patient record with auth fields
-     * Returns JWT token for immediate login
+     * Register new patient with phone + password.
+     * Requires a valid verification_token from POST /patient/verify-otp
+     * (unless GENTRX_PHONE_VERIFY_REQUIRED env var is set to false).
      */
     public function signup(Request $request)
     {
         try {
+            // ------------------------------------------------------------------
+            // Phone OTP verification gate (configurable via env).
+            // Default: ON in production. Set GENTRX_PHONE_VERIFY_REQUIRED=false
+            // to bypass (e.g., during internal testing).
+            // ------------------------------------------------------------------
+            $phoneVerifyRequired = strtolower((string) env('GENTRX_PHONE_VERIFY_REQUIRED', 'true')) !== 'false';
+
+            if ($phoneVerifyRequired) {
+                $verificationToken = $request->input('verification_token');
+                if (!$verificationToken) {
+                    return response()->json([
+                        'success'  => false,
+                        'error'    => 'Phone verification required.',
+                        'message'  => 'Please verify your phone number via OTP before signing up.',
+                    ], 422);
+                }
+
+                $phone = $request->input('phone');
+                $otpRecord = DB::table('patient_otps')
+                    ->where('phone', $phone)
+                    ->where('verification_token', $verificationToken)
+                    ->whereNotNull('used_at')
+                    ->where('expires_at', '>', now()->subMinutes(30)) // token valid for 30 min after use
+                    ->first();
+
+                if (!$otpRecord) {
+                    return response()->json([
+                        'success' => false,
+                        'error'   => 'Invalid or expired phone verification. Please verify your phone again.',
+                    ], 422);
+                }
+            }
+
             // Validation
             $validator = Validator::make($request->all(), [
                 'phone'       => 'required|regex:/^[0-9]{10}$/|unique:patients,phone',
@@ -112,33 +166,25 @@ class PatientAuthController extends Controller
                 'email'       => 'nullable|email|unique:patients,email',
                 'gender'      => 'nullable|in:Male,Female,Other',
                 'isd_code'    => 'nullable|string|max:5',
-                // clinic_id: required, must exist in the clinics table
                 'clinic_id'   => 'required|integer|exists:clinics,id',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'error' => 'Validation failed',
+                    'error'   => 'Validation failed',
                     'details' => $validator->errors(),
                 ], 422);
             }
 
-            // Begin transaction
             DB::beginTransaction();
 
             try {
-                $fName     = trim((string) $request->input('f_name', ''));
-                $lName     = trim((string) $request->input('l_name', ''));
-                $fullName  = trim($fName . ' ' . $lName);
+                $fName    = trim((string) $request->input('f_name', ''));
+                $lName    = trim((string) $request->input('l_name', ''));
+                $fullName = trim($fName . ' ' . $lName);
 
-                // ----------------------------------------------------------
                 // Resolve clinic_code from the clinic record.
-                // If clinic_code is not yet populated in the clinics table,
-                // auto-derive a 3-letter code from the clinic title
-                // (uppercase first 3 alpha characters, e.g. "Main Clinic" -> "MAI").
-                // This ensures the system works even before clinic codes are assigned.
-                // ----------------------------------------------------------
                 $clinic = DB::table('clinics')
                     ->where('id', (int) $request->input('clinic_id'))
                     ->select('id', 'title', 'clinic_code')
@@ -147,19 +193,11 @@ class PatientAuthController extends Controller
                 if (!empty($clinic->clinic_code)) {
                     $clinicCode = strtoupper(trim((string) $clinic->clinic_code));
                 } else {
-                    // Derive: strip non-alpha, take first 3 chars, uppercase, pad with 'X' if short
                     $alphaOnly  = preg_replace('/[^A-Za-z]/', '', $clinic->title ?? '');
                     $clinicCode = strtoupper(str_pad(substr($alphaOnly, 0, 3), 3, 'X'));
                 }
 
-                // ----------------------------------------------------------
                 // Atomic per-clinic sequence increment (concurrency-safe).
-                //
-                // PostgreSQL's ON CONFLICT DO UPDATE guarantees that even if
-                // two requests race, each gets a distinct last_sequence value.
-                // The RETURNING clause gives us our assigned number immediately
-                // without a second SELECT, keeping the window of conflict tiny.
-                // ----------------------------------------------------------
                 $sequenceResult = DB::select("
                     INSERT INTO patient_code_sequences (clinic_code, last_sequence)
                     VALUES (?, 1)
@@ -168,9 +206,7 @@ class PatientAuthController extends Controller
                     RETURNING last_sequence
                 ", [$clinicCode]);
 
-                $sequence = (int) $sequenceResult[0]->last_sequence;
-
-                // Format: "MXN-00000001" (3-letter code + dash + 8-digit zero-padded)
+                $sequence    = (int) $sequenceResult[0]->last_sequence;
                 $patientCode = $clinicCode . '-' . str_pad($sequence, 8, '0', STR_PAD_LEFT);
 
                 $patientPayload = [
@@ -181,53 +217,45 @@ class PatientAuthController extends Controller
                     'gender'   => $request->input('gender'),
                     'isd_code' => $request->input('isd_code') ?? '+63',
 
-                    // Patient code fields
                     'clinic_code'      => $clinicCode,
                     'patient_sequence' => $sequence,
                     'patient_code'     => $patientCode,
 
-                    // Auth fields
-                    'password_hash'      => Hash::make($request->input('password')),
-                    'auth_status'        => 'active',
-                    'login_attempts'     => 0,
-                    'locked_until'       => null,
+                    'password_hash'       => Hash::make($request->input('password')),
+                    'auth_status'         => 'active',
+                    'login_attempts'      => 0,
+                    'locked_until'        => null,
                     'credential_setup_at' => now(),
-                    'last_login_at'      => now(),
+                    'last_login_at'       => now(),
                 ];
 
-                // Some deployments have patients.name, others do not.
                 if (Schema::hasColumn('patients', 'name')) {
                     $patientPayload['name'] = $request->input('name') ?: $fullName;
                 }
 
-                // Create patient record
                 $patient = Patient::create($patientPayload);
 
-                // Log signup attempt
                 AuthenticationLog::create([
-                    'patient_id' => $patient->id,
+                    'patient_id'       => $patient->id,
                     'login_identifier' => $request->input('phone'),
-                    'attempt_type' => 'signup',
-                    'status' => 'success',
-                    'ip_address' => $request->ip(),
-                    'user_agent' => $request->header('User-Agent'),
+                    'attempt_type'     => 'signup',
+                    'status'           => 'success',
+                    'ip_address'       => $request->ip(),
+                    'user_agent'       => $request->header('User-Agent'),
                 ]);
 
                 DB::commit();
 
-                // Generate token
+                // Generate and persist token — unconditional; column must exist.
                 $token = $this->generateToken($patient);
-
-                if (Schema::hasColumn('patients', 'api_token')) {
-                    $patient->update(['api_token' => $token]);
-                }
+                DB::table('patients')->where('id', $patient->id)->update(['api_token' => $token]);
 
                 return response()->json([
                     'response' => 201,
-                    'status' => true,
-                    'message' => 'Signup successful',
-                    'data' => $this->formatPatientResponse($patient, $token),
-                    'token' => $token,
+                    'status'   => true,
+                    'message'  => 'Signup successful',
+                    'data'     => $this->formatPatientResponse($patient, $token),
+                    'token'    => $token,
                 ], 201);
 
             } catch (\Exception $e) {
@@ -238,7 +266,7 @@ class PatientAuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => 'Signup failed',
+                'error'   => 'Signup failed',
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -377,12 +405,9 @@ class PatientAuthController extends Controller
                 'user_agent' => $request->header('User-Agent'),
             ]);
 
-            // Generate token
+            // Generate and persist token — unconditional; column must exist.
             $token = $this->generateToken($patient);
-
-            if (Schema::hasColumn('patients', 'api_token')) {
-                $patient->update(['api_token' => $token]);
-            }
+            DB::table('patients')->where('id', $patient->id)->update(['api_token' => $token]);
 
             return response()->json([
                 'response' => 200,
@@ -403,21 +428,25 @@ class PatientAuthController extends Controller
 
     /**
      * POST /api/v1/patient/logout
-     * 
-     * Invalidate patient token (optional - frontend typically just clears localStorage)
+     *
+     * Invalidates the patient's api_token so subsequent requests are rejected.
+     * Frontend always proceeds with local logout regardless of this response.
      */
     public function logout(Request $request)
     {
         try {
-            $bearerToken = $request->header('Authorization');
-            
-            if ($bearerToken) {
+            $patient = $this->resolvePatientFromToken($request);
+
+            if ($patient) {
+                // Invalidate token server-side
+                DB::table('patients')->where('id', $patient->id)->update(['api_token' => null]);
+
                 AuthenticationLog::create([
-                    'patient_id' => auth('api')->id(),
+                    'patient_id'   => $patient->id,
                     'attempt_type' => 'logout',
-                    'status' => 'success',
-                    'ip_address' => $request->ip(),
-                    'user_agent' => $request->header('User-Agent'),
+                    'status'       => 'success',
+                    'ip_address'   => $request->ip(),
+                    'user_agent'   => $request->header('User-Agent'),
                 ]);
             }
 
@@ -427,48 +456,262 @@ class PatientAuthController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            // Always return 200 for logout — client doesn't need to handle failures
             return response()->json([
-                'success' => false,
-                'error' => 'Logout failed',
-            ], 500);
+                'success' => true,
+                'message' => 'Logged out',
+            ], 200);
         }
     }
 
     /**
-     * Helper: Generate JWT token for patient
-     * 
-     * Token claims:
-     * - sub: patient_id
-     * - identity_type: 'patient' (distinguishes from admin)
-     * - phone: patient phone
-     * - iat: issued at
-     * - exp: expires at (24 hours)
+     * POST /api/v1/patient/update
+     *
+     * Update the authenticated patient's profile fields.
+     * Phone is intentionally excluded (change phone requires a separate OTP flow).
+     * Requires Bearer token.
      */
-    private function generateToken($patient)
+    public function update(Request $request)
     {
-        // Using simple JWT structure (implement with firebase/jwt or similar in production)
-        $payload = [
-            'sub' => $patient->id,
-            'identity_type' => 'patient',
-            'phone' => $patient->phone,
-            'email' => $patient->email,
-            'iat' => now()->timestamp,
-            'exp' => now()->addHours(self::TOKEN_EXPIRY_HOURS)->timestamp,
-        ];
+        $patient = $this->resolvePatientFromToken($request);
+        if (!$patient) {
+            return response()->json(['success' => false, 'error' => 'Unauthorized'], 401);
+        }
 
-        // In production, use Firebase JWT library:
-        // return JWT::encode($payload, env('JWT_SECRET'), 'HS256');
-        
-        // Placeholder: use Laravel's built-in token if available
-        return bin2hex(random_bytes(32)); // Temporary auth token
+        $validator = Validator::make($request->all(), [
+            'f_name'      => 'nullable|string|max:255',
+            'l_name'      => 'nullable|string|max:255',
+            'email'       => 'nullable|email|unique:patients,email,' . $patient->id,
+            'gender'      => 'nullable|in:Male,Female,Other',
+            'dob'         => 'nullable|date',
+            'city'        => 'nullable|string|max:100',
+            'state'       => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'address'     => 'nullable|string|max:500',
+            'isd_code'    => 'nullable|string|max:5',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Validation failed',
+                'details' => $validator->errors(),
+            ], 422);
+        }
+
+        $allowed    = ['f_name', 'l_name', 'email', 'gender', 'dob', 'city', 'state', 'postal_code', 'address', 'isd_code'];
+        $updateData = array_filter($request->only($allowed), fn($v) => $v !== null && $v !== '');
+
+        // Keep the denormalized name column in sync when present
+        if (Schema::hasColumn('patients', 'name')) {
+            $fName = $updateData['f_name'] ?? $patient->f_name ?? '';
+            $lName = $updateData['l_name'] ?? $patient->l_name ?? '';
+            $updateData['name'] = trim("$fName $lName");
+        }
+
+        if (!empty($updateData)) {
+            $patient->update($updateData);
+            $patient->refresh();
+        }
+
+        return response()->json([
+            'response' => 200,
+            'status'   => true,
+            'message'  => 'Profile updated successfully',
+            'data'     => $this->formatPatientResponse($patient, $request->bearerToken()),
+        ], 200);
     }
 
     /**
-     * Helper: Format patient response matching frontend expectations
-     * 
-     * Matches structure stored in localStorage.user
+     * POST /api/v1/patient/change-password
+     *
+     * Change the patient's 4-digit PIN.
+     * Requires Bearer token + correct current PIN.
      */
-    private function formatPatientResponse($patient, $token)
+    public function changePassword(Request $request)
+    {
+        $patient = $this->resolvePatientFromToken($request);
+        if (!$patient) {
+            return response()->json(['success' => false, 'error' => 'Unauthorized'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'old_password' => 'required|digits:4',
+            'new_password' => 'required|digits:4',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Validation failed',
+                'details' => $validator->errors(),
+            ], 422);
+        }
+
+        if (!$patient->password_hash || !Hash::check($request->input('old_password'), $patient->password_hash)) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Current PIN is incorrect',
+            ], 401);
+        }
+
+        $patient->update(['password_hash' => Hash::make($request->input('new_password'))]);
+
+        return response()->json([
+            'response' => 200,
+            'status'   => true,
+            'message'  => 'PIN changed successfully',
+        ], 200);
+    }
+
+    /**
+     * POST /api/v1/patient/send-otp
+     *
+     * Send a 6-digit OTP via Movider SMS to the provided phone number.
+     * Rate-limited to 1 OTP per phone per 60 seconds.
+     * No authentication required (public endpoint).
+     */
+    public function sendOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|regex:/^[0-9]{10}$/',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Invalid phone number',
+                'details' => $validator->errors(),
+            ], 422);
+        }
+
+        $phone = $request->input('phone');
+
+        // Rate limit: 1 OTP per phone per 60 seconds
+        $recentOtp = DB::table('patient_otps')
+            ->where('phone', $phone)
+            ->where('created_at', '>=', now()->subSeconds(60))
+            ->first();
+
+        if ($recentOtp) {
+            return response()->json([
+                'success'              => false,
+                'error'                => 'Please wait before requesting another OTP.',
+                'retry_after_seconds'  => 60,
+            ], 429);
+        }
+
+        // Generate cryptographically random 6-digit OTP
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        // Store hashed OTP (10-minute expiry)
+        DB::table('patient_otps')->insert([
+            'phone'      => $phone,
+            'otp_hash'   => Hash::make($otp),
+            'expires_at' => now()->addMinutes(10),
+            'created_at' => now(),
+        ]);
+
+        // Send via Movider
+        $sms  = new MoviderSmsService();
+        $sent = $sms->send($phone, "Your GentRx verification code: {$otp}. Valid for 10 minutes. Do not share this code.");
+
+        if (!$sent) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Failed to send OTP. Please try again.',
+            ], 500);
+        }
+
+        return response()->json([
+            'response' => 200,
+            'status'   => true,
+            'message'  => 'OTP sent successfully. Check your SMS.',
+        ], 200);
+    }
+
+    /**
+     * POST /api/v1/patient/verify-otp
+     *
+     * Verify the OTP for a phone number.
+     * On success returns a verification_token to be included in /patient/signup.
+     * No authentication required (public endpoint).
+     */
+    public function verifyOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|regex:/^[0-9]{10}$/',
+            'otp'   => 'required|digits:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Invalid request',
+                'details' => $validator->errors(),
+            ], 422);
+        }
+
+        $phone = $request->input('phone');
+        $otp   = $request->input('otp');
+
+        // Find the latest unexpired, unused OTP for this phone
+        $record = DB::table('patient_otps')
+            ->where('phone', $phone)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'OTP expired or not found. Please request a new one.',
+            ], 422);
+        }
+
+        if (!Hash::check($otp, $record->otp_hash)) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Invalid OTP. Please try again.',
+            ], 422);
+        }
+
+        // Mark OTP as used and store a short-lived verification token
+        $verificationToken = bin2hex(random_bytes(16)); // 32-char hex
+
+        DB::table('patient_otps')
+            ->where('id', $record->id)
+            ->update([
+                'used_at'            => now(),
+                'verification_token' => $verificationToken,
+            ]);
+
+        return response()->json([
+            'response'           => 200,
+            'status'             => true,
+            'message'            => 'Phone verified successfully.',
+            'verification_token' => $verificationToken,
+        ], 200);
+    }
+
+    /**
+     * Helper: Generate an opaque auth token for a patient.
+     * 64-char hex string stored in patients.api_token (column max 80).
+     */
+    private function generateToken($patient): string
+    {
+        return bin2hex(random_bytes(32));
+    }
+
+    /**
+     * Helper: Format patient response matching frontend localStorage.user structure.
+     *
+     * NOTE: The 'token' key in this payload is used by login/signup responses.
+     * For GET /patient/me, the frontend ignores this field and keeps its existing
+     * token (see updateUserLocalStorage.js), so it is safe to pass bearerToken().
+     */
+    private function formatPatientResponse($patient, ?string $token): array
     {
         $fName = $patient->f_name ?? '';
         $lName = $patient->l_name ?? '';
@@ -487,6 +730,11 @@ class PatientAuthController extends Controller
             'email'          => $patient->email,
             'gender'         => $patient->gender,
             'isd_code'       => $patient->isd_code,
+            'dob'            => $patient->dob ? (is_string($patient->dob) ? $patient->dob : $patient->dob->format('Y-m-d')) : null,
+            'city'           => $patient->city ?? null,
+            'state'          => $patient->state ?? null,
+            'postal_code'    => $patient->postal_code ?? null,
+            'address'        => $patient->address ?? null,
             'image'          => $patient->image ?? null,
             'image_path'     => $patient->image_path ?? null,
             'image_mime'     => $patient->image_mime ?? null,
@@ -494,7 +742,7 @@ class PatientAuthController extends Controller
             'image_checksum' => $patient->image_checksum ?? null,
             'token'          => $token,
             'auth_status'    => $patient->auth_status,
-            // Patient code fields (null for legacy patients without a clinic assignment)
+            'created_at'     => $patient->created_at ? $patient->created_at->toISOString() : null,
             'clinic_code'    => $patient->clinic_code ?? null,
             'patient_code'   => $patient->patient_code ?? null,
         ];
@@ -502,33 +750,26 @@ class PatientAuthController extends Controller
 
     /**
      * GET /api/v1/patient/me
-     * 
-     * Return authenticated patient profile
-     * Requires Bearer token
+     *
+     * Return the authenticated patient's profile.
+     * Requires Bearer token.
      */
     public function me(Request $request)
     {
-        try {
-            $patient = Patient::find(auth('api')->id());
+        $patient = $this->resolvePatientFromToken($request);
 
-            if (!$patient) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Patient not found',
-                ], 404);
-            }
-
-            return response()->json([
-                'response' => 200,
-                'status' => true,
-                'data' => $this->formatPatientResponse($patient, $request->header('Authorization')),
-            ], 200);
-
-        } catch (\Exception $e) {
+        if (!$patient) {
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to fetch patient profile',
-            ], 500);
+                'error'   => 'Unauthorized',
+                'message' => 'Invalid or expired token.',
+            ], 401);
         }
+
+        return response()->json([
+            'response' => 200,
+            'status'   => true,
+            'data'     => $this->formatPatientResponse($patient, $request->bearerToken()),
+        ], 200);
     }
 }

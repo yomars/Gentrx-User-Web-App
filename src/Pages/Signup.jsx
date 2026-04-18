@@ -41,6 +41,21 @@ const Signup = () => {
   const [clinics, setClinics] = useState([]);
   const [clinicsLoading, setClinicsLoading] = useState(true);
 
+  // OTP step state
+  const [showOtpStep, setShowOtpStep] = useState(false);
+  const [verificationToken, setVerificationToken] = useState(null);
+  const [otpValue, setOtpValue] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [pendingFormValues, setPendingFormValues] = useState(null);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  // Countdown timer for OTP resend button
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const id = setTimeout(() => setResendTimer((t) => t - 1), 1000);
+    return () => clearTimeout(id);
+  }, [resendTimer]);
+
   // Fetch active clinics for the signup dropdown on mount
   useEffect(() => {
     let cancelled = false;
@@ -161,8 +176,14 @@ const Signup = () => {
         });
       }
 
-      // Directly create user without OTP
-      const data = {
+      // --- OTP gate: send OTP and show verification step ---
+      const sendRes = await postAuthJson(getAuthEndpoint('sendOtp'), { phone: normalizedPhone });
+      if (!sendRes?.status) {
+        showToast(toast, "error", sendRes?.error || "Failed to send OTP. Please try again.");
+        return;
+      }
+
+      setPendingFormValues({
         name: fullName,
         f_name,
         l_name,
@@ -172,13 +193,49 @@ const Signup = () => {
         email,
         password,
         clinic_id: values.clinic_id,
-      };
+      });
+      setOtpValue("");
+      setResendTimer(60);
+      setShowOtpStep(true);
 
-      // Use configurable endpoint (patient/signup or legacy add_user)
-      const signupEndpoint = getAuthEndpoint('signup');
-      const res = await postAuthJson(signupEndpoint, data);
-      const isSignupSuccess =
-        res?.status === true || res?.success === true || res?.response === 201;
+      toast({
+        title: "OTP Sent",
+        description: `A 6-digit verification code was sent to +63${normalizedPhone}`,
+        status: "info",
+        duration: 4000,
+        isClosable: true,
+        position: "top",
+      });
+    } catch (error) {
+      showToast(toast, "error", error.message);
+    }
+  };
+
+  const handleOtpVerify = async () => {
+    if (otpValue.length !== 6) {
+      showToast(toast, "error", "Please enter the 6-digit code.");
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const verifyRes = await postAuthJson(getAuthEndpoint('verifyOtp'), {
+        phone: pendingFormValues.phone,
+        otp: otpValue,
+      });
+
+      if (!verifyRes?.status) {
+        showToast(toast, "error", verifyRes?.error || "Invalid OTP. Please try again.");
+        setOtpLoading(false);
+        return;
+      }
+
+      const vToken = verifyRes.verification_token;
+      setVerificationToken(vToken);
+
+      // Now register the patient with the verified token
+      const signupPayload = { ...pendingFormValues, verification_token: vToken };
+      const res = await postAuthJson(getAuthEndpoint('signup'), signupPayload);
+      const isSignupSuccess = res?.status === true || res?.success === true || res?.response === 201;
 
       if (isSignupSuccess) {
         const token = res?.token || res?.data?.token;
@@ -199,6 +256,24 @@ const Signup = () => {
         }, 2000);
       } else {
         showToast(toast, "error", res.message || "Signup failed");
+      }
+    } catch (error) {
+      showToast(toast, "error", error.message);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    try {
+      const sendRes = await postAuthJson(getAuthEndpoint('sendOtp'), { phone: pendingFormValues.phone });
+      if (sendRes?.status) {
+        setResendTimer(60);
+        setOtpValue("");
+        toast({ title: "OTP Resent", status: "info", duration: 3000, isClosable: true, position: "top" });
+      } else {
+        showToast(toast, "error", sendRes?.error || "Failed to resend OTP.");
       }
     } catch (error) {
       showToast(toast, "error", error.message);
@@ -252,6 +327,67 @@ const Signup = () => {
             </Text>
 
             <form onSubmit={handleSubmit(onSubmit)}>
+              {/* ---- OTP verification step ---- */}
+              {showOtpStep ? (
+                <Box>
+                  <Text fontWeight={600} color="#2f3848" mb="2" fontSize="15px">
+                    Verify your mobile number
+                  </Text>
+                  <Text color="#555" fontSize="13px" mb="4">
+                    A 6-digit code was sent to +63{pendingFormValues?.phone}. Enter it below.
+                  </Text>
+
+                  <Input
+                    placeholder="6-digit code"
+                    maxLength={6}
+                    value={otpValue}
+                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    borderColor="#ddd"
+                    _focus={{ borderColor: "#34C38F", boxShadow: "0 0 0 1px #34C38F" }}
+                    fontSize="22px"
+                    letterSpacing="0.3em"
+                    textAlign="center"
+                    mb="4"
+                  />
+
+                  <Button
+                    bg="#005FCC"
+                    color="white"
+                    width="100%"
+                    mb="3"
+                    isLoading={otpLoading}
+                    onClick={handleOtpVerify}
+                    fontWeight={600}
+                    fontSize="16px"
+                    h="52px"
+                    borderRadius="999px"
+                    _hover={{ bg: "#0047A3" }}
+                  >
+                    Verify &amp; Create Account
+                  </Button>
+
+                  <Flex justify="space-between" align="center">
+                    <Button
+                      variant="link"
+                      color={resendTimer > 0 ? "#aaa" : "#005FCC"}
+                      fontSize="13px"
+                      isDisabled={resendTimer > 0}
+                      onClick={handleResendOtp}
+                    >
+                      {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+                    </Button>
+                    <Button
+                      variant="link"
+                      color="#999"
+                      fontSize="13px"
+                      onClick={() => { setShowOtpStep(false); setOtpValue(""); }}
+                    >
+                      &larr; Back
+                    </Button>
+                  </Flex>
+                </Box>
+              ) : (
+                <>
               {/* First Name and Last Name in one row */}
               <Flex gap={4} mb="4" direction={["column", "column", "row", "row"]}>
                 <FormControl isInvalid={errors.f_name} flex={1}>
@@ -445,6 +581,8 @@ const Signup = () => {
               >
                 Sign Up
               </Button>
+            </>
+            )}
             </form>
 
             <Text fontSize="sm" textAlign="center" mb="3" color="#2f3848">
