@@ -1342,7 +1342,9 @@ const Step4 = ({
     paymentStatusOverride,
     statusOverride,
   } = {}) => ({
-    family_member_id: patientDetails.id,
+    ...(patientDetails.selectionType === "self"
+      ? { patient_id: patientDetails.id }
+      : { family_member_id: patientDetails.id }),
     status: statusOverride || (selectedMethod === 2 ? "Pending" : "Confirmed"),
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
     time_slots: selectedSlot ? selectedSlot.time_start : moment().format("hh:mm"),
@@ -1471,7 +1473,9 @@ const Step4 = ({
   if (!patientDetails) return null;
 
   const paymentData = {
-    family_member_id: String(patientDetails.id), // Ensure this is a string
+    ...(patientDetails.selectionType === "self"
+      ? { patient_id: String(patientDetails.id) }
+      : { family_member_id: String(patientDetails.id) }),
     status: "Confirmed",
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
     time_slots: selectedSlot

@@ -41,7 +41,7 @@ Route::prefix('v1/patient')->group(function () {
     // OTP endpoints (public — called before account exists)
     Route::post('/send-otp', [PatientAuthController::class, 'sendOtp'])
         ->name('patient.send-otp')
-        ->middleware('throttle:6,1'); // 6 sends/min per IP
+        ->middleware('throttle:20,1'); // 20 sends/min per IP
 
     Route::post('/verify-otp', [PatientAuthController::class, 'verifyOtp'])
         ->name('patient.verify-otp')

@@ -722,6 +722,14 @@ class PatientAuthController extends Controller
             $lName = $lName !== '' ? $lName : (count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : '');
         }
 
+        // Fetch wallet balance keyed by patient_code (wallets.patient_id = VARCHAR patient_code).
+        $patientCode = $patient->patient_code ?? null;
+        $walletAmount = 0;
+        if ($patientCode) {
+            $wallet = DB::table('wallets')->where('patient_id', $patientCode)->first();
+            $walletAmount = $wallet ? (float) $wallet->balance : 0;
+        }
+
         return [
             'id'             => $patient->id,
             'f_name'         => $fName,
@@ -744,7 +752,8 @@ class PatientAuthController extends Controller
             'auth_status'    => $patient->auth_status,
             'created_at'     => $patient->created_at ? $patient->created_at->toISOString() : null,
             'clinic_code'    => $patient->clinic_code ?? null,
-            'patient_code'   => $patient->patient_code ?? null,
+            'patient_code'   => $patientCode,
+            'wallet_amount'  => $walletAmount,
         ];
     }
 
