@@ -595,33 +595,30 @@ class PatientAuthController extends Controller
 
         if ($recentOtp) {
             return response()->json([
-                'success'              => false,
-                'error'                => 'Please wait before requesting another OTP.',
-                'retry_after_seconds'  => 60,
+                'success'             => false,
+                'error'               => 'Please wait before requesting another OTP.',
+                'retry_after_seconds' => 60,
             ], 429);
         }
 
-        // Generate cryptographically random 6-digit OTP
-        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // Send via Movider Verify API — Movider generates and delivers the OTP
+        $sms       = new MoviderSmsService();
+        $requestId = $sms->sendVerify($phone);
 
-        // Store hashed OTP (10-minute expiry)
-        DB::table('patient_otps')->insert([
-            'phone'      => $phone,
-            'otp_hash'   => Hash::make($otp),
-            'expires_at' => now()->addMinutes(10),
-            'created_at' => now(),
-        ]);
-
-        // Send via Movider
-        $sms  = new MoviderSmsService();
-        $sent = $sms->send($phone, "Your GentRx verification code: {$otp}. Valid for 10 minutes. Do not share this code.");
-
-        if (!$sent) {
+        if (!$requestId) {
             return response()->json([
                 'success' => false,
                 'error'   => 'Failed to send OTP. Please try again.',
             ], 500);
         }
+
+        // Store the Movider request_id in otp_hash column for verification later
+        DB::table('patient_otps')->insert([
+            'phone'      => $phone,
+            'otp_hash'   => $requestId,
+            'expires_at' => now()->addMinutes(10),
+            'created_at' => now(),
+        ]);
 
         return response()->json([
             'response' => 200,
@@ -670,15 +667,19 @@ class PatientAuthController extends Controller
             ], 422);
         }
 
-        if (!Hash::check($otp, $record->otp_hash)) {
+        // Acknowledge with Movider — otp_hash stores the Movider request_id
+        $sms     = new MoviderSmsService();
+        $isValid = $sms->acknowledgeVerify($record->otp_hash, $otp);
+
+        if (!$isValid) {
             return response()->json([
                 'success' => false,
                 'error'   => 'Invalid OTP. Please try again.',
             ], 422);
         }
 
-        // Mark OTP as used and store a short-lived verification token
-        $verificationToken = bin2hex(random_bytes(16)); // 32-char hex
+        // Mark OTP as used and issue a short-lived verification token
+        $verificationToken = bin2hex(random_bytes(16));
 
         DB::table('patient_otps')
             ->where('id', $record->id)
@@ -726,7 +727,7 @@ class PatientAuthController extends Controller
         $patientCode = $patient->patient_code ?? null;
         $walletAmount = 0;
         if ($patientCode) {
-            $wallet = DB::table('wallets')->where('patient_id', $patientCode)->first();
+            $wallet = DB::table('wallets')->where('patient_code', $patientCode)->first();
             $walletAmount = $wallet ? (float) $wallet->balance : 0;
         }
 
