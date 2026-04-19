@@ -23,7 +23,7 @@ if (getStorageItem("chakra-ui-color-mode") === "dark") {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ChakraProvider theme={theme}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         {" "}
         <App />
       </BrowserRouter>

@@ -12,9 +12,9 @@ import { updateUserLocalStorage } from "../Controllers/updateUserLocalStorage";
 import { resolveMediaUrl } from "../lib/media";
 
 const handleUpdate = async (data) => {
-  const res = await ADD(user.token, "update_user", data);
+  const res = await ADD(user.token, "patient/update-image", data);
   if (res.response !== 200) {
-    throw new Error(res.message);
+    throw new Error(res.message || "Failed to update profile picture");
   }
   return res;
 };
@@ -27,7 +27,6 @@ function ProfilePicture({ img }) {
   const mutation = useMutation({
     mutationFn: async (data) => {
       const formData = new FormData();
-      formData.append("id", user.id);
       formData.append("image", data);
       await handleUpdate(formData);
     },

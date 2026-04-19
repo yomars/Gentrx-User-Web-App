@@ -147,6 +147,16 @@ class AppointmentController extends Controller
 
             $patientId = $request->patient_id;
 
+            // Handle patient_code string passed as patient_id (new PatientAuth flow)
+            if (isset($patientId) && !is_numeric($patientId)) {
+                $resolvedPatient = PatientModel::where('patient_code', $patientId)->first();
+                if (!$resolvedPatient) {
+                    DB::rollBack();
+                    return Helpers::errorResponse("patient not found");
+                }
+                $patientId = $resolvedPatient->id;
+            }
+
             if (!isset($request->patient_id)) {
                 if (!isset($request->family_member_id)) {
 
@@ -227,7 +237,7 @@ class AppointmentController extends Controller
                         DB::rollBack();
                         return Helpers::errorResponse("error");
                     }
-                    $walletRecord = DB::table('wallets')->where('patient_id', $patientRecord->patient_code)->first();
+                    $walletRecord = DB::table('wallets')->where('patient_code', $patientRecord->patient_code)->first();
                     if (!$walletRecord) {
                         DB::rollBack();
                         return Helpers::errorResponse("error");
@@ -241,7 +251,7 @@ class AppointmentController extends Controller
 
                     $userNewAmount = $userOldAmount - $deductAmount;
                     $qResponceWU = DB::table('wallets')
-                        ->where('patient_id', $patientRecord->patient_code)
+                        ->where('patient_code', $patientRecord->patient_code)
                         ->update(['balance' => $userNewAmount, 'updated_at' => $timeStamp]);
                     if (!$qResponceWU) {
                         DB::rollBack();
@@ -260,8 +270,14 @@ class AppointmentController extends Controller
 
             $dataModel = new AppointmentModel;
 
+            $patientRecord = PatientModel::where('id', $patientId)->first();
+            $patientCode = $patientRecord ? $patientRecord->patient_code : null;
+            if (!$patientCode) {
+                DB::rollBack();
+                return Helpers::errorResponse("patient_code not found");
+            }
 
-            $dataModel->patient_id = $patientId;
+            $dataModel->patient_code = $patientCode;
             $dataModel->status = $request->status;
             $dataModel->date = $request->date;
             $dataModel->time_slots = $request->time_slots;
@@ -422,12 +438,12 @@ class AppointmentController extends Controller
 
             $appointmentData = DB::table("appointments")
                 ->select('appointments.*', 'patients.user_id')
-                ->join("patients", "patients.id", '=', 'appointments.patient_id')
+                ->join("patients", "patients.patient_code", '=', 'appointments.patient_code')
                 ->where("appointments.id", "=", $request->id)
                 ->first();
             $userId = $appointmentData->user_id;
-            $patient_id = $appointmentData->patient_id;
-            if ($patient_id == null) {
+            $patient_code = $appointmentData->patient_code;
+            if ($patient_code == null) {
                 DB::rollBack();
                 return Helpers::errorResponse("error");
             }
@@ -435,7 +451,7 @@ class AppointmentController extends Controller
             $dataASLModel->appointment_id  =  $request->id;
             $dataASLModel->user_id  = $userId;
             $dataASLModel->status  = "Rescheduled";
-            $dataASLModel->patient_id  = $patient_id;
+            $dataASLModel->patient_code  = $patient_code;
             $dataASLModel->clinic_id  =  $dataModel->clinic_id;
             $dataASLModel->notes  = "Appointment " . $oldDate . " " . $oldTime . " rescheduled to " . $request->date . " " . $request->time_slots;
             $dataASLModel->created_at = $timeStamp;
@@ -493,12 +509,12 @@ class AppointmentController extends Controller
 
                 $appointmentData = DB::table("appointments")
                     ->select('appointments.*', 'patients.user_id')
-                    ->join("patients", "patients.id", '=', 'appointments.patient_id')
+                    ->join("patients", "patients.patient_code", '=', 'appointments.patient_code')
                     ->where("appointments.id", "=", $request->id)
                     ->first();
                 $userId = $appointmentData->user_id;
-                $patient_id = $appointmentData->patient_id;
-                if ($patient_id == null) {
+                $patient_code = $appointmentData->patient_code;
+                if ($patient_code == null) {
                     DB::rollBack();
                     return Helpers::errorResponse("error");
                 }
@@ -507,7 +523,7 @@ class AppointmentController extends Controller
                 $dataASLModel->user_id  = $userId;
                 $dataASLModel->status  =  $request->status;
                 $dataASLModel->clinic_id = $dataModel->clinic_id;
-                $dataASLModel->patient_id  = $patient_id;
+                $dataASLModel->patient_code  = $patient_code;
                 $dataASLModel->created_at = $timeStamp;
                 $dataASLModel->updated_at = $timeStamp;
                 $qResponceApp = $dataASLModel->save();
@@ -633,7 +649,7 @@ class AppointmentController extends Controller
                 'clinics.ambulance_btn_enable as clinic_ambulance_btn_enable',
 
             )
-            ->Join('patients', 'patients.id', '=', 'appointments.patient_id')
+            ->Join('patients', 'patients.patient_code', '=', 'appointments.patient_code')
             ->Join('department', 'department.id', '=', 'appointments.dept_id')
             ->Join('users', 'users.id', '=', 'appointments.doct_id')
             ->join('clinics', 'clinics.id', '=', 'appointments.clinic_id')
@@ -694,7 +710,7 @@ class AppointmentController extends Controller
                 'users.image as doct_image',
                 'doctors.specialization as doct_specialization'
             )
-            ->join('patients', 'patients.id', '=', 'appointments.patient_id')
+            ->join('patients', 'patients.patient_code', '=', 'appointments.patient_code')
             ->join('department', 'department.id', '=', 'appointments.dept_id')
             ->join('users', 'users.id', '=', 'appointments.doct_id')
             ->leftJoin('doctors', 'doctors.user_id', '=', 'appointments.doct_id')
@@ -728,7 +744,7 @@ class AppointmentController extends Controller
         }
 
         if ($request->filled('patient_id')) {
-            $query->where('appointments.patient_id', '=', $request->patient_id );
+            $query->where('appointments.patient_code', '=', $request->patient_id );
         }
 
         if ($request->filled('dept_id')) {

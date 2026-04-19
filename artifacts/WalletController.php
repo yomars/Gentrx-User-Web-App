@@ -32,11 +32,11 @@ class WalletController extends Controller
         $clinicId = $request->query('clinic_id');
 
         $query = DB::table('wallets as w')
-            ->join('patients as p', 'p.id', '=', 'w.patient_id')
+            ->join('patients as p', 'p.patient_code', '=', 'w.patient_code')
             ->leftJoin('clinics as c', 'c.id', '=', 'p.clinic_id')
             ->select([
                 'w.id',
-                'w.patient_id',
+                'w.patient_code',
                 'w.balance',
                 'w.currency',
                 'w.created_at',
@@ -65,7 +65,7 @@ class WalletController extends Controller
 
         // Summary stats
         $summary = DB::table('wallets as w')
-            ->join('patients as p', 'p.id', '=', 'w.patient_id')
+            ->join('patients as p', 'p.patient_code', '=', 'w.patient_code')
             ->when($clinicId, fn($q) => $q->where('p.clinic_id', $clinicId))
             ->selectRaw('SUM(w.balance) AS total_balance, COUNT(*) AS active_wallets')
             ->first();
@@ -85,23 +85,30 @@ class WalletController extends Controller
     // -----------------------------------------------------------------------
     public function showByPatient($patientId)
     {
+        // Resolve patient_code from the numeric patient ID in the URL
+        $patient = DB::table('patients')->where('id', $patientId)->first();
+        if (!$patient || !$patient->patient_code) {
+            return response()->json(['response' => 404, 'status' => false, 'message' => 'Patient not found.'], 404);
+        }
+        $patientCode = $patient->patient_code;
+
         $wallet = DB::table('wallets as w')
-            ->join('patients as p', 'p.id', '=', 'w.patient_id')
+            ->join('patients as p', 'p.patient_code', '=', 'w.patient_code')
             ->select([
                 'w.*',
                 DB::raw("CONCAT(p.f_name, ' ', p.l_name) AS patient_name"),
             ])
-            ->where('w.patient_id', $patientId)
+            ->where('w.patient_code', $patientCode)
             ->first();
 
         if (!$wallet) {
             // Auto-create wallet on first access
             $id = DB::table('wallets')->insertGetId([
-                'patient_id' => $patientId,
-                'balance'    => 0.00,
-                'currency'   => 'PHP',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
+                'patient_code' => $patientCode,
+                'balance'      => 0.00,
+                'currency'     => 'PHP',
+                'created_at'   => Carbon::now(),
+                'updated_at'   => Carbon::now(),
             ]);
             $wallet = DB::table('wallets')->where('id', $id)->first();
         }
@@ -197,7 +204,11 @@ class WalletController extends Controller
             $request->clinic_id ? (int) $request->clinic_id : null
         );
 
-        $walletId = $this->ensureWallet((int) $request->patient_id);
+        $topupPatient = DB::table('patients')->where('id', $request->patient_id)->first();
+        if (!$topupPatient || !$topupPatient->patient_code) {
+            return response()->json(['response' => 422, 'status' => false, 'message' => 'Patient not found.'], 422);
+        }
+        $walletId = $this->ensureWallet($topupPatient->patient_code);
 
         DB::table('wallets')
             ->where('id', $walletId)
@@ -264,7 +275,11 @@ class WalletController extends Controller
             $request->clinic_id ? (int) $request->clinic_id : null
         );
 
-        $walletId = $this->ensureWallet((int) $request->patient_id);
+        $deductPatient = DB::table('patients')->where('id', $request->patient_id)->first();
+        if (!$deductPatient || !$deductPatient->patient_code) {
+            return response()->json(['response' => 422, 'status' => false, 'message' => 'Patient not found.'], 422);
+        }
+        $walletId = $this->ensureWallet($deductPatient->patient_code);
         $wallet   = DB::table('wallets')->where('id', $walletId)->first();
 
         if ($wallet->balance < $request->amount) {
@@ -302,18 +317,18 @@ class WalletController extends Controller
     // -----------------------------------------------------------------------
     // Private: ensure wallet row exists for patient, returns wallet id
     // -----------------------------------------------------------------------
-    private function ensureWallet(int $patientId): int
+    private function ensureWallet(string $patientCode): int
     {
-        $wallet = DB::table('wallets')->where('patient_id', $patientId)->first();
+        $wallet = DB::table('wallets')->where('patient_code', $patientCode)->first();
         if ($wallet) {
             return $wallet->id;
         }
         return DB::table('wallets')->insertGetId([
-            'patient_id' => $patientId,
-            'balance'    => 0.00,
-            'currency'   => 'PHP',
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
+            'patient_code' => $patientCode,
+            'balance'      => 0.00,
+            'currency'     => 'PHP',
+            'created_at'   => Carbon::now(),
+            'updated_at'   => Carbon::now(),
         ]);
     }
 

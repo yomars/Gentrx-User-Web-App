@@ -61,7 +61,7 @@ export default function HomePage() {
     { label: "Check-up", icon: <MdHealthAndSafety fontSize={28} />, to: "/doctors" },
     { label: "Doctors", icon: <FaUserMd fontSize={26} />, to: "/doctors" },
     { label: "Prescription", icon: <BsPrescription fontSize={26} />, to: "/login" },
-    { label: "Patient Profile", icon: <HiUserCircle fontSize={30} />, to: "/login" },
+    { label: "Patient Profile", icon: <HiUserCircle fontSize={30} />, to: "/profile" },
     { label: "Hospital Info", icon: <FaHospitalAlt fontSize={26} />, to: "/clinics" },
     { label: "Top-up", icon: <IoMdWallet fontSize={26} />, to: "/login" },
   ];

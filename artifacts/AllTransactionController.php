@@ -113,19 +113,19 @@ class AllTransactionController extends Controller
           DB::rollBack();
           return Helpers::errorResponse("error");
         }
-        $walletRecord = DB::table('wallets')->where('patient_id', $patientRecord->patient_code)->first();
+        $walletRecord = DB::table('wallets')->where('patient_code', $patientRecord->patient_code)->first();
         $oldAmount = $walletRecord ? (float) $walletRecord->balance : 0.0;
         $newAmount = $request->transaction_type == "Credited"
             ? $oldAmount + (float) $request->amount
             : $oldAmount - (float) $request->amount;
         if ($walletRecord) {
             $walletUpdateRes = DB::table('wallets')
-                ->where('patient_id', $patientRecord->patient_code)
+                ->where('patient_code', $patientRecord->patient_code)
                 ->update(['balance' => $newAmount, 'updated_at' => $timeStamp]);
         } else {
             // First top-up: create the wallet row
             $walletUpdateRes = DB::table('wallets')->insert([
-                'patient_id' => $patientRecord->patient_code,
+                'patient_code' => $patientRecord->patient_code,
                 'balance'    => $newAmount,
                 'currency'   => 'PHP',
                 'created_at' => $timeStamp,
@@ -206,18 +206,18 @@ class AllTransactionController extends Controller
           DB::rollBack();
           return Helpers::errorResponse("error");
         }
-        $walletRecord2 = DB::table('wallets')->where('patient_id', $patientRecord2->patient_code)->first();
+        $walletRecord2 = DB::table('wallets')->where('patient_code', $patientRecord2->patient_code)->first();
         $oldAmount = $walletRecord2 ? (float) $walletRecord2->balance : 0.0;
         $newAmount = $request->transaction_type == "Credited"
             ? $oldAmount + (float) $request->amount
             : $oldAmount - (float) $request->amount;
         if ($walletRecord2) {
             $walletUpdateRes = DB::table('wallets')
-                ->where('patient_id', $patientRecord2->patient_code)
+                ->where('patient_code', $patientRecord2->patient_code)
                 ->update(['balance' => $newAmount, 'updated_at' => $timeStamp]);
         } else {
             $walletUpdateRes = DB::table('wallets')->insert([
-                'patient_id' => $patientRecord2->patient_code,
+                'patient_code' => $patientRecord2->patient_code,
                 'balance'    => $newAmount,
                 'currency'   => 'PHP',
                 'created_at' => $timeStamp,

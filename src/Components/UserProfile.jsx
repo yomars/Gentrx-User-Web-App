@@ -22,10 +22,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ADD, GET_AUTH } from "../Controllers/ApiControllers";
 import Loading from "./Loading";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ProfilePicture from "./ProfilePicture";
 import showToast from "../Controllers/ShowToast";
 import ErrorPage from "../Pages/ErrorPage";
 import { updateUserLocalStorage } from "../Controllers/updateUserLocalStorage";
+import logoutFn from "../Controllers/logout";
 
 const getData = async () => {
   const res = await GET_AUTH(user.token, `patient/me`);
@@ -42,6 +44,7 @@ const handleUpdate = async (data) => {
 
 const UserProfile = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const {
     data: userData,
     isLoading,
@@ -50,6 +53,16 @@ const UserProfile = () => {
     queryKey: ["user"],
     queryFn: getData,
   });
+
+  // If patient/me returns 401 (stale/invalid token), clear session and redirect to login
+  useEffect(() => {
+    if (error) {
+      const status = error?.response?.status ?? error?.cause?.status;
+      if (status === 401 || error?.message?.toLowerCase().includes("unauthorized") || error?.message?.toLowerCase().includes("invalid or expired token")) {
+        logoutFn();
+      }
+    }
+  }, [error, navigate]);
 
   const { register, handleSubmit, reset } = useForm();
   const toast = useToast();
@@ -91,15 +104,17 @@ const UserProfile = () => {
     mutation.mutate(data);
   };
 
+  const cardBg = useColorModeValue("white", "gray.800");
+
   if (isLoading) return <Loading />;
-  if (error) return <ErrorPage />;
+  if (error) return null; // logoutFn() redirect handles the 401 case
 
   return (
     <>
       {userData ? (
         <Box
           w={"full"}
-          bg={useColorModeValue("white", "gray.800")}
+          bg={cardBg}
           boxShadow={"xl"}
           rounded={"lg"}
           mt={5}
