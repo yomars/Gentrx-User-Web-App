@@ -82,6 +82,7 @@ const Signup = () => {
     register,
     control,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm();
 
@@ -163,7 +164,7 @@ const Signup = () => {
 
     const { f_name, l_name, phone, gender, email, password } = values;
     const fullName = [f_name, l_name].filter(Boolean).join(" ").trim();
-    const normalizedPhone = String(phone || "").trim();
+    const normalizedPhone = sanitizePhone(phone);
 
     try {
       await ensurePatientAuthBackendReady();
@@ -282,6 +283,16 @@ const Signup = () => {
       showToast(toast, "error", error.message);
     }
   };
+
+  // Sanitise mobile input: digits only, strip leading zeros
+  const sanitizePhone = (raw) => String(raw || "").replace(/\D/g, "").replace(/^0+/, "").slice(0, 10);
+  const phoneField = register("phone", {
+    required: "Phone number is required",
+    pattern: {
+      value: /^[0-9]{10}$/,
+      message: "Phone number must be exactly 10 digits",
+    },
+  });
 
   return (
     <Flex
@@ -437,14 +448,15 @@ const Signup = () => {
                   </InputLeftAddon>
                   <Input
                     type="tel"
+                    inputMode="numeric"
                     placeholder="Mobile Number"
-                    {...register("phone", {
-                      required: "Phone number is required",
-                      pattern: {
-                        value: /^[0-9]{10}$/,
-                        message: "Phone number must be 10 digits",
-                      },
-                    })}
+                    maxLength={10}
+                    {...phoneField}
+                    onChange={(e) => {
+                      const clean = sanitizePhone(e.target.value);
+                      e.target.value = clean;
+                      phoneField.onChange(e);
+                    }}
                     borderColor="#ddd"
                     _focus={{ borderColor: "#34C38F", boxShadow: "0 0 0 1px #34C38F" }}
                   />
