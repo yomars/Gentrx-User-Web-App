@@ -53,7 +53,6 @@ function DoctorCard({ doctor }) {
           className="ds-card__img"
           src={imageSrc}
           alt={`Dr. ${doctor.f_name} ${doctor.l_name}`}
-          loading="lazy"
         />
       </div>
 

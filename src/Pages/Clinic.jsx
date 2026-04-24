@@ -110,7 +110,7 @@ export default function Doctor() {
                 borderRadius={8}
                 size="2xl"
                 src={`${imageBaseURL}/${data.image}`}
-                fallbackSrc="https://via.placeholder.com/150"
+                fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2394a3b8' font-size='12' font-family='sans-serif'%3ENo Image%3C/text%3E%3C/svg%3E"
               />
               <Box>
                 <Text fontSize={["lg", "xl"]} fontWeight="bold">

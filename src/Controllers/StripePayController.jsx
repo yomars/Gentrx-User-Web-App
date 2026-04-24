@@ -20,7 +20,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe } from "@stripe/stripe-js/pure";
 import {
   Elements,
   PaymentElement,
@@ -34,7 +34,9 @@ import Loading from "../Components/Loading";
 import ISD_CODES from "./ISDCODES";
 import showToast from "./ShowToast";
 import {
+  clearPendingAppointmentPayment,
   clearPendingWalletTopup,
+  savePendingAppointmentPayment,
   savePendingWalletTopup,
 } from "../lib/walletTopup";
 
@@ -62,12 +64,17 @@ const resolveStripeReturnBaseUrl = () => {
 };
 
 const formattedData = (data) => {
+  const canonicalDoctorId = data.doctor_id || data.doct_id || "";
+  const canonicalPatientCode = data.patient_code || data.patient_id || "";
+
   return {
     family_member_id: data.family_member_id,
+    doctor_id: canonicalDoctorId,
+    patient_code: canonicalPatientCode,
     status: data.status,
     date: data.date,
     time_slots: data.time_slots,
-    doct_id: data.doct_id,
+    doct_id: data.doct_id || canonicalDoctorId,
     dept_id: data.dept_id,
     type: data.type,
     payment_status: data.payment_status,
@@ -132,6 +139,14 @@ const CheckoutForm = ({ onSuccess, onCancel, type, data }) => {
           status: "pending",
           userId: user?.id,
         });
+      } else if (type === "Appointment") {
+        savePendingAppointmentPayment({
+          appointment: data,
+          paymentMethod: "stripe",
+          source: "appointment",
+          status: "pending",
+          userId: user?.id,
+        });
       }
 
       const { error: stripeError, paymentIntent } = await stripe.confirmPayment(
@@ -146,6 +161,8 @@ const CheckoutForm = ({ onSuccess, onCancel, type, data }) => {
       if (stripeError) {
         if (type === "Wallet") {
           clearPendingWalletTopup();
+        } else if (type === "Appointment") {
+          clearPendingAppointmentPayment();
         }
         setError(stripeError.message);
         showToast(toast, "error", stripeError.message);
@@ -159,6 +176,8 @@ const CheckoutForm = ({ onSuccess, onCancel, type, data }) => {
     } catch (err) {
       if (type === "Wallet") {
         clearPendingWalletTopup();
+      } else if (type === "Appointment") {
+        clearPendingAppointmentPayment();
       }
       setError(err.message);
       showToast(toast, "error", err.message);

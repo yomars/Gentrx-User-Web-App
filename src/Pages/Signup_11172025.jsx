@@ -157,6 +157,7 @@ const Signup = () => {
 
   const varifyOTP = async (values) => {
     const { f_name, l_name, phone, gender, dob, email } = values;
+    const fullName = [f_name, l_name].filter(Boolean).join(" ").trim();
     if (!OTP) {
       return toast({
         title: "Please Enter OTP!",
@@ -170,6 +171,7 @@ const Signup = () => {
       const otpVarified = await handleOtp();
       if (otpVarified !== false) {
         const data = {
+          name: fullName,
           f_name,
           l_name,
           phone,

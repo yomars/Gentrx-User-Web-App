@@ -14,6 +14,7 @@ import { FaUserAlt } from "react-icons/fa";
 import { AiFillHome } from "react-icons/ai";
 import { BiUser, BiWallet } from "react-icons/bi";
 import { BiLogOut } from "react-icons/bi";
+import logoutFn from "../Controllers/logout";
 import { IoMdWallet } from "react-icons/io";
 import {
   Box,
@@ -50,7 +51,6 @@ import NotificationIcon from "../Components/Notification";
 import moment from "moment";
 import WalletModel from "../Components/Wallet";
 import LocationSeletor from "../Components/LocationSeletor";
-import { removeStorageItem } from "../lib/storage";
 import showToast from "../Controllers/ShowToast";
 import { consumeWalletTopupResult } from "../lib/walletTopup";
 
@@ -387,11 +387,7 @@ export default function TopbarNew() {
                             color="gray.500"
                           />
                         }
-                        onClick={() => {
-                          removeStorageItem("user");
-                          navigate("/", { replace: true });
-                          window.location.reload();
-                        }}
+                        onClick={() => logoutFn()}
                       >
                         Logout
                       </MenuItem>
@@ -519,11 +515,7 @@ export default function TopbarNew() {
                               </MenuItem>
                               <MenuItem
                                 fontSize={16}
-                                onClick={() => {
-                                  removeStorageItem("user");
-                                  navigate("/", { replace: true });
-                                  window.location.reload();
-                                }}
+                                onClick={() => logoutFn()}
                               >
                                 Logout
                               </MenuItem>

@@ -1,5 +1,8 @@
 ﻿// src/firebase-config.js
-import { initializeApp } from "firebase/app";
+// Lazy initialization: Firebase is only started when getFirebaseApp() is first called.
+// This prevents Firebase from accessing cross-origin storage (IndexedDB, cookies) on every
+// page load, which triggers Edge/Chrome Tracking Prevention warnings for all users.
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getToken } from "firebase/messaging";
 
 const firebaseConfig = {
@@ -12,9 +15,9 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Returns the existing Firebase app or initializes one on first call.
+export function getFirebaseApp() {
+  return getApps().length ? getApp() : initializeApp(firebaseConfig);
+}
 
-// Initialize Firebase Messaging
-
-export { app, getToken };
+export { getToken };

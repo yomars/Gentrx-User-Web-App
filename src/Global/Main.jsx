@@ -6,7 +6,6 @@ import Loading from "../Components/Loading";
 import { NotFoundPage } from "../Pages/NotFoundPage";
 import imageBaseURL from "../Controllers/image";
 import TopbarNew from "./TopbarNew";
-import StripePaymentProcess from "../Pages/StripePaymentProcess";
 import ContactMarqee from "../Components/ContactMarqee";
 import useSettingsData from "../Hooks/SettingData";
 import { getStorageJSON } from "../lib/storage";
@@ -48,6 +47,7 @@ const Search = lazy(() => import("../Pages/SearchPage"));
 const Clinic = lazy(() => import("../Pages/Clinic"));
 const Clinics = lazy(() => import("../Pages/Clinics"));
 const Sitemap = lazy(() => import("../Pages/Sitemap"));
+const StripePaymentProcess = lazy(() => import("../Pages/StripePaymentProcess"));
 
 function ProtectedRoute({ children }) {
   const currentUser = getStorageJSON("user");

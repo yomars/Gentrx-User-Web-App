@@ -3,9 +3,8 @@ import { IoMdRefresh } from "react-icons/io";
 import { TbBrandZoom } from "react-icons/tb";
 /* eslint-disable react/prop-types */
 import { AiOutlineRight } from "react-icons/ai";
-import { FaDirections, FaFileDownload } from "react-icons/fa";
+import { FaDirections, FaFileDownload, FaUserAlt, FaChevronLeft } from "react-icons/fa";
 import { AiOutlineDownload } from "react-icons/ai";
-import { FaUserAlt } from "react-icons/fa";
 import {
   Box,
   Flex,
@@ -53,6 +52,7 @@ import AddDoctorReview from "../Components/AddDoctorReview";
 import { AnimatePresence, motion } from "framer-motion";
 import { GoFileSubmodule } from "react-icons/go";
 import { resolveAttachmentUrl } from "../lib/media";
+import { getDoctorIdentifier, getPatientIdentifier } from "../lib/appointmentIdentity";
 
 const formatDate = (dateString) => {
   const date = moment(dateString);
@@ -98,16 +98,13 @@ const AppointmentDetails = () => {
   };
   const getQueueNumber = async () => {
     const res = await GET(
-      `get_appointment_check_in?doctor_id=${appointmentData?.doct_id}&start_date=${appointmentData?.date}&end_date=${appointmentData?.date}`
+      `get_appointment_check_in?doctor_id=${doctorIdentifier}&start_date=${appointmentData?.date}&end_date=${appointmentData?.date}`
     );
     return res.data;
   };
   const getPatientFiles = async () => {
-    const patientCode =
-      appointmentData?.patient_code ||
-      appointmentData?.patient_id;
     const res = await GET(
-      `get_patient_file?patient_code=${patientCode}`
+      `get_patient_file?patient_id=${patientIdentifier}`
     );
     return res.data;
   };
@@ -129,21 +126,30 @@ const AppointmentDetails = () => {
     queryFn: getPrescription,
   });
 
+  const doctorIdentifier = getDoctorIdentifier(
+    appointmentData,
+    "AppointmentDetails:get_appointment_check_in"
+  );
+  const patientIdentifier = getPatientIdentifier(
+    appointmentData,
+    "AppointmentDetails:get_patient_file"
+  );
+
   // Add the missing queries:
   const { 
     data: queueData, 
     isFetching: queueIsFetching,
     refetch 
   } = useQuery({
-    queryKey: ["queue", appointmentData?.doct_id, appointmentData?.date],
+    queryKey: ["queue", doctorIdentifier, appointmentData?.date],
     queryFn: getQueueNumber,
-    enabled: !!appointmentData?.doct_id && !!appointmentData?.date && appointmentData?.type === "OPD" && appointmentData?.status === "Confirmed",
+    enabled: !!doctorIdentifier && !!appointmentData?.date && appointmentData?.type === "OPD" && appointmentData?.status === "Confirmed",
   });
 
   const { isLoading: patientFilesLoading, data: patientFilesData } = useQuery({
-    queryKey: ["patient-files", appointmentData?.patient_code || appointmentData?.patient_id],
+    queryKey: ["patient-files", patientIdentifier],
     queryFn: getPatientFiles,
-    enabled: !!(appointmentData?.patient_code || appointmentData?.patient_id),
+    enabled: !!patientIdentifier,
   });
 
   const getLaboratoryRequests = async () => {
@@ -173,493 +179,325 @@ const AppointmentDetails = () => {
   )
     return <Loading />;
   return (
-    <Box>
-      {" "}
-      <Box bg={"primary.main"} p={4} py={{ base: "4", md: "10" }}>
-        <Box className="container">
-          <Text
-            fontFamily={"Quicksand, sans-serif"}
-            fontSize={{ base: 24, md: 32 }}
-            fontWeight={700}
-            textAlign={"center"}
-            mt={0}
-            color={"#fff"}
+    <Box bg="gray.50" minH="100vh">
+      {/* Header */}
+      <Box
+        bg="linear-gradient(135deg, #34C38F 0%, #2db580 100%)"
+        pt={{ base: 8, md: 10 }}
+        pb={{ base: 14, md: 16 }}
+        px={4}
+        position="relative"
+        overflow="hidden"
+      >
+        <Box position="absolute" top="-40px" right="-40px" w="180px" h="180px" borderRadius="full" bg="whiteAlpha.100" />
+        <Box position="absolute" bottom="-50px" left="-20px" w="140px" h="140px" borderRadius="full" bg="whiteAlpha.50" />
+        <Box maxW="640px" mx="auto" position="relative">
+          <Button
+            variant="ghost"
+            color="white"
+            leftIcon={<FaChevronLeft />}
+            mb={3}
+            onClick={() => navigate(-1)}
+            _hover={{ bg: "whiteAlpha.200" }}
+            size="sm"
           >
+            Back
+          </Button>
+          <Text fontSize={{ base: "xl", md: "2xl" }} fontWeight={800} color="white" textAlign="center" mb={3}>
             Appointment #{id}
           </Text>
+          <Flex justify="center">
+            <Box display="inline-flex" alignItems="center" px={3} py={1} borderRadius="full" bg="whiteAlpha.200">
+              <Box w={2} h={2} borderRadius="full" bg="white" mr={2} />
+              <Text fontSize="sm" fontWeight={700} color="white">{appointmentData?.status}</Text>
+            </Box>
+          </Flex>
         </Box>
-      </Box>{" "}
-      <Box className="container" minH={"80vh"}>
-        <Flex justify={"center"}>
-          {" "}
-          <Box
-            p={[2, 4, 5]}
-            shadow="lg"
-            borderWidth="1px"
-            borderRadius="lg"
-            mx="auto"
-            bg="white"
-            mt={5}
-            w={600}
-            maxW={"98vw"}
-          >
-            <Flex alignItems="center" mb={5}>
-              <Avatar
-                borderRadius={5}
-                size="2xl"
+      </Box>
+      {/* Main content */}
+      <Box maxW="640px" mx="auto" px={4} mt="-28px" pb={10}>
+
+        {/* Doctor Card */}
+        <Box bg="white" borderRadius="20px" boxShadow="0 4px 20px rgba(0,0,0,0.1)" p={5} mb={4}>
+          <Flex align="center" gap={4}>
+            <Box
+              w="90px"
+              borderRadius="12px"
+              overflow="hidden"
+              flexShrink={0}
+              bg="gray.100"
+            >
+              <Image
                 src={`${imageBaseURL}/${appointmentData.doct_image}`}
+                w="100%"
+                h="auto"
+                display="block"
+                fallback={<Avatar borderRadius="12px" size="xl" />}
               />
-              <Box ml={3}>
-                <Text fontSize="lg" fontWeight="bold">
-                  {appointmentData.doct_f_name} {appointmentData.doct_l_name}
-                </Text>
-                <Text
-                  fontWeight={600}
-                  color={"gray.600"}
-                  fontSize={["sm", "sm"]}
-                >
-                  {appointmentData.doct_specialization} ({" "}
-                  {appointmentData.dept_title})
-                </Text>
-                <Text
-                  fontWeight={600}
-                  color={"text.600"}
-                  fontSize={["md", "md"]}
-                >
-                  {appointmentData.clinic_title}
-                </Text>
-
-                <Text
-                  fontWeight={600}
-                  color={"gray.600"}
-                  fontSize={["xs", "xs"]}
-                  display={"flex"}
-                  gap={2}
-                  alignItems={"center"}
-                >
-                  <RatingStars rating={appointmentData.average_rating} /> (
-                  {appointmentData.number_of_reviews})
-                </Text>
-                <Text
-                  fontWeight={600}
-                  color={"gray.600"}
-                  fontSize={["xs", "xs"]}
-                  display={"flex"}
-                  align={"center"}
-                  gap={2}
-                  mt={1}
-                >
-                  <FaUserAlt fontSize={12} />{" "}
-                  <Text mt={"-2px"}>
-                    {appointmentData.total_appointment_done}+ Happy Clients
-                  </Text>
-                </Text>
-              </Box>
-            </Flex>
-
-            {appointmentData?.status === "Visited" ||
-            appointmentData?.status === "Completed" ? (
-              <Button
-                colorScheme="green"
-                variant="solid"
-                width="100%"
-                size="xs"
-                onClick={ratingOnOpen}
-              >
+            </Box>
+            <Box flex={1} minW={0}>
+              <Text fontSize="lg" fontWeight={800} color="gray.800" noOfLines={1}>
+                {appointmentData.doct_f_name} {appointmentData.doct_l_name}
+              </Text>
+              <Text fontSize="sm" fontWeight={600} color="green.600" noOfLines={1}>
+                {appointmentData.doct_specialization}
+              </Text>
+              <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                {appointmentData.dept_title} · {appointmentData.clinic_title}
+              </Text>
+              <HStack spacing={1} mt={1}>
+                <RatingStars rating={appointmentData.average_rating} />
+                <Text fontSize="xs" color="gray.500">({appointmentData.number_of_reviews} reviews)</Text>
+              </HStack>
+            </Box>
+          </Flex>
+          <Divider my={4} />
+          <Flex gap={2} flexWrap="wrap">
+            {(appointmentData?.status === "Visited" || appointmentData?.status === "Completed") && (
+              <Button size="sm" colorScheme="green" borderRadius="full" flex={1} minW="120px" onClick={ratingOnOpen}>
                 Review Doctor
               </Button>
-            ) : (
-              <Divider />
             )}
-            {appointmentData.type === "OPD" &&
-            appointmentData?.status === "Confirmed" ? (
+            {appointmentData.type === "OPD" && appointmentData?.status === "Confirmed" && (
               queueNumb >= 0 ? (
                 <Button
-                  fontWeight={600}
-                  color={"#fff"}
-                  mt={2}
-                  bg={"green.700"}
-                  _hover={{
-                    bg: "green.700",
-                  }}
-                  size={"sm"}
-                  rightIcon={<IoMdRefresh fontSize={18} />}
+                  size="sm" colorScheme="green" variant="outline" borderRadius="full"
+                  flex={1} minW="120px" rightIcon={<IoMdRefresh />}
                   onClick={() => {
                     // @ts-ignore
-                    queryClient.invalidateQueries([
-                      "queue",
-                      appointmentData?.doct_id,
-                      appointmentData?.date,
-                    ]);
+                    queryClient.invalidateQueries(["queue", doctorIdentifier, appointmentData?.date]);
                     refetch();
                   }}
                 >
-                  {`Queue Number. - ${queueNumb + 1}`}
+                  Queue #{queueNumb + 1}
                 </Button>
               ) : (
                 <Button
-                  fontWeight={600}
-                  color={"#fff"}
-                  mt={2}
-                  bg={"green.700"}
-                  _hover={{
-                    bg: "green.700",
-                  }}
-                  size={"sm"}
-                  rightIcon={<MdOutlineLogin fontSize={18} />}
-                  onClick={() => {
-                    navigate(`/appointment-success/${id}`);
-                  }}
+                  size="sm" colorScheme="green" variant="outline" borderRadius="full"
+                  flex={1} minW="120px" rightIcon={<MdOutlineLogin />}
+                  onClick={() => navigate(`/appointment-success/${id}`)}
                 >
                   Check-In
                 </Button>
               )
-            ) : null}
-
-            <Flex align={"center"} justify={"space-between"} mt={5}>
-              {" "}
-              <Text fontWeight="bold" color={"gray.600"}>
-                Appointment #{appointmentData.id}
-              </Text>
-              {getStatusBadge(appointmentData?.status)}
-            </Flex>
-            <Box>
-              {" "}
-              <Text fontWeight={600} color={"gray.600"} fontSize={"sm"}>
-                Patient : {appointmentData.patient_f_name}{" "}
-                {appointmentData.patient_l_name}
-              </Text>
-              <Badge
-                colorScheme={
-                  appointmentData.type === "Emergency" ? "red" : "green"
-                }
-                fontSize={{ base: "xs", md: "xs" }}
-                fontWeight={800}
-              >
-                {appointmentData.type}
-              </Badge>
-            </Box>
-            <Divider my={2} />
-            <Box overflow="hidden" p={5}>
-              <Flex align={"center"} justify={"space-between"} gap={5}>
-                <Box flex={1}>
-                  {" "}
-                  <Text>Date</Text>
-                  <InputGroup w={"100%"}>
-                    <InputLeftElement pointerEvents="none">
-                      <CalendarIcon color="gray.800" />
-                    </InputLeftElement>
-                    <Input
-                      variant="flushed"
-                      isReadOnly
-                      defaultValue={`${month} ${date} ${year}`}
-                      fontWeight={600}
-                      fontSize={"sm"}
-                    />
-                  </InputGroup>
-                </Box>
-                <Box flex={1}>
-                  <Text>Time</Text>
-                  <InputGroup w={"100%"}>
-                    <InputLeftElement pointerEvents="none">
-                      <CalendarIcon color="gray.800" />
-                    </InputLeftElement>
-                    <Input
-                      variant="flushed"
-                      isReadOnly
-                      defaultValue={appointmentData.time_slots}
-                      fontWeight={600}
-                      fontSize={"sm"}
-                    />
-                  </InputGroup>
-                </Box>
-              </Flex>
-            </Box>
-            {appointmentData?.type === "Video Consultant" && (
-              <Flex gap={4}>
-                {" "}
-                <Button
-                  isDisabled={
-                    appointmentData?.status === "Cancelled" ||
-                    appointmentData?.status === "Rejected"
-                  }
-                  colorScheme="green"
-                  mt={5}
-                  width="100%"
-                  size={"sm"}
-                  leftIcon={<TbBrandZoom fontSize={"20px"} />}
-                  onClick={() => {
-                    window.open(appointmentData?.meeting_link, "_blank");
-                  }}
-                >
-                  Join Meeting
-                </Button>
-              </Flex>
             )}
-            <Divider my={2} mt={5} />
-            <Box mt={5}>
-              <Flex align={"center"} justify={"space-between"} mb={3}>
-                <Text fontWeight="bold">Laboratory Requests - </Text>
-              </Flex>
-
-              {labRequestsLoading ? (
-                <Loading />
-              ) : labRequestsData && labRequestsData.length ? (
-                labRequestsData?.map((request, index) => (
-                  <Box key={request.id} mb={3}>
-                    <Button
-                      variant="link"
-                      colorScheme="green"
-                      rightIcon={<AiOutlineDownload fontSize={18} />}
-                      onClick={() => {
-                        printPDF(`${api}/laboratory_request/generatePDF/${request.id}`);
-                      }}
-                    >
-                      Download Laboratory Request #{index + 1}
-                    </Button>
-                    <Flex gap={2} mt={1} flexWrap={"wrap"} ml={4}>
-                      {request.items?.map((item) => (
-                        <Badge
-                          key={item.id}
-                          colorScheme={item.is_urgent ? "red" : "blue"}
-                          fontSize={"10px"}
-                        >
-                          {item.test_name}
-                        </Badge>
-                      ))}
-                    </Flex>
-                  </Box>
-                ))
-              ) : (
-                <Alert
-                  status="error"
-                  size={"sm"}
-                  fontSize={"sm"}
-                  py={1}
-                  fontWeight={600}
-                  borderRadius={4}
-                >
-                  <AlertIcon />
-                  Laboratory Requests Not Found!
-                </Alert>
-              )}
-            </Box>
-            <Divider my={2} mt={5} />
-            <Box mt={5}>
-              <Flex align={"center"} justify={"space-between"}>
-                {" "}
-                <Text fontWeight="bold">Prescriptions - </Text>
-              </Flex>
-              {prescriptionData.length ? (
-                prescriptionData?.map((item, index) => (
-                  <Button
-                    key={item.id}
-                    variant="link"
-                    colorScheme="green"
-                    rightIcon={<AiOutlineDownload fontSize={18} />}
-                    onClick={() => {
-                      const pdfURL = resolveAttachmentUrl(item, ["pdf_file"]);
-                      if (pdfURL) {
-                        printPDF(pdfURL);
-                      } else {
-                        printPDF(`${api}/prescription/generatePDF/${item.id}`);
-                      }
-                    }}
-                  >
-                    Download Prescription #{index + 1}
-                  </Button>
-                ))
-              ) : (
-                <Alert
-                  status="error"
-                  size={"sm"}
-                  fontSize={"sm"}
-                  py={1}
-                  fontWeight={600}
-                  borderRadius={4}
-                >
-                  <AlertIcon />
-                  Prescriptions Not Found!
-                </Alert>
-              )}
-            </Box>
-            <Divider my={2} mt={5} />
-            <Box mt={5}>
-              <Flex align={"center"} justify={"space-between"} mb={3}>
-                {" "}
-                <Text fontWeight="bold">Patient Files - </Text>
-              </Flex>
-
-              {patientFilesData.length ? (
-                <AnimatePresence>
-                  {patientFilesData?.map((file) => (
-                    <motion.div
-                      key={file.id}
-                      initial={{ opacity: 0, y: 50 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.7 }}
-                    >
-                      <Card cursor={"pointer"} mb={4} onClick={() => {}}>
-                        <CardBody p={4}>
-                          <Flex align={"center"} justify={"space-between"}>
-                            <Flex align={"center"} gap={4}>
-                              {" "}
-                              <GoFileSubmodule fontSize={24} color="#2D3748" />
-                              <Box>
-                                <Text fontSize={14} fontWeight={600} mb={0}>
-                                  {file.file_name}
-                                </Text>
-                                <Text fontSize={12} fontWeight={600}>
-                                  {file.f_name} {file.l_name} |{" "}
-                                  {moment(file.created_at).format(
-                                    "D-MMM-YY HH:MM A"
-                                  )}
-                                </Text>
-                              </Box>
-                            </Flex>
-                            <IconButton
-                              icon={<FaFileDownload />}
-                              colorScheme={"green"}
-                              size={"sm"}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openFile(file);
-                              }}
-                            />
-                          </Flex>
-                        </CardBody>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              ) : (
-                <Alert
-                  status="error"
-                  size={"sm"}
-                  fontSize={"sm"}
-                  py={1}
-                  fontWeight={600}
-                  borderRadius={4}
-                >
-                  <AlertIcon />
-                  Files Not Found!
-                </Alert>
-              )}
-            </Box>
-            <Divider my={2} mt={5} />
-            <Box mt={5}>
-              <Flex align={"center"} justify={"space-between"}>
-                {" "}
-                <Text fontWeight="bold">Payment Status</Text>
-                <Badge colorScheme="green" fontWeight="bold" variant="solid">
-                  {appointmentData?.payment_status || "Not Paid"}
-                </Badge>
-              </Flex>
-
-              <Text color={"gray.600"} fontSize={"sm"} fontWeight={600}>
-                Payment Id #{appointmentData.id}
-              </Text>
-              {invoiceData ? (
-                <Button
-                  variant="link"
-                  colorScheme="green"
-                  rightIcon={<AiOutlineDownload fontSize={18} />}
-                  onClick={() => {
-                    printPDF(`${api}/invoice/generatePDF/${invoiceData.id}`);
-                  }}
-                >
-                  Download Invoice #{invoiceData.id}
-                </Button>
-              ) : null}
-            </Box>
-            <Contact data={appointmentData} />
-            <Box mt={5}>
+            {appointmentData?.type === "Video Consultant" && (
               <Button
-                leftIcon={<FaDirections />}
-                colorScheme="green"
-                variant="solid"
-                width="100%"
-                size={"sm"}
-                as={Link}
-                href={`https://www.google.com/maps?q=${appointmentData.clinic_latitude},${appointmentData.clinic_longitude}`}
-                isExternal
+                size="sm" colorScheme="teal" borderRadius="full" flex={1} minW="120px"
+                leftIcon={<TbBrandZoom fontSize="18px" />}
+                isDisabled={appointmentData?.status === "Cancelled" || appointmentData?.status === "Rejected"}
+                onClick={() => window.open(appointmentData?.meeting_link, "_blank")}
               >
-                Make direction to clinic location
+                Join Meeting
               </Button>
-            </Box>
-            <Divider my={2} />
+            )}
+          </Flex>
+        </Box>
 
-            {["Pending", "Confirmed", "Rescheduled", "Cancelled"].includes(
-              appointmentData?.status
-            ) && (
-              <Box>
-                <Box
-                  bg={"red.400"}
-                  _hover={{
-                    bg: "red.500",
-                  }}
-                  mt={5}
-                  width="100%"
-                  size={"sm"}
-                  as={Button}
-                  color={"#000"}
-                  rightIcon={<AiOutlineRight color="#fff" />}
-                  justifyContent={"space-between"}
-                  alignItems={"center"}
-                  textAlign={"left"}
-                  py={2}
-                  h={"fit-content"}
+        {/* Appointment Details */}
+        <Box bg="white" borderRadius="16px" boxShadow="0 1px 8px rgba(0,0,0,0.06)" p={5} mb={4}>
+          <Text fontSize="xs" fontWeight={700} color="gray.400" textTransform="uppercase" letterSpacing="0.1em" mb={4}>
+            Appointment Details
+          </Text>
+          <Flex justify="space-between" align="center" py={2} borderBottom="1px solid" borderColor="gray.50">
+            <Text fontSize="sm" color="gray.500">Patient</Text>
+            <Text fontSize="sm" fontWeight={700} color="gray.800">{appointmentData.patient_f_name} {appointmentData.patient_l_name}</Text>
+          </Flex>
+          <Flex justify="space-between" align="center" py={2} borderBottom="1px solid" borderColor="gray.50">
+            <Text fontSize="sm" color="gray.500">Date</Text>
+            <Text fontSize="sm" fontWeight={700} color="gray.800">{month} {date}, {year}</Text>
+          </Flex>
+          <Flex justify="space-between" align="center" py={2} borderBottom="1px solid" borderColor="gray.50">
+            <Text fontSize="sm" color="gray.500">Time</Text>
+            <Text fontSize="sm" fontWeight={700} color="gray.800">{moment(appointmentData.time_slots, "HH:mm:ss").format("h:mm A")}</Text>
+          </Flex>
+          <Flex justify="space-between" align="center" py={2} borderBottom="1px solid" borderColor="gray.50">
+            <Text fontSize="sm" color="gray.500">Type</Text>
+            <Badge colorScheme={appointmentData.type === "Emergency" ? "red" : "green"} borderRadius="full" px={3} fontSize="xs">
+              {appointmentData.type}
+            </Badge>
+          </Flex>
+          <Flex justify="space-between" align="center" py={2}>
+            <Text fontSize="sm" color="gray.500">Booking No.</Text>
+            <Text fontSize="sm" fontWeight={700} color={appointmentData?.booking_number ? "gray.800" : "orange.500"}>
+              {appointmentData?.booking_number || "Pending assignment"}
+            </Text>
+          </Flex>
+        </Box>
+
+        {/* Laboratory Requests */}
+        <Box bg="white" borderRadius="16px" boxShadow="0 1px 8px rgba(0,0,0,0.06)" p={5} mb={4}>
+          <Text fontSize="xs" fontWeight={700} color="gray.400" textTransform="uppercase" letterSpacing="0.1em" mb={3}>
+            Laboratory Requests
+          </Text>
+          {labRequestsLoading ? (
+            <Loading />
+          ) : labRequestsData?.length ? (
+            labRequestsData.map((request, index) => (
+              <Box key={request.id} mb={3}>
+                <Button
+                  size="sm" variant="outline" colorScheme="green" borderRadius="full"
+                  rightIcon={<AiOutlineDownload fontSize={16} />}
+                  onClick={() => printPDF(`${api}/laboratory_request/generatePDF/${request.id}`)}
+                >
+                  Lab Request #{index + 1}
+                </Button>
+                <Flex gap={2} mt={2} flexWrap="wrap" ml={1}>
+                  {request.items?.map((item) => (
+                    <Badge key={item.id} colorScheme={item.is_urgent ? "red" : "blue"} fontSize="10px" borderRadius="full">
+                      {item.test_name}
+                    </Badge>
+                  ))}
+                </Flex>
+              </Box>
+            ))
+          ) : (
+            <Text fontSize="sm" color="gray.400" fontStyle="italic">No laboratory requests for this appointment</Text>
+          )}
+        </Box>
+
+        {/* Prescriptions */}
+        <Box bg="white" borderRadius="16px" boxShadow="0 1px 8px rgba(0,0,0,0.06)" p={5} mb={4}>
+          <Text fontSize="xs" fontWeight={700} color="gray.400" textTransform="uppercase" letterSpacing="0.1em" mb={3}>
+            Prescriptions
+          </Text>
+          {prescriptionData?.length ? (
+            <Flex gap={2} flexWrap="wrap">
+              {prescriptionData.map((item, index) => (
+                <Button
+                  key={item.id}
+                  size="sm" variant="outline" colorScheme="green" borderRadius="full"
+                  rightIcon={<AiOutlineDownload fontSize={16} />}
                   onClick={() => {
-                    if (
-                      appointmentData.current_cancel_req_status ===
-                        "Approved" ||
-                      appointmentData.current_cancel_req_status === "Rejected"
-                    ) {
-                      return;
-                    }
-                    onOpen();
+                    const pdfURL = resolveAttachmentUrl(item, ["pdf_file"]);
+                    if (pdfURL) { printPDF(pdfURL); } else { printPDF(`${api}/prescription/generatePDF/${item.id}`); }
                   }}
                 >
-                  <Box>
-                    <Text fontSize={"sm"} color={"#fff"}>
-                      Appointment Cancellation
-                    </Text>
-                    {appointmentData.current_cancel_req_status !== "Approved" ||
-                      (appointmentData.current_cancel_req_status !==
-                        "Rejected" && (
-                        <Text fontSize={"xs"} mt={1} color={"gray.100"}>
-                          Click Here to{" "}
-                          {appointmentData.current_cancel_req_status === null
-                            ? "Initiate"
-                            : "Delete"}{" "}
-                          Cancelletion Request
-                        </Text>
-                      ))}
+                  Prescription #{index + 1}
+                </Button>
+              ))}
+            </Flex>
+          ) : (
+            <Text fontSize="sm" color="gray.400" fontStyle="italic">No prescriptions for this appointment</Text>
+          )}
+        </Box>
 
-                    {appointmentData.current_cancel_req_status !== null && (
-                      <Text fontSize={"xs"} mt={1} color={"gray.100"}>
-                        Current status -{" "}
-                        {appointmentData.current_cancel_req_status}
-                      </Text>
-                    )}
-                  </Box>
-                </Box>
-                {appointmentData.current_cancel_req_status !== null && (
-                  <Box bg={"gray.200"} borderRadius={"md"} px={2} py={1} mt={2}>
-                    <Text fontSize={"sm"} fontWeight={600} mb={2}>
-                      Request History
-                    </Text>
-                    {reqHistoryData?.map((item) => (
-                      <ReqHistory key={item.id} item={item} />
-                    ))}
-                  </Box>
-                )}
+        {/* Patient Files */}
+        <Box bg="white" borderRadius="16px" boxShadow="0 1px 8px rgba(0,0,0,0.06)" p={5} mb={4}>
+          <Text fontSize="xs" fontWeight={700} color="gray.400" textTransform="uppercase" letterSpacing="0.1em" mb={3}>
+            Patient Files
+          </Text>
+          {(patientFilesData ?? []).length ? (
+            <AnimatePresence>
+              {patientFilesData.map((file) => (
+                <motion.div key={file.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                  <Flex align="center" justify="space-between" bg="gray.50" borderRadius="12px" p={3} mb={2}>
+                    <Flex align="center" gap={3}>
+                      <Box bg="green.50" p={2} borderRadius="8px">
+                        <GoFileSubmodule fontSize={18} color="#2db580" />
+                      </Box>
+                      <Box>
+                        <Text fontSize="sm" fontWeight={600}>{file.file_name}</Text>
+                        <Text fontSize="xs" color="gray.500">{file.f_name} {file.l_name} · {moment(file.created_at).format("D MMM YY")}</Text>
+                      </Box>
+                    </Flex>
+                    <IconButton
+                      icon={<FaFileDownload />}
+                      colorScheme="green"
+                      variant="ghost"
+                      size="sm"
+                      borderRadius="full"
+                      aria-label="Download file"
+                      onClick={(e) => { e.stopPropagation(); openFile(file); }}
+                    />
+                  </Flex>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          ) : (
+            <Text fontSize="sm" color="gray.400" fontStyle="italic">No patient files found</Text>
+          )}
+        </Box>
+
+        {/* Payment */}
+        <Box bg="white" borderRadius="16px" boxShadow="0 1px 8px rgba(0,0,0,0.06)" p={5} mb={4}>
+          <Text fontSize="xs" fontWeight={700} color="gray.400" textTransform="uppercase" letterSpacing="0.1em" mb={3}>
+            Payment
+          </Text>
+          <Flex justify="space-between" align="center" mb={2}>
+            <Text fontSize="sm" color="gray.500">Status</Text>
+            <Badge
+              colorScheme={appointmentData?.payment_status === "Paid" ? "green" : "orange"}
+              fontWeight="bold" variant="solid" borderRadius="full" px={3}
+            >
+              {appointmentData?.payment_status || "Not Paid"}
+            </Badge>
+          </Flex>
+          <Text fontSize="xs" color="gray.400" mb={3}>Payment ID #{appointmentData.id}</Text>
+          {invoiceData && (
+            <Button
+              size="sm" variant="outline" colorScheme="green" borderRadius="full"
+              rightIcon={<AiOutlineDownload fontSize={16} />}
+              onClick={() => printPDF(`${api}/invoice/generatePDF/${invoiceData.id}`)}
+            >
+              Download Invoice #{invoiceData.id}
+            </Button>
+          )}
+        </Box>
+
+        {/* Contact */}
+        <Contact data={appointmentData} />
+
+        {/* Directions */}
+        <Box mb={4}>
+          <Button
+            leftIcon={<FaDirections />}
+            width="100%"
+            borderRadius="full"
+            size="md"
+            bgGradient="linear(to-r, #34C38F, #2db580)"
+            color="white"
+            _hover={{ bgGradient: "linear(to-r, #2db580, #34C38F)", boxShadow: "0 4px 14px rgba(52,195,143,0.35)" }}
+            as={Link}
+            href={`https://www.google.com/maps?q=${appointmentData.clinic_latitude},${appointmentData.clinic_longitude}`}
+            isExternal
+          >
+            Directions to Clinic
+          </Button>
+        </Box>
+
+        {/* Cancellation */}
+        {["Pending", "Confirmed", "Rescheduled", "Cancelled"].includes(appointmentData?.status) && (
+          <Box mb={4}>
+            <Button
+              width="100%"
+              colorScheme="red"
+              variant="outline"
+              borderRadius="full"
+              rightIcon={<AiOutlineRight />}
+              onClick={() => {
+                if (
+                  appointmentData.current_cancel_req_status === "Approved" ||
+                  appointmentData.current_cancel_req_status === "Rejected"
+                ) return;
+                onOpen();
+              }}
+            >
+              {appointmentData.current_cancel_req_status === null
+                ? "Request Cancellation"
+                : `Cancellation: ${appointmentData.current_cancel_req_status}`}
+            </Button>
+            {appointmentData.current_cancel_req_status !== null && (
+              <Box bg="gray.50" borderRadius="12px" px={3} py={3} mt={3}>
+                <Text fontSize="sm" fontWeight={700} mb={2} color="gray.600">Request History</Text>
+                {reqHistoryData?.map((item) => <ReqHistory key={item.id} item={item} />)}
               </Box>
             )}
           </Box>
-        </Flex>
+        )}
       </Box>
-      {/* modal */}
+
+      {/* Modals */}
       <DailogModal
         cancelRef={cancelRef}
         isOpen={isOpen}
@@ -669,8 +507,8 @@ const AppointmentDetails = () => {
       />
       {ratingIsOpen && (
         <AddDoctorReview
-          patientCode={appointmentData?.patient_code || appointmentData?.patient_id}
-          doctID={appointmentData?.doct_id}
+          doctID={doctorIdentifier}
+          patientCode={patientIdentifier}
           AppID={appointmentData?.id}
           isOpen={ratingIsOpen}
           onClose={ratingOnClose}

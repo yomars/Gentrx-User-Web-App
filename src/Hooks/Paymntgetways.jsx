@@ -33,10 +33,10 @@ const PaymentGetwayData = () => {
   } = useQuery({
     queryKey: ["payment-getway-active"],
     queryFn: getData,
-    staleTime: 0, // Data is considered stale immediately
-    cacheTime: 0, // Cache will not be stored
-    refetchOnWindowFocus: true, // Refetch when the window is focused
-    refetchInterval: false, // Disable periodic refetching, set to a number if needed
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    cacheTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   const shouldUseTestOverride =

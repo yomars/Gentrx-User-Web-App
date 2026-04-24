@@ -33,10 +33,11 @@ import {
   AlertIcon,
   AlertTitle,
   Select,
+  Badge,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ADD, GET } from "../Controllers/ApiControllers";
+import { ADD, GET, GET_AUTH } from "../Controllers/ApiControllers";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Loading from "../Components/Loading";
 import imageBaseURL from "../Controllers/image";
@@ -44,6 +45,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import moment from "moment";
 import { useForm } from "react-hook-form";
 import user from "../Controllers/user";
+import logoutFn from "../Controllers/logout";
 import showToast from "../Controllers/ShowToast";
 import currency from "../Controllers/currency";
 import "swiper/swiper-bundle.css";
@@ -52,10 +54,11 @@ import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import defaultISD from "../Controllers/defaultISD";
 import RazorpayPaymentController from "../Controllers/RazorpayPaymentController";
 import ErrorPage from "./ErrorPage";
-import LoginModal from "../Components/LoginModal";
+const LoginModal = lazy(() => import("../Components/LoginModal"));
 import useSettingsData from "../Hooks/SettingData";
 import PaymentGetwayData from "../Hooks/Paymntgetways";
 import StripePaymentController from "../Controllers/StripePayController";
+import { clearPendingAppointmentPayment } from "../lib/walletTopup";
 
 const steps = [
   {
@@ -654,7 +657,11 @@ const Step1 = ({
         </Box>
       </Box>
 
-      {isOpen && <LoginModal isModalOpen={isOpen} onModalClose={onClose} />}
+      {isOpen && (
+        <Suspense fallback={null}>
+          <LoginModal isModalOpen={isOpen} onModalClose={onClose} />
+        </Suspense>
+      )}
     </Box>
   );
 };
@@ -744,18 +751,28 @@ const Step2 = ({
 
   // get doctors booked slotes
   const getBookedSlotes = async () => {
-    const res = await GET(
-      `get_booked_time_slots?doct_id=${Doctordetails.user_id}&date=${moment(
-        selectedDate
-      ).format("YYYY-MM-DD")}&type=${appoinmentType.title}`
-    );
-    return res.data;
+    try {
+      const res = await GET(
+        `get_booked_time_slots?doct_id=${Doctordetails.user_id}&date=${moment(
+          selectedDate
+        ).format("YYYY-MM-DD")}&type=${appoinmentType.title}`
+      );
+      return res.data ?? [];
+    } catch {
+      return [];
+    }
   };
 
   const { isLoading: bookedSlotesLoading, data: bookedSlotes } = useQuery({
-    queryKey: ["bookedslotes", selectedDate, Doctordetails.user_id],
+    queryKey: [
+      "bookedslotes",
+      selectedDate,
+      Doctordetails.user_id,
+      appoinmentType?.title,
+    ],
     queryFn: getBookedSlotes,
     enabled: !!selectedDate,
+    retry: false,
   });
 
   // get slot is booked or not
@@ -941,6 +958,7 @@ const Step3 = ({ setPatientDetails, setStep }) => {
   const { isLoading: patientLoading, data: patientData } = useQuery({
     queryKey: ["family-members", user?.id],
     queryFn: getData,
+    enabled: !!user?.id,
   });
 
   if (patientLoading) {
@@ -960,7 +978,7 @@ const Step3 = ({ setPatientDetails, setStep }) => {
       const res = await ADD(user.token, "add_family_member", apiData);
       console.log(res);
       showToast(toast, "success", "Success");
-      QueryClient.invalidateQueries("patients");
+      QueryClient.invalidateQueries({ queryKey: ["family-members", user?.id] });
       setaddNew(false);
       setPatientDetails({ ...data, id: res.id });
       setStep(4);
@@ -1063,7 +1081,7 @@ const Step3 = ({ setPatientDetails, setStep }) => {
       ) : (
         <Box>
           <Text fontSize={17} fontWeight={600} mb={3}>
-            Family Member
+            Who is this appointment for?
           </Text>{" "}
           <Box>
             <AnimatePresence>
@@ -1074,29 +1092,43 @@ const Step3 = ({ setPatientDetails, setStep }) => {
                 transition={{ duration: 0.2 }}
               >
                 {" "}
-                <Button
-                  align="center"
-                  leftIcon={<BsPersonAdd fontSize={20} />}
-                  colorScheme="green"
-                  size={"sm"}
-                  w={"100%"}
-                  onClick={() => {
-                    setaddNew(true);
-                  }}
+                <motion.div
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  Add Family Member
-                </Button>
-                {patientData && (
+                  <Card
+                    cursor={"pointer"}
+                    mb={4}
+                    borderColor={"blue.400"}
+                    borderWidth={1}
+                    onClick={() => {
+                      setPatientDetails({ ...user, selectionType: "self" });
+                      setStep(4);
+                    }}
+                  >
+                    <CardBody p={4}>
+                      <Flex align={"center"} gap={4}>
+                        <FaUser fontSize={24} color="#3182CE" />
+                        <Box>
+                          <Flex align={"center"} gap={2}>
+                            <Text fontSize={14} fontWeight={600} mb={0}>
+                              {user?.f_name} {user?.l_name}
+                            </Text>
+                            <Badge colorScheme="blue" fontSize={11}>
+                              You
+                            </Badge>
+                          </Flex>
+                          <Text fontSize={14} fontWeight={600}>
+                            {user?.phone}
+                          </Text>
+                        </Box>
+                      </Flex>
+                    </CardBody>
+                  </Card>
+                </motion.div>
+                {patientData && patientData.length > 0 && (
                   <Box>
-                    <Text
-                      fontSize={14}
-                      fontWeight={600}
-                      mb={3}
-                      textAlign={"center"}
-                      my={2}
-                    >
-                      OR
-                    </Text>{" "}
                     {patientData.map((patient) => (
                       <motion.div
                         key={patient.id}
@@ -1131,6 +1163,20 @@ const Step3 = ({ setPatientDetails, setStep }) => {
                     ))}
                   </Box>
                 )}
+                <Button
+                  align="center"
+                  leftIcon={<BsPersonAdd fontSize={20} />}
+                  colorScheme="green"
+                  variant={"outline"}
+                  size={"sm"}
+                  w={"100%"}
+                  mt={2}
+                  onClick={() => {
+                    setaddNew(true);
+                  }}
+                >
+                  Add Family Member
+                </Button>
               </motion.div>
             </AnimatePresence>
           </Box>
@@ -1146,14 +1192,13 @@ const Step3 = ({ setPatientDetails, setStep }) => {
 };
 
 const getUserDetails = async () => {
-  const data = {
-    phone: user?.phone,
-  };
-  const user = await ADD(user.token, "re_login_phone", data);
-  if (user.response !== 200) {
-    throw new Error(user.message);
+  try {
+    const userRes = await GET_AUTH(user.token, "patient/me");
+    if (userRes.response !== 200 && userRes.status !== true) return null;
+    return userRes.data;
+  } catch {
+    return null;
   }
-  return user.data;
 };
 
 const Step4 = ({
@@ -1171,9 +1216,10 @@ const Step4 = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [method, setMethod] = useState("1");
+  const [method, setMethod] = useState("2");
   const [coupon, setcoupon] = useState();
   const [SelectedCoupon, setSelectedCoupon] = useState();
+  const [bookingError, setBookingError] = useState(null);
   const { paymentGetwaysData } = PaymentGetwayData();
   const [paymentMethod, setPaymentMethod] = useState(null);
   useEffect(() => {
@@ -1197,20 +1243,30 @@ const Step4 = ({
   };
 
   const getBookedSlotes = async () => {
-    const res = await GET(
-      `get_booked_time_slots?doct_id=${Doctordetails.user_id}&date=${moment(
-        selectedDate
-      ).format("YYYY-MM-DD")}&type=${appoinmentType.title}`
-    );
-    return res.data;
+    try {
+      const res = await GET(
+        `get_booked_time_slots?doct_id=${Doctordetails.user_id}&date=${moment(
+          selectedDate
+        ).format("YYYY-MM-DD")}&type=${appoinmentType.title}`
+      );
+      return res.data ?? [];
+    } catch {
+      return [];
+    }
   };
 
   const { isLoading: bookedSlotesLoading, data: bookedSlotes } = useQuery({
-    queryKey: ["bookedslotes", selectedDate, Doctordetails.user_id],
+    queryKey: [
+      "bookedslotes",
+      selectedDate,
+      Doctordetails.user_id,
+      appoinmentType?.title,
+    ],
     queryFn: getBookedSlotes,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     staleTime: 0,
+    retry: false,
   });
 
   // get slot is booked or not
@@ -1237,128 +1293,202 @@ const Step4 = ({
   });
 
   const getfee = (type, doc) => {
+    const feeSource = doc || {};
     switch (type) {
       case "OPD":
-        return doc.opd_fee;
+        return Number(feeSource.opd_fee) || 0;
       case "Video Consultant":
-        return doc.video_fee;
+        return Number(feeSource.video_fee) || 0;
       case "Emergency":
-        return doc.emg_fee;
+        return Number(feeSource.emg_fee) || 0;
       default:
-        return doc.emg_fee;
+        return Number(feeSource.emg_fee) || 0;
     }
   };
 
   const taxAmount = (amount) => {
-    return (amount * tax.value) / 100;
+    return (Number(amount) * (Number(tax.value) || 0)) / 100;
   };
   const discountAmount = (amount, value) => {
     if (value) {
-      return (amount * value) / 100;
+      return (Number(amount) * Number(value)) / 100;
     } else {
       return 0;
     }
   };
   const getTotal = (amount, taxAmount, discount) => {
-    return amount - discount + taxAmount;
+    return Number(amount) - Number(discount) + Number(taxAmount);
   };
 
-  const ValidateCoupon = async () => {
-    try {
-      let data = {
-        user_id: user.id,
-        title: coupon.toUpperCase(),
-      };
-      setisLoading(true);
-      let res = await ADD(user.token, "get_validate", data);
-      console.log(res);
-      setisLoading(false);
-      if (res.response === 200) {
-        if (res.status === false) {
-          showToast(toast, "error", res.msg);
-        } else if (res.status === true) {
-          showToast(toast, "success", "Coupon Applied");
-          setSelectedCoupon(res.data);
-        }
-      } else {
-        showToast(toast, "error", res?.message || "error");
-      }
-    } catch (error) {
-      setisLoading(false);
-      showToast(toast, "error", "something went wrong!");
+  const feeAmount = Number(getfee(appoinmentType.title, Doctordetails)) || 0;
+  const unitTaxAmount = taxAmount(feeAmount);
+  const couponOffAmount = discountAmount(feeAmount, SelectedCoupon?.value);
+  const unitTotalAmount = getTotal(feeAmount, unitTaxAmount, 0);
+
+  const payableTotal = Number(
+    getTotal(
+      feeAmount,
+      unitTaxAmount,
+      couponOffAmount
+    ).toFixed(2)
+  );
+  const walletAvailable = Number(userData?.wallet_amount || 0);
+  const isWalletInsufficient = walletAvailable < payableTotal;
+  const canonicalDoctorId = Doctordetails?.id || Doctordetails?.doctor_id || null;
+  const canonicalPatientCode =
+    patientDetails?.patient_code ||
+    userData?.patient_code ||
+    user?.patient_code ||
+    null;
+
+  const buildAppointmentDetails = ({
+    selectedMethod = Number(method),
+    paymentTransactionId,
+    paymentMethodOverride,
+    paymentStatusOverride,
+    statusOverride,
+  } = {}) => ({
+    ...(patientDetails.selectionType === "self"
+      ? { patient_id: patientDetails.id, patient_code: canonicalPatientCode }
+      : { family_member_id: patientDetails.id }),
+    patient_code: canonicalPatientCode,
+    doctor_id: canonicalDoctorId,
+    status: statusOverride || (selectedMethod === 2 ? "Pending" : "Confirmed"),
+    date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
+    time_slots: selectedSlot ? selectedSlot.time_start : moment().format("hh:mm"),
+    doct_id: Doctordetails.user_id,
+    dept_id: Doctordetails.department,
+    type: appoinmentType.title,
+    payment_status:
+      paymentStatusOverride || (selectedMethod === 2 ? "Unpaid" : "Paid"),
+    fee: feeAmount,
+    service_charge: 0,
+    tax: tax.value,
+    unit_tax_amount: unitTaxAmount,
+    total_amount: payableTotal,
+    unit_total_amount: unitTotalAmount,
+    invoice_description: appoinmentType.title,
+    user_id: user.id,
+    payment_method:
+      paymentMethodOverride ||
+      (selectedMethod === 1
+        ? "Online"
+        : selectedMethod === 3
+        ? "Wallet"
+        : null),
+    payment_transaction_id:
+      paymentTransactionId || (selectedMethod === 3 ? "Wallet" : null),
+    is_wallet_txn:
+      (paymentMethodOverride || (selectedMethod === 3 ? "Wallet" : "")) ===
+      "Wallet"
+        ? 1
+        : 0,
+    source: "Web",
+    coupon_id: SelectedCoupon?.id,
+    coupon_title: SelectedCoupon?.title,
+    coupon_value: SelectedCoupon?.value,
+    coupon_off_amount: couponOffAmount,
+  });
+
+  const addAppointment = async (options = {}) => {
+    if (!patientDetails?.id || !Doctordetails?.user_id || !selectedSlot?.time_start) {
+      showToast(
+        toast,
+        "error",
+        "Booking details are incomplete. Please reselect date, slot, and patient."
+      );
+      return null;
     }
-  };
 
-  const addAppointment = async () => {
-    const appointmentDetails = {
-      family_member_id: patientDetails.id,
-      status: "Confirmed",
-      date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
-      time_slots: selectedSlot
-        ? selectedSlot.time_start
-        : moment().format("hh:mm"),
-      doct_id: Doctordetails.user_id,
-      dept_id: Doctordetails.department,
-      type: appoinmentType.title,
-      payment_status: method == 2 ? "Unpaid" : "Paid",
-      fee: getfee(appoinmentType.title, Doctordetails),
-      service_charge: 0,
-      tax: tax.value,
-      unit_tax_amount: taxAmount(getfee(appoinmentType.title, Doctordetails)),
-      total_amount: getTotal(
-        getfee(appoinmentType.title, Doctordetails).toFixed(2),
-        taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-        discountAmount(
-          getfee(appoinmentType.title, Doctordetails),
-          SelectedCoupon?.value
-        )
-      ),
-      unit_total_amount: getTotal(
-        getfee(appoinmentType.title, Doctordetails).toFixed(2),
-        taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-        0
-      ),
-      invoice_description: appoinmentType.title,
-      user_id: user.id,
-      payment_method: method == 1 ? "Online" : method == 3 ? "Wallet" : null,
-      payment_transaction_id: method == 1 ? "" : method == 3 ? "Wallet" : null,
-      is_wallet_txn: method == 3 ? 1 : 0,
-      source: "Web",
-      coupon_id: SelectedCoupon?.id,
-      coupon_title: SelectedCoupon?.title,
-      coupon_value: SelectedCoupon?.value,
-      coupon_off_amount: discountAmount(
-        getfee(appoinmentType.title, Doctordetails),
-        SelectedCoupon?.value
-      ),
-    };
+    if (!user?.token) {
+      showToast(toast, "error", "Session expired. Please log in and try again.");
+      return null;
+    }
 
     try {
+      const appointmentDetails = buildAppointmentDetails(options);
       setisLoading(true);
       let res = await ADD(user.token, "add_appointment", appointmentDetails);
-      console.log(res);
+      console.log("[booking] response:", res);
       setisLoading(false);
-      if (res.response === 200) {
-        showToast(toast, "success", "Appointment Booked Successfully!");
+      if (res.response === 200 || res?.status === true || res?.success === true) {
+        const appointmentId =
+          res?.id ||
+          res?.appointment_id ||
+          res?.data?.id ||
+          res?.data?.appointment_id ||
+          res?.appointment?.id ||
+          null;
+        const savedStatus =
+          res?.data?.status || res?.appointment?.status || appointmentDetails.status;
+        const savedPaymentStatus =
+          res?.data?.payment_status ||
+          res?.appointment?.payment_status ||
+          appointmentDetails.payment_status;
+        const successMessage =
+          savedStatus === "Pending" || savedPaymentStatus === "Unpaid"
+            ? "Appointment submitted. Status: Pending. Payment is due at the hospital."
+            : "Appointment booked successfully. Status: Confirmed.";
+
+        if (!appointmentId) {
+          showToast(
+            toast,
+            "warning",
+            "Booking may be saved, but appointment ID was not returned. Please check your appointments list."
+          );
+          setAllNull();
+          queryClient.invalidateQueries({ queryKey: ["timeslotes"] });
+          queryClient.invalidateQueries({ queryKey: ["bookedslotes"] });
+          queryClient.invalidateQueries({ queryKey: ["appointments"] });
+          queryClient.invalidateQueries({ queryKey: ["user"] });
+          navigate("/appointments");
+          return res;
+        }
+
+        clearPendingAppointmentPayment();
+        setBookingError(null);
+        showToast(toast, "success", successMessage);
         setAllNull();
-        queryClient.invalidateQueries("timeslotes");
-        queryClient.invalidateQueries("bookedslotes");
-        queryClient.invalidateQueries("user");
-        navigate(`/appointment-success/${res.id}`);
+        queryClient.invalidateQueries({ queryKey: ["timeslotes"] });
+        queryClient.invalidateQueries({ queryKey: ["bookedslotes"] });
+        queryClient.invalidateQueries({ queryKey: ["appointments"] });
+        queryClient.invalidateQueries({ queryKey: ["user"] });
+        navigate(`/appointment-success/${appointmentId}`);
+        return res;
       } else {
-        showToast(toast, "error", res.message);
-        queryClient.invalidateQueries("timeslotes");
-        queryClient.invalidateQueries("bookedslotes");
-        queryClient.invalidateQueries("user");
+        if (res?.sessionExpired) {
+          showToast(toast, "error", "Your session has expired. Please log in again.");
+          setTimeout(() => logoutFn(), 1500);
+          return null;
+        }
+        const errMsg = res?.message || "Unable to save appointment. Please try again.";
+        setBookingError(errMsg);
+        showToast(toast, "error", errMsg);
+        queryClient.invalidateQueries({ queryKey: ["timeslotes"] });
+        queryClient.invalidateQueries({ queryKey: ["bookedslotes"] });
+        queryClient.invalidateQueries({ queryKey: ["user"] });
+        return null;
       }
     } catch (error) {
       setisLoading(false);
-      showToast(toast, "error", "something went wrong!");
+      const errMsg = error?.message || "Something went wrong. Please try again.";
+      setBookingError(errMsg);
+      showToast(toast, "error", errMsg);
+      return null;
     }
   };
 
+  if (!patientDetails) return null;
+
   const paymentData = {
-    family_member_id: String(patientDetails.id), // Ensure this is a string
+    ...(patientDetails.selectionType === "self"
+      ? {
+          patient_id: String(patientDetails.id),
+          patient_code: canonicalPatientCode ? String(canonicalPatientCode) : "",
+        }
+      : { family_member_id: String(patientDetails.id) }),
+    patient_code: canonicalPatientCode ? String(canonicalPatientCode) : "",
+    doctor_id: canonicalDoctorId ? String(canonicalDoctorId) : "",
     status: "Confirmed",
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
     time_slots: selectedSlot
@@ -1368,29 +1498,14 @@ const Step4 = ({
     dept_id: String(Doctordetails.department), // Convert to string
     type: appoinmentType.title,
     payment_status: "Paid",
-    fee: String(getfee(appoinmentType.title, Doctordetails).toFixed(2)), // Convert to string
+    fee: String(feeAmount.toFixed(2)), // Convert to string
     service_charge: "0.0", // Ensure this is a string with decimal
     tax: String(tax.value), // Convert to string
     unit_tax_amount: String(
-      taxAmount(getfee(appoinmentType.title, Doctordetails)).toFixed(2)
+      unitTaxAmount.toFixed(2)
     ), // String and formatted
-    total_amount: String(
-      getTotal(
-        getfee(appoinmentType.title, Doctordetails).toFixed(2),
-        taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-        discountAmount(
-          getfee(appoinmentType.title, Doctordetails),
-          SelectedCoupon?.value
-        )
-      ).toFixed(2)
-    ), // Ensure string and formatted
-    unit_total_amount: String(
-      getTotal(
-        getfee(appoinmentType.title, Doctordetails).toFixed(2),
-        taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
-        0
-      ).toFixed(2)
-    ), // String and formatted
+    total_amount: String(payableTotal.toFixed(2)), // Ensure string and formatted
+    unit_total_amount: String(unitTotalAmount.toFixed(2)), // String and formatted
     invoice_description: appoinmentType.title,
     user_id: String(user.id), // Convert to string
     payment_method: "Online",
@@ -1399,24 +1514,20 @@ const Step4 = ({
     coupon_id: SelectedCoupon?.id ? String(SelectedCoupon?.id) : "", // Ensure it's a string or empty
     coupon_title: SelectedCoupon?.title || "", // Ensure it's a string or empty
     coupon_value: SelectedCoupon?.value ? String(SelectedCoupon?.value) : "", // String or empty
-    coupon_off_amount: String(
-      discountAmount(
-        getfee(appoinmentType.title, Doctordetails),
-        SelectedCoupon?.value
-      ).toFixed(2)
-    ), // Ensure string and formatted
+    coupon_off_amount: String(couponOffAmount.toFixed(2)), // Ensure string and formatted
     name: `${patientDetails.f_name} ${patientDetails.l_name}`,
     desc: "Appointment",
   };
 
   // add appoinment
-  const nextfn = async () => {
-    showToast(toast, "success", "Appointment Booked Successfully!");
-    setAllNull();
-    queryClient.invalidateQueries("timeslotes");
-    queryClient.invalidateQueries("bookedslotes");
-    queryClient.invalidateQueries("user");
-    navigate(`/appointments`);
+  const nextfn = async (paymentId) => {
+    await addAppointment({
+      selectedMethod: 1,
+      paymentTransactionId: paymentId || "Online",
+      paymentMethodOverride: paymentMethod || "Online",
+      paymentStatusOverride: "Paid",
+      statusOverride: "Confirmed",
+    });
   };
 
   // payment data
@@ -1474,6 +1585,11 @@ const Step4 = ({
             color={"gray.600"}
           >
             {patientDetails.f_name} {patientDetails.l_name}
+            {patientDetails.selectionType === "self" && (
+              <Badge colorScheme="blue" ml={1} fontSize={11}>
+                You
+              </Badge>
+            )}
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1652,17 +1768,19 @@ const Step4 = ({
         <Box mt={5}>
           <RadioGroup value={method} fontWeight={500} size={"md"}>
             <Stack>
-              <Radio
-                value={"1"}
-                fontWeight={700}
-                onChange={(e) => {
-                  setcoupon(null);
-                  setSelectedCoupon(null);
-                  setMethod(e.target.value);
-                }}
-              >
-                Pay Now
-              </Radio>
+              {paymentMethod === "stripe" && (
+                <Radio
+                  value={"1"}
+                  fontWeight={700}
+                  onChange={(e) => {
+                    setcoupon(null);
+                    setSelectedCoupon(null);
+                    setMethod(e.target.value);
+                  }}
+                >
+                  Pay Now
+                </Radio>
+              )}
               {appoinmentType.id !== 2 && (
                 <Radio
                   value={"2"}
@@ -1680,10 +1798,7 @@ const Step4 = ({
               <Radio
                 value={"3"}
                 fontWeight={700}
-                isDisabled={
-                  getfee(appoinmentType.title, Doctordetails).toFixed(2) >
-                  userData?.wallet_amount
-                }
+                isDisabled={isWalletInsufficient}
                 onChange={(e) => {
                   setcoupon(null);
                   setSelectedCoupon(null);
@@ -1720,7 +1835,26 @@ const Step4 = ({
               return;
             }
 
+            if (method == 3 && isWalletInsufficient) {
+              showToast(
+                toast,
+                "error",
+                `Insufficient wallet balance. Please load ${currency}${(
+                  payableTotal - walletAvailable
+                ).toFixed(2)} or more before booking.`
+              );
+              return;
+            }
+
             if (method == 1) {
+              if (paymentMethod !== "stripe") {
+                showToast(
+                  toast,
+                  "error",
+                  "Online payment is currently unavailable. Please select 'Pay At Hospital' to proceed."
+                );
+                return;
+              }
               onOpen();
             } else {
               addAppointment();
@@ -1737,6 +1871,12 @@ const Step4 = ({
             )
           ).toFixed(2)}
         </Button>
+        {bookingError && (
+          <Alert status="error" mt={3} borderRadius={8} fontSize={13}>
+            <AlertIcon />
+            <AlertTitle>{bookingError}</AlertTitle>
+          </Alert>
+        )}
       </Box>
       {isOpen ? (
         <>
@@ -1750,16 +1890,7 @@ const Step4 = ({
               type={"Appointment"}
             />
           )}
-          {paymentMethod === "razorpay" && (
-            <RazorpayPaymentController
-              isOpen={isOpen}
-              onClose={onClose}
-              nextFn={nextfn}
-              data={paymentData}
-              type={"Appointment"}
-              cancelFn={() => onClose()}
-            />
-          )}
+          {/* Razorpay is disabled */}
         </>
       ) : null}
     </Box>

@@ -138,7 +138,7 @@ export default function Doctors() {
               <Box mt={4}>
                 {filteredData?.length ? (
                   <div className="ds-grid ds-grid--wide">
-                    {filteredData.map((item) => {
+                    {filteredData.map((item, idx) => {
                       const imageSrc = item.image
                         ? `${imageBaseURL}/${item.image}`
                         : "https://plus.unsplash.com/premium_photo-1661764878654-3d0fc2eefcca?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fGRvY3RvcnxlbnwwfHwwfHx8MA%3D%3D";
@@ -172,7 +172,6 @@ export default function Doctors() {
                                 className="ds-card__img"
                                 src={imageSrc}
                                 alt={`Dr. ${item.f_name} ${item.l_name}`}
-                                loading="lazy"
                               />
                             </div>
                           </Link>

@@ -19,6 +19,17 @@ UPLOAD_MAX_SYSTEM_MB=5
 SIGNED_URL_TTL_SECONDS=300
 
 # =============================================================================
+# Movider SMS / OTP — append to /opt/gentrx-api/.env
+# Credentials from https://platform.movider.net
+# =============================================================================
+MOVIDER_API_KEY=35sfUcHlupBFggQPx0gKolTeNe7
+MOVIDER_API_SECRET=W5x1g5McdWXVJTjgGUfITi7Taqij1JWrIgI8XhGC
+
+# Set to false to bypass phone OTP during development/internal testing.
+# Must be true (or absent) in production.
+GENTRX_PHONE_VERIFY_REQUIRED=true
+
+# =============================================================================
 # Staging server env additions — append to /opt/gentrx-api/.env
 # on staging server 207.148.74.62
 # (uses a separate mount — do NOT point to prod /mnt/)

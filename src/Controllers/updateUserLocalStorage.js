@@ -1,23 +1,23 @@
-﻿import { ADD } from "./ApiControllers";
+﻿import { GET_AUTH } from "./ApiControllers";
 import user from "./user";
 import { setStorageItem } from "../lib/storage";
 
-export const updateUserLocalStorage = async (phoneNumber) => {
+export const updateUserLocalStorage = async () => {
   try {
-    const data = { phone: phoneNumber };
-    const res = await ADD(user.token, "re_login_phone", data);
+    const res = await GET_AUTH(user.token, "patient/me");
 
-    if (res.status === true) {
+    if (res.status === true && res.data) {
+      // Update localStorage with refreshed user data
       const updatedUser = { ...res.data, token: user.token };
-      console.log(updatedUser);
       setStorageItem("user", JSON.stringify(updatedUser));
     } else {
       console.error(
-        "Failed to update user data:",
+        "Failed to refresh user data:",
         res.message || "Unknown error"
       );
     }
   } catch (error) {
-    console.error("Error updating user data:", error.message);
+    console.error("Error refreshing user data:", error.message);
   }
 };
+

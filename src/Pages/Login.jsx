@@ -35,6 +35,10 @@ import {
 import defaultISD from "../Controllers/defaultISD";
 import { setStorageItem } from "../lib/storage";
 import useSettingsData from "../Hooks/SettingData";
+import {
+  ensurePatientAuthBackendReady,
+  getAuthEndpoint,
+} from "../Controllers/authConfig";
 
 const FirebaseLogin = ({ redirectLocation }) => {
   const [isd_code, setIsd_code] = useState(defaultISD);
@@ -67,7 +71,7 @@ const FirebaseLogin = ({ redirectLocation }) => {
     { label: "Check-up", icon: <MdHealthAndSafety fontSize={28} />, to: "/doctors" },
     { label: "Doctors", icon: <FaUserMd fontSize={26} />, to: "/doctors" },
     { label: "Prescription", icon: <BsPrescription fontSize={26} />, to: "/login" },
-    { label: "Patient Profile", icon: <HiUserCircle fontSize={30} />, to: "/login" },
+    { label: "Patient Profile", icon: <HiUserCircle fontSize={30} />, to: "/profile" },
     { label: "Hospital Info", icon: <FaHospitalAlt fontSize={26} />, to: "/clinics" },
     { label: "Top-up", icon: <IoMdWallet fontSize={26} />, to: "/login" },
   ];
@@ -85,14 +89,19 @@ const FirebaseLogin = ({ redirectLocation }) => {
     
     setisLoading(true);
     try {
+      await ensurePatientAuthBackendReady();
+
       let data = {
         phone: phoneNumber,
         password: password,
       };
-      const res = await ADD("", "login_phone", data);
+      // Use configurable endpoint (patient/login or legacy login_phone)
+      const endpoint = getAuthEndpoint('login');
+      const res = await ADD("", endpoint, data);
       
       if (res.status === true) {
-        const user = { ...res.data, token: res.token };
+        const token = res?.token || res?.data?.token;
+        const user = { ...res.data, token };
         setStorageItem("user", JSON.stringify(user));
         toast({
           title: "Login Success",

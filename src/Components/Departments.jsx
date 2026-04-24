@@ -155,8 +155,8 @@ export default function Departments() {
                     >
                       <Image
                         src={
-                          item.image
-                            ? `${imageBaseURL}/${item.image}`
+                          (item.image_path || item.image)
+                            ? `${imageBaseURL}/${item.image_path || item.image}`
                             : "/imagePlaceholder.png"
                         }
                         fallbackSrc="/imagePlaceholder.png"

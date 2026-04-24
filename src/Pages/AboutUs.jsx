@@ -46,7 +46,7 @@ export default function AboutUs() {
     {
       label: "Patient Profile",
       icon: <HiUserCircle fontSize={30} />,
-      to: "/login",
+      to: "/profile",
     },
     {
       label: "Hospital Info",

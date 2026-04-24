@@ -32,12 +32,10 @@ function inferRepository() {
 
 async function main() {
   const gitSha =
-    read("VERCEL_GIT_COMMIT_SHA") ||
     read("GITHUB_SHA") ||
     runGit("git rev-parse HEAD", "unknown");
 
   const branch =
-    read("VERCEL_GIT_COMMIT_REF") ||
     read("GITHUB_REF_NAME") ||
     runGit("git rev-parse --abbrev-ref HEAD", "unknown");
 
@@ -48,9 +46,7 @@ async function main() {
     branch,
     builtAt: new Date().toISOString(),
     source:
-      read("VERCEL", "").toLowerCase() === "1"
-        ? "vercel"
-        : read("GITHUB_ACTIONS", "").toLowerCase() === "true"
+      read("GITHUB_ACTIONS", "").toLowerCase() === "true"
           ? "github-actions"
           : "local",
   };

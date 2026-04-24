@@ -19,12 +19,12 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { ADD } from "../Controllers/ApiControllers";
 import currency from "../Controllers/currency";
 import user from "../Controllers/user";
 import showToast from "../Controllers/ShowToast";
-import StripePaymentController from "../Controllers/StripePayController";
+const StripePaymentController = lazy(() => import("../Controllers/StripePayController"));
 import RazorpayPaymentController from "../Controllers/RazorpayPaymentController";
 import PaymentGetwayData from "../Hooks/Paymntgetways"; // Import icons if needed
 let minAmount = 100;
@@ -55,7 +55,7 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
     }
 
     const method = `${paymentMethod || ""}`.trim().toLowerCase();
-    if (method === "stripe" || method === "razorpay") {
+    if (method === "stripe") {
       return;
     }
 
@@ -149,8 +149,7 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
     }
 
     const normalizedMethod = normalizedPaymentMethod;
-    const isSupportedMethod =
-      normalizedMethod === "stripe" || normalizedMethod === "razorpay";
+    const isSupportedMethod = normalizedMethod === "stripe";
 
     if (!isSupportedMethod) {
       return toast({
@@ -257,30 +256,18 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
       {paymentIsOpen && (
         <>
           {normalizedPaymentMethod === "stripe" && (
-            <StripePaymentController
-              isOpen={paymentIsOpen}
-              onClose={paymentClose}
-              nextFn={AddMoney}
-              data={paymentData}
-              cancelFn={() => setisPaymentLoading(false)}
-              type={"Wallet"}
-            />
+            <Suspense fallback={null}>
+              <StripePaymentController
+                isOpen={paymentIsOpen}
+                onClose={paymentClose}
+                nextFn={AddMoney}
+                data={paymentData}
+                cancelFn={() => setisPaymentLoading(false)}
+                type={"Wallet"}
+              />
+            </Suspense>
           )}
-          {normalizedPaymentMethod === "razorpay" && (
-            <RazorpayPaymentController
-              isOpen={paymentIsOpen}
-              onClose={paymentClose}
-              nextFn={rzpNextFn}
-              data={paymentData}
-              cancelFn={() => {
-                // Reset loading. The wallet modal is still open so the user
-                // can see their balance and hit "Add Money" again to retry.
-                setisPaymentLoading(false);
-                paymentClose();
-              }}
-              type={"Wallet"}
-            />
-          )}
+          {/* Razorpay is disabled */}
         </>
       )}
     </>
