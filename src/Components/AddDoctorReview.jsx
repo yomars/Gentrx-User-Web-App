@@ -27,7 +27,7 @@ const addRating = async (data) => {
   }
   return res.data;
 };
-function AddDoctorReview({ doctID, AppID, isOpen, onClose, patient_id }) {
+function AddDoctorReview({ doctID, AppID, isOpen, onClose, patientCode }) {
   const [rating, setRating] = useState(5);
   const [notes, setNotes] = useState(null);
   const toast = useToast();
@@ -39,7 +39,7 @@ function AddDoctorReview({ doctID, AppID, isOpen, onClose, patient_id }) {
         doctor_id: doctID,
         points: rating,
         description: notes,
-        user_id: patient_id,
+        patient_code: patientCode,
         appointment_id: AppID,
       };
 

@@ -103,8 +103,11 @@ const AppointmentDetails = () => {
     return res.data;
   };
   const getPatientFiles = async () => {
+    const patientCode =
+      appointmentData?.patient_code ||
+      appointmentData?.patient_id;
     const res = await GET(
-      `get_patient_file?patient_id=${appointmentData?.patient_id}`
+      `get_patient_file?patient_code=${patientCode}`
     );
     return res.data;
   };
@@ -138,9 +141,9 @@ const AppointmentDetails = () => {
   });
 
   const { isLoading: patientFilesLoading, data: patientFilesData } = useQuery({
-    queryKey: ["patient-files", appointmentData?.patient_id],
+    queryKey: ["patient-files", appointmentData?.patient_code || appointmentData?.patient_id],
     queryFn: getPatientFiles,
-    enabled: !!appointmentData?.patient_id,
+    enabled: !!(appointmentData?.patient_code || appointmentData?.patient_id),
   });
 
   const getLaboratoryRequests = async () => {
@@ -666,7 +669,7 @@ const AppointmentDetails = () => {
       />
       {ratingIsOpen && (
         <AddDoctorReview
-          patient_id={appointmentData?.patient_id}
+          patientCode={appointmentData?.patient_code || appointmentData?.patient_id}
           doctID={appointmentData?.doct_id}
           AppID={appointmentData?.id}
           isOpen={ratingIsOpen}
