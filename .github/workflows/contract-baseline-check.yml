@@ -1,0 +1,63 @@
+name: Contract Baseline Check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      openapi_tag:
+        description: Optional override tag for manual checks
+        required: false
+      api_version:
+        description: Optional override API version for manual checks
+        required: false
+      migration_version:
+        description: Optional override migration version for manual checks
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify baseline file exists
+        run: test -f contract-baseline.json
+
+      - name: Parse baseline
+        id: baseline
+        run: |
+          OPENAPI_TAG=$(jq -r '.openapi_tag' contract-baseline.json)
+          API_VERSION=$(jq -r '.api_version' contract-baseline.json)
+          MIGRATION_VERSION=$(jq -r '.migration_version' contract-baseline.json)
+          WARN_UNTIL=$(jq -r '.warn_mode_until_release' contract-baseline.json)
+
+          {
+            echo "openapi_tag=$OPENAPI_TAG"
+            echo "api_version=$API_VERSION"
+            echo "migration_version=$MIGRATION_VERSION"
+            echo "warn_until=$WARN_UNTIL"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check client version pin
+        run: |
+          TAG='${{ github.event.inputs.openapi_tag || steps.baseline.outputs.openapi_tag }}'
+          if grep -R "$TAG" package.json package-lock.json >/dev/null 2>&1; then
+            echo "Client tag pin found: $TAG"
+          else
+            echo "Client tag pin missing: $TAG"
+            echo "warning=1" >> $GITHUB_ENV
+          fi
+
+      - name: Warn-only gate
+        run: |
+          if [ "${warning:-0}" = "1" ]; then
+            echo "::warning::Contract baseline drift detected. Warn mode active until ${{ steps.baseline.outputs.warn_until }}"
+          else
+            echo "No contract baseline drift detected"
+          fi
