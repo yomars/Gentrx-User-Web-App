@@ -1024,6 +1024,12 @@ const Step4 = ({
     unitTaxAmount,
     couponOffAmount
   );
+  const canonicalDoctorId = Doctordetails?.id || Doctordetails?.doctor_id || null;
+  const canonicalPatientCode =
+    patientDetails?.patient_code ||
+    userData?.patient_code ||
+    user?.patient_code ||
+    null;
 
   const walletAvailable = Number(userData?.wallet_amount || 0);
   const isWalletInsufficient = payableTotal > walletAvailable;
@@ -1063,8 +1069,10 @@ const Step4 = ({
     paymentTransactionId,
   } = {}) => ({
       ...(patientDetails.selectionType === "self"
-        ? { patient_id: patientDetails.id }
+        ? { patient_id: patientDetails.id, patient_code: canonicalPatientCode }
         : { family_member_id: patientDetails.id }),
+      patient_code: canonicalPatientCode,
+      doctor_id: canonicalDoctorId,
       status:
         appointmentStatusOverride ||
         (selectedMethod === 2 ? "Pending" : "Confirmed"),
@@ -1199,8 +1207,13 @@ const Step4 = ({
 
   const paymentData = {
     ...(patientDetails.selectionType === "self"
-      ? { patient_id: String(patientDetails.id) }
+      ? {
+          patient_id: String(patientDetails.id),
+          patient_code: canonicalPatientCode ? String(canonicalPatientCode) : "",
+        }
       : { family_member_id: String(patientDetails.id) }),
+    patient_code: canonicalPatientCode ? String(canonicalPatientCode) : "",
+    doctor_id: canonicalDoctorId ? String(canonicalDoctorId) : "",
     status: "Confirmed",
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
     time_slots: selectedSlot

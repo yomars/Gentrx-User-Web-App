@@ -1334,6 +1334,12 @@ const Step4 = ({
   );
   const walletAvailable = Number(userData?.wallet_amount || 0);
   const isWalletInsufficient = walletAvailable < payableTotal;
+  const canonicalDoctorId = Doctordetails?.id || Doctordetails?.doctor_id || null;
+  const canonicalPatientCode =
+    patientDetails?.patient_code ||
+    userData?.patient_code ||
+    user?.patient_code ||
+    null;
 
   const buildAppointmentDetails = ({
     selectedMethod = Number(method),
@@ -1343,8 +1349,10 @@ const Step4 = ({
     statusOverride,
   } = {}) => ({
     ...(patientDetails.selectionType === "self"
-      ? { patient_id: patientDetails.id }
+      ? { patient_id: patientDetails.id, patient_code: canonicalPatientCode }
       : { family_member_id: patientDetails.id }),
+    patient_code: canonicalPatientCode,
+    doctor_id: canonicalDoctorId,
     status: statusOverride || (selectedMethod === 2 ? "Pending" : "Confirmed"),
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
     time_slots: selectedSlot ? selectedSlot.time_start : moment().format("hh:mm"),
@@ -1474,8 +1482,13 @@ const Step4 = ({
 
   const paymentData = {
     ...(patientDetails.selectionType === "self"
-      ? { patient_id: String(patientDetails.id) }
+      ? {
+          patient_id: String(patientDetails.id),
+          patient_code: canonicalPatientCode ? String(canonicalPatientCode) : "",
+        }
       : { family_member_id: String(patientDetails.id) }),
+    patient_code: canonicalPatientCode ? String(canonicalPatientCode) : "",
+    doctor_id: canonicalDoctorId ? String(canonicalDoctorId) : "",
     status: "Confirmed",
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
     time_slots: selectedSlot

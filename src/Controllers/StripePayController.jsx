@@ -64,12 +64,17 @@ const resolveStripeReturnBaseUrl = () => {
 };
 
 const formattedData = (data) => {
+  const canonicalDoctorId = data.doctor_id || data.doct_id || "";
+  const canonicalPatientCode = data.patient_code || data.patient_id || "";
+
   return {
     family_member_id: data.family_member_id,
+    doctor_id: canonicalDoctorId,
+    patient_code: canonicalPatientCode,
     status: data.status,
     date: data.date,
     time_slots: data.time_slots,
-    doct_id: data.doct_id,
+    doct_id: data.doct_id || canonicalDoctorId,
     dept_id: data.dept_id,
     type: data.type,
     payment_status: data.payment_status,

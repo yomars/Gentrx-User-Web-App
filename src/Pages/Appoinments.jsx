@@ -40,6 +40,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import moment from "moment";
 import { Link, useNavigate } from "react-router-dom";
 import ErrorPage from "./ErrorPage";
+import { getDoctorIdentifier } from "../lib/appointmentIdentity";
 
 const STATUS_CONFIG = {
   Pending:     { color: "#F59E0B", bg: "#FFFBEB", border: "#F59E0B", label: "Pending" },
@@ -86,6 +87,10 @@ const AppointmentCard = ({ appointment }) => {
   const status = appointment.status || "Pending";
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.Pending;
   const apptDate = moment(appointment.date, "YYYY-MM-DD");
+  const doctorIdentifier = getDoctorIdentifier(
+    appointment,
+    "Appoinments:doctor-navigation"
+  );
 
   return (
     <motion.div
@@ -214,7 +219,8 @@ const AppointmentCard = ({ appointment }) => {
               leftIcon={<FaCalendarPlus />}
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/doctor/${appointment.doct_id}`);
+                if (!doctorIdentifier) return;
+                navigate(`/doctor/${doctorIdentifier}`);
               }}
             >
               Rebook

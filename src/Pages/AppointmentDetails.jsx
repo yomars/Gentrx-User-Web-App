@@ -52,6 +52,7 @@ import AddDoctorReview from "../Components/AddDoctorReview";
 import { AnimatePresence, motion } from "framer-motion";
 import { GoFileSubmodule } from "react-icons/go";
 import { resolveAttachmentUrl } from "../lib/media";
+import { getDoctorIdentifier, getPatientIdentifier } from "../lib/appointmentIdentity";
 
 const formatDate = (dateString) => {
   const date = moment(dateString);
@@ -97,13 +98,13 @@ const AppointmentDetails = () => {
   };
   const getQueueNumber = async () => {
     const res = await GET(
-      `get_appointment_check_in?doctor_id=${appointmentData?.doct_id}&start_date=${appointmentData?.date}&end_date=${appointmentData?.date}`
+      `get_appointment_check_in?doctor_id=${doctorIdentifier}&start_date=${appointmentData?.date}&end_date=${appointmentData?.date}`
     );
     return res.data;
   };
   const getPatientFiles = async () => {
     const res = await GET(
-      `get_patient_file?patient_id=${appointmentData?.patient_id}`
+      `get_patient_file?patient_id=${patientIdentifier}`
     );
     return res.data;
   };
@@ -125,21 +126,30 @@ const AppointmentDetails = () => {
     queryFn: getPrescription,
   });
 
+  const doctorIdentifier = getDoctorIdentifier(
+    appointmentData,
+    "AppointmentDetails:get_appointment_check_in"
+  );
+  const patientIdentifier = getPatientIdentifier(
+    appointmentData,
+    "AppointmentDetails:get_patient_file"
+  );
+
   // Add the missing queries:
   const { 
     data: queueData, 
     isFetching: queueIsFetching,
     refetch 
   } = useQuery({
-    queryKey: ["queue", appointmentData?.doct_id, appointmentData?.date],
+    queryKey: ["queue", doctorIdentifier, appointmentData?.date],
     queryFn: getQueueNumber,
-    enabled: !!appointmentData?.doct_id && !!appointmentData?.date && appointmentData?.type === "OPD" && appointmentData?.status === "Confirmed",
+    enabled: !!doctorIdentifier && !!appointmentData?.date && appointmentData?.type === "OPD" && appointmentData?.status === "Confirmed",
   });
 
   const { isLoading: patientFilesLoading, data: patientFilesData } = useQuery({
-    queryKey: ["patient-files", appointmentData?.patient_id],
+    queryKey: ["patient-files", patientIdentifier],
     queryFn: getPatientFiles,
-    enabled: !!appointmentData?.patient_id,
+    enabled: !!patientIdentifier,
   });
 
   const getLaboratoryRequests = async () => {
@@ -255,7 +265,7 @@ const AppointmentDetails = () => {
                   flex={1} minW="120px" rightIcon={<IoMdRefresh />}
                   onClick={() => {
                     // @ts-ignore
-                    queryClient.invalidateQueries(["queue", appointmentData?.doct_id, appointmentData?.date]);
+                    queryClient.invalidateQueries(["queue", doctorIdentifier, appointmentData?.date]);
                     refetch();
                   }}
                 >
@@ -497,8 +507,8 @@ const AppointmentDetails = () => {
       />
       {ratingIsOpen && (
         <AddDoctorReview
-          patient_id={appointmentData?.patient_id}
-          doctID={appointmentData?.doct_id}
+          patient_id={appointmentData?.patient_id || patientIdentifier}
+          doctID={doctorIdentifier}
           AppID={appointmentData?.id}
           isOpen={ratingIsOpen}
           onClose={ratingOnClose}

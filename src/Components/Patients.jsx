@@ -29,6 +29,7 @@ import defaultISD from "../Controllers/defaultISD";
 import user from "../Controllers/user";
 import showToast from "../Controllers/ShowToast";
 import ISDCODEMODAL from "./ISDCODEMODAL";
+import { uniquePatients } from "../lib/appointmentIdentity";
 
 const getData = async () => {
   const res = await GET(`get_patients/user/${user.id}`);
@@ -50,6 +51,7 @@ function Patients() {
     queryKey: ["patients"],
     queryFn: getData,
   });
+  const normalizedPatients = uniquePatients(patientData);
 
   if (patientLoading) {
     return <Loading />;
@@ -189,9 +191,9 @@ function Patients() {
                   >
                     Add New Patient
                   </Button>
-                  {patientData && (
+                  {normalizedPatients.length > 0 && (
                     <Box mt={4}>
-                      {patientData.map((patient) => (
+                      {normalizedPatients.map((patient) => (
                         <motion.div
                           key={patient.id}
                           initial={{ opacity: 0, y: 50 }}
