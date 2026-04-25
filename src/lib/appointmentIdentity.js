@@ -110,13 +110,18 @@ export const withAppointmentIdentifiers = (payload) => {
   if (!payload || typeof payload !== "object") return payload;
 
   const doctorId = payload.doctor_id ?? payload.doct_id ?? null;
-  const patientCode = payload.patient_code ?? payload.patient_id ?? null;
+  const patientCode = payload.patient_code ?? null;
+  const ownerId = payload.owner_id ?? patientCode;
+  const ownerType = payload.owner_type ?? "patient";
+  const patientId = payload.patient_id ?? null;
 
   return {
     ...payload,
     doctor_id: doctorId,
     patient_code: patientCode,
+    owner_id: ownerId,
+    owner_type: ownerType,
     doct_id: payload.doct_id ?? doctorId,
-    patient_id: payload.patient_id ?? patientCode,
+    patient_id: patientId,
   };
 };

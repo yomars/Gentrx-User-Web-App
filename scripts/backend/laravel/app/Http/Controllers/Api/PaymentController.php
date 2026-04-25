@@ -261,7 +261,10 @@ class PaymentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'appointment_id'      => 'required|integer',
-            'patient_id'          => 'required|integer',
+            'patient_id'          => 'nullable|integer',
+            'patient_code'        => 'nullable|string',
+            'owner_id'            => 'nullable|string',
+            'owner_type'          => 'nullable|string|in:patient',
             'clinic_id'           => 'nullable|integer',
             'doctor_id'           => 'nullable|integer',
             'service_charge'      => 'nullable|numeric|min:0',
@@ -277,11 +280,33 @@ class PaymentController extends Controller
             ], 422);
         }
 
+        if (!$request->filled('patient_id') && !$request->filled('patient_code') && !$request->filled('owner_id')) {
+            return response()->json([
+                'response' => 422,
+                'status' => false,
+                'message' => 'Either patient_id, patient_code, or owner_id is required.',
+            ], 422);
+        }
+
         try {
             $appointmentId = (int) $request->appointment_id;
-            $patientId     = (int) $request->patient_id;
             $localClinicId = $this->resolveLocalClinicId($request->clinic_id ? (int) $request->clinic_id : null);
             $localDoctorId = $this->resolveLocalDoctorId($request->doctor_id ? (int) $request->doctor_id : null);
+            $patient = $this->resolvePatientContextFromRequest(
+                $request,
+                $localClinicId
+            );
+
+            if (!$patient || empty($patient['patient_id']) || empty($patient['patient_code'])) {
+                return response()->json([
+                    'response' => 422,
+                    'status' => false,
+                    'message' => 'Patient not found. Provide a valid patient_code or patient_id.',
+                ], 422);
+            }
+
+            $patientId = (int) $patient['patient_id'];
+            $patientCode = (string) $patient['patient_code'];
 
             $legacyAppointment = $this->fetchLegacyAppointment($appointmentId, $request->bearerToken());
             if (!$legacyAppointment) {
@@ -301,30 +326,10 @@ class PaymentController extends Controller
                 ], 409);
             }
 
-            $result = DB::transaction(function () use ($request, $localClinicId, $localDoctorId) {
+            $result = DB::transaction(function () use ($request, $localClinicId, $localDoctorId, $patientId, $patientCode) {
                 $appointmentId = (int) $request->appointment_id;
-                $patientId     = (int) $request->patient_id;
                 $amount        = (float) ($request->service_charge ?? 0);
-
-                $this->ensurePatientExists(
-                    $patientId,
-                    $localClinicId
-                );
-
-                // Ensure wallet row exists before locking.
-                DB::table('wallets')->updateOrInsert(
-                    ['patient_id' => $patientId],
-                    [
-                        'currency'   => 'PHP',
-                        'updated_at' => Carbon::now(),
-                        'created_at' => Carbon::now(),
-                    ]
-                );
-
-                $wallet = DB::table('wallets')
-                    ->where('patient_id', $patientId)
-                    ->lockForUpdate()
-                    ->first();
+                $wallet = $this->lockWalletForPatient($patientCode, $patientId);
 
                 $balance = (float) ($wallet->balance ?? 0);
                 if ($balance < $amount) {
@@ -426,7 +431,7 @@ class PaymentController extends Controller
                 }
 
                 $newBalance = (float) DB::table('wallets')
-                    ->where('patient_id', $patientId)
+                    ->where('id', $wallet->id)
                     ->value('balance');
 
                 return [
@@ -440,6 +445,7 @@ class PaymentController extends Controller
                             'invoice_id' => $invoiceId,
                             'invoice_number' => $invoiceNumber,
                             'payment_id' => $paymentId,
+                            'patient_code' => $patientCode,
                             'wallet_balance' => $newBalance,
                         ],
                     ],
@@ -559,6 +565,98 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             // Ignore on non-PostgreSQL drivers.
         }
+    }
+
+    private function resolvePatientContextFromRequest(Request $request, ?int $clinicId = null): ?array
+    {
+        $hasPatientCodeColumn = Schema::hasColumn('patients', 'patient_code');
+        $patientCode = trim((string) ($request->input('patient_code') ?? ''));
+        $ownerId = trim((string) ($request->input('owner_id') ?? ''));
+        $ownerType = strtolower(trim((string) ($request->input('owner_type') ?? '')));
+
+        if ($patientCode === '' && $ownerId !== '' && ($ownerType === '' || $ownerType === 'patient')) {
+            $patientCode = $ownerId;
+        }
+
+        $patientId = null;
+        if ($request->filled('patient_id')) {
+            $patientId = (int) $request->input('patient_id');
+            $this->ensurePatientExists($patientId, $clinicId);
+        }
+
+        $patient = null;
+        if ($patientCode !== '' && $hasPatientCodeColumn) {
+            $patient = DB::table('patients')->where('patient_code', $patientCode)->orderByDesc('id')->first();
+        }
+
+        if (!$patient && $patientId !== null) {
+            $patient = DB::table('patients')->where('id', $patientId)->first();
+        }
+
+        if (!$patient) {
+            return null;
+        }
+
+        $resolvedPatientCode = $hasPatientCodeColumn ? ($patient->patient_code ?? null) : null;
+        if (!$resolvedPatientCode && $patientCode !== '') {
+            $resolvedPatientCode = $patientCode;
+        }
+
+        if (!$resolvedPatientCode) {
+            return null;
+        }
+
+        return [
+            'patient_id' => (int) $patient->id,
+            'patient_code' => (string) $resolvedPatientCode,
+        ];
+    }
+
+    private function lockWalletForPatient(string $patientCode, int $patientId): object
+    {
+        $hasPatientCode = Schema::hasColumn('wallets', 'patient_code');
+        $hasOwnerType = Schema::hasColumn('wallets', 'owner_type');
+
+        $walletQuery = DB::table('wallets');
+        if ($hasPatientCode) {
+            $walletQuery->where('patient_code', $patientCode);
+        } else {
+            $walletQuery->where(function ($q) use ($patientCode, $patientId) {
+                $q->where('owner_id', $patientCode)
+                  ->orWhere('owner_id', (string) $patientId);
+            });
+            if ($hasOwnerType) {
+                $walletQuery->where('owner_type', 'patient');
+            }
+        }
+
+        $wallet = $walletQuery->orderByDesc('id')->lockForUpdate()->first();
+        if ($wallet) {
+            return $wallet;
+        }
+
+        $insert = [
+            'balance' => 0,
+            'currency' => 'PHP',
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ];
+
+        if ($hasPatientCode) {
+            $insert['patient_code'] = $patientCode;
+        } else {
+            $insert['owner_id'] = $patientCode;
+            if ($hasOwnerType) {
+                $insert['owner_type'] = 'patient';
+            }
+        }
+
+        $walletId = DB::table('wallets')->insertGetId($insert);
+
+        return DB::table('wallets')
+            ->where('id', $walletId)
+            ->lockForUpdate()
+            ->first();
     }
 
     private function resolveLocalClinicId(?int $clinicId): ?int

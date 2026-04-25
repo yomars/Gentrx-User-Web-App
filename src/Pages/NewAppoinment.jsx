@@ -1352,6 +1352,8 @@ const Step4 = ({
       ? { patient_id: patientDetails.id, patient_code: canonicalPatientCode }
       : { family_member_id: patientDetails.id }),
     patient_code: canonicalPatientCode,
+    owner_id: canonicalPatientCode,
+    owner_type: "patient",
     doctor_id: canonicalDoctorId,
     status: statusOverride || (selectedMethod === 2 ? "Pending" : "Confirmed"),
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
@@ -1488,6 +1490,8 @@ const Step4 = ({
         }
       : { family_member_id: String(patientDetails.id) }),
     patient_code: canonicalPatientCode ? String(canonicalPatientCode) : "",
+    owner_id: canonicalPatientCode ? String(canonicalPatientCode) : "",
+    owner_type: "patient",
     doctor_id: canonicalDoctorId ? String(canonicalDoctorId) : "",
     status: "Confirmed",
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),

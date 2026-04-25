@@ -65,12 +65,15 @@ const resolveStripeReturnBaseUrl = () => {
 
 const formattedData = (data) => {
   const canonicalDoctorId = data.doctor_id || data.doct_id || "";
-  const canonicalPatientCode = data.patient_code || data.patient_id || "";
+  const canonicalPatientCode = data.patient_code || "";
 
   return {
     family_member_id: data.family_member_id,
+    patient_id: data.patient_id,
     doctor_id: canonicalDoctorId,
     patient_code: canonicalPatientCode,
+    owner_id: canonicalPatientCode || data.owner_id || "",
+    owner_type: data.owner_type || "patient",
     status: data.status,
     date: data.date,
     time_slots: data.time_slots,

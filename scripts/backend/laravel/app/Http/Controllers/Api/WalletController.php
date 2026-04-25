@@ -244,7 +244,10 @@ class WalletController extends Controller
     public function topup(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'patient_id'  => 'required|integer',
+            'patient_id'  => 'nullable|integer',
+            'patient_code' => 'nullable|string',
+            'owner_id' => 'nullable|string',
+            'owner_type' => 'nullable|string|in:patient',
             'amount'      => 'required|numeric|min:0.01',
             'description' => 'nullable|string',
             'clinic_id'   => 'nullable|integer',
@@ -258,12 +261,18 @@ class WalletController extends Controller
             ], 422);
         }
 
-        $this->ensurePatientExists(
-            (int) $request->patient_id,
+        if (!$request->filled('patient_id') && !$request->filled('patient_code') && !$request->filled('owner_id')) {
+            return response()->json([
+                'response' => 422,
+                'status' => false,
+                'message' => 'Either patient_id, patient_code, or owner_id is required.',
+            ], 422);
+        }
+
+        $topupPatient = $this->resolvePatientFromRequest(
+            $request,
             $request->clinic_id ? (int) $request->clinic_id : null
         );
-
-        $topupPatient = DB::table('patients')->where('id', $request->patient_id)->first();
         if (!$topupPatient || !$topupPatient->patient_code) {
             return response()->json(['response' => 422, 'status' => false, 'message' => 'Patient not found.'], 422);
         }
@@ -275,7 +284,7 @@ class WalletController extends Controller
 
         DB::table('wallet_transactions')->insert([
             'wallet_id'   => $walletId,
-            'patient_id'  => $request->patient_id,
+            'patient_id'  => (int) $topupPatient->id,
             'amount'      => $request->amount,
             'type'        => 'topup',
             'description' => $request->description ?? 'Admin wallet top-up',
@@ -289,7 +298,7 @@ class WalletController extends Controller
                 DB::table('transactions')->whereYear('created_at', Carbon::now()->year)->count() + 1,
                 6, '0', STR_PAD_LEFT
             ),
-            'patient_id'     => $request->patient_id,
+            'patient_id'     => (int) $topupPatient->id,
             'amount'         => $request->amount,
             'type'           => 'credit',
             'status'         => 'success',
@@ -315,7 +324,10 @@ class WalletController extends Controller
     public function deduct(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'patient_id'  => 'required|integer',
+            'patient_id'  => 'nullable|integer',
+            'patient_code' => 'nullable|string',
+            'owner_id' => 'nullable|string',
+            'owner_type' => 'nullable|string|in:patient',
             'amount'      => 'required|numeric|min:0.01',
             'description' => 'nullable|string',
             'clinic_id'   => 'nullable|integer',
@@ -329,12 +341,18 @@ class WalletController extends Controller
             ], 422);
         }
 
-        $this->ensurePatientExists(
-            (int) $request->patient_id,
+        if (!$request->filled('patient_id') && !$request->filled('patient_code') && !$request->filled('owner_id')) {
+            return response()->json([
+                'response' => 422,
+                'status' => false,
+                'message' => 'Either patient_id, patient_code, or owner_id is required.',
+            ], 422);
+        }
+
+        $deductPatient = $this->resolvePatientFromRequest(
+            $request,
             $request->clinic_id ? (int) $request->clinic_id : null
         );
-
-        $deductPatient = DB::table('patients')->where('id', $request->patient_id)->first();
         if (!$deductPatient || !$deductPatient->patient_code) {
             return response()->json(['response' => 422, 'status' => false, 'message' => 'Patient not found.'], 422);
         }
@@ -355,7 +373,7 @@ class WalletController extends Controller
 
         DB::table('wallet_transactions')->insert([
             'wallet_id'   => $walletId,
-            'patient_id'  => $request->patient_id,
+            'patient_id'  => (int) $deductPatient->id,
             'amount'      => $request->amount,
             'type'        => 'debit',
             'description' => $request->description ?? 'Admin wallet deduction',
@@ -420,9 +438,47 @@ class WalletController extends Controller
         return DB::table('wallets')->insertGetId($insert);
     }
 
-    private function ensurePatientExists(int $patientId, ?int $clinicId = null): void
+    private function resolvePatientFromRequest(Request $request, ?int $clinicId = null): ?object
     {
-        if (DB::table('patients')->where('id', $patientId)->exists()) {
+        $patientCode = trim((string) ($request->input('patient_code') ?? ''));
+        $ownerId = trim((string) ($request->input('owner_id') ?? ''));
+        $ownerType = strtolower(trim((string) ($request->input('owner_type') ?? '')));
+
+        if ($patientCode === '' && $ownerId !== '' && ($ownerType === '' || $ownerType === 'patient')) {
+            $patientCode = $ownerId;
+        }
+
+        $patientId = null;
+        if ($request->filled('patient_id')) {
+            $patientId = (int) $request->input('patient_id');
+            $this->ensurePatientExists($patientId, $clinicId, $patientCode !== '' ? $patientCode : null);
+        }
+
+        if ($patientCode !== '') {
+            $byCode = DB::table('patients')->where('patient_code', $patientCode)->orderByDesc('id')->first();
+            if ($byCode) {
+                return $byCode;
+            }
+        }
+
+        if ($patientId !== null) {
+            return DB::table('patients')->where('id', $patientId)->first();
+        }
+
+        return null;
+    }
+
+    private function ensurePatientExists(int $patientId, ?int $clinicId = null, ?string $patientCode = null): void
+    {
+        $hasPatientCodeColumn = Schema::hasColumn('patients', 'patient_code');
+        $existing = DB::table('patients')->where('id', $patientId)->first();
+        if ($existing) {
+            if ($patientCode && $hasPatientCodeColumn && empty($existing->patient_code)) {
+                DB::table('patients')->where('id', $patientId)->update([
+                    'patient_code' => $patientCode,
+                    'updated_at' => Carbon::now(),
+                ]);
+            }
             return;
         }
 
@@ -431,7 +487,7 @@ class WalletController extends Controller
             throw new \RuntimeException('Unable to create wallet for patient because no clinic exists in local database');
         }
 
-        DB::table('patients')->insert([
+        $insert = [
             'id' => $patientId,
             'clinic_id' => $resolvedClinicId,
             'f_name' => 'External',
@@ -441,7 +497,13 @@ class WalletController extends Controller
             'active' => 1,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
-        ]);
+        ];
+
+        if ($hasPatientCodeColumn) {
+            $insert['patient_code'] = $patientCode;
+        }
+
+        DB::table('patients')->insert($insert);
 
         try {
             DB::statement("SELECT setval(pg_get_serial_sequence('patients', 'id'), (SELECT COALESCE(MAX(id), 1) FROM patients))");
