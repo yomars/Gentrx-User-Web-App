@@ -1,0 +1,6 @@
+{
+  "api_version": "1.0.0",
+  "openapi_tag": "openapi-v1.0.0",
+  "migration_version": "2026.04.25.01",
+  "warn_mode_until_release": "2026.05.09.01"
+}

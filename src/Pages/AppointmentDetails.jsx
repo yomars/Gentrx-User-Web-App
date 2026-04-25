@@ -507,8 +507,8 @@ const AppointmentDetails = () => {
       />
       {ratingIsOpen && (
         <AddDoctorReview
-          patient_id={appointmentData?.patient_id || patientIdentifier}
           doctID={doctorIdentifier}
+          patientCode={patientIdentifier}
           AppID={appointmentData?.id}
           isOpen={ratingIsOpen}
           onClose={ratingOnClose}
