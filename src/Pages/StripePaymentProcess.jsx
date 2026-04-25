@@ -1,10 +1,8 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js/pure";
-import Lottie from "lottie-react";
-import { Box, Button, Flex, Text, useToast } from "@chakra-ui/react";
+import { Box, Button, Flex, Spinner, Text, useToast } from "@chakra-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
-import paymentProccesing from "../assets/paymentProccesing.json";
 import { ADD } from "../Controllers/ApiControllers";
 import showToast from "../Controllers/ShowToast";
 import PaymentGetwayData from "../Hooks/Paymntgetways";
@@ -282,10 +280,12 @@ function StripePaymentProcess() {
   return (
     <Box>
       <Flex justifyContent="center" mt={10}>
-        <Lottie
-          animationData={paymentProccesing}
-          loop={true}
-          style={{ width: "300px", maxWidth: "80vw" }}
+        <Spinner
+          thickness="4px"
+          speed="0.65s"
+          emptyColor="gray.200"
+          color="primary.main"
+          size="xl"
         />
       </Flex>
       <Text textAlign="center" fontSize={20} fontWeight={600}>

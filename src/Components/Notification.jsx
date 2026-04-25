@@ -18,8 +18,6 @@ import { ADD, GET } from "../Controllers/ApiControllers";
 import user from "../Controllers/user";
 import imageBaseURL from "../Controllers/image";
 
-// import messaging from firebase.js
-
 const getData = async () => {
   if (!user?.id || !user?.created_at) {
     return [];

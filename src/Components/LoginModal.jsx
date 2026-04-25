@@ -15,8 +15,6 @@ import {
   InputGroup,
   InputLeftAddon,
   Link,
-  PinInput,
-  PinInputField,
   Text,
   useDisclosure,
   useToast,
@@ -24,43 +22,15 @@ import {
 import { useState } from "react";
 import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import showToast from "../Controllers/ShowToast";
-import {
-  getAuth,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-} from "firebase/auth";
 import { Link as RouterLink } from "react-router-dom";
-import { getFirebaseApp } from "../Controllers/firebase.config";
 import defaultISD from "../Controllers/defaultISD";
-import { setStorageItem } from "../lib/storage";
 
 function LoginModal({ isModalOpen, onModalClose }) {
-  const [step, setStep] = useState(1);
   const [isd_code, setIsd_code] = useState(defaultISD);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [phoneNumber, setphoneNumber] = useState();
-  const [isLoading, setisLoading] = useState(false);
+  const [isLoading] = useState(false);
   const toast = useToast();
-  const [OTP, setOTP] = useState();
-  const [confirmationResult, setConfirmationResult] = useState(null);
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return step1({
-          onOpen,
-          isd_code,
-          phoneNumber,
-          setphoneNumber,
-          handleSubmit,
-          isLoading,
-        });
-      case 2:
-        return step2({ setOTP, handleOtpSubmit: hnadleOtp, isLoading }); // If you have other steps, handle them here
-      default:
-        return step1({ onOpen, isd_code });
-    }
-  };
 
   const handleSubmit = async () => {
     if (!phoneNumber) {
@@ -76,80 +46,6 @@ function LoginModal({ isModalOpen, onModalClose }) {
     setTimeout(() => {
       window.location.href = `/login?phone=${encodeURIComponent(phoneNumber)}`;
     }, 500);
-  };
-
-  const handleSendCode = async () => {
-    const auth = getAuth(getFirebaseApp());
-    window.recaptchaVerifier = new RecaptchaVerifier(
-      auth,
-      "recaptcha-container",
-      {
-        size: "invisible",
-      }
-    );
-    const appVerifier = window.recaptchaVerifier;
-    try {
-      let number = `${isd_code}${phoneNumber}`;
-      const result = await signInWithPhoneNumber(auth, number, appVerifier);
-      setisLoading(false);
-      setConfirmationResult(result);
-      toast({
-        title: "OTP Sent",
-        description: "Please check your phone for the OTP.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-      setStep(2);
-    } catch (error) {
-      setisLoading(false);
-      toast({
-        title: "Error",
-        description: "Failed to send OTP. Please try again.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-    }
-  };
-
-  const hnadleOtp = async () => {
-    if (OTP.length !== 6) {
-      return toast({
-        title: "Error",
-        description: "Please Enter valid OTP.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-    }
-    setisLoading(true);
-    try {
-      const login = await confirmationResult.confirm(OTP);
-      ConfirmLogin(login);
-    } catch (error) {
-      setisLoading(false);
-      toast({
-        title: "Invalid OTP",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-    }
-  };
-
-  const ConfirmLogin = async () => {
-    showToast(
-      toast,
-      "info",
-      "OTP flow is disabled for patient auth. Please use password login."
-    );
-    setisLoading(false);
-    window.location.href = `/login?phone=${encodeURIComponent(phoneNumber || "")}`;
   };
   return (
     <Modal
@@ -169,7 +65,6 @@ function LoginModal({ isModalOpen, onModalClose }) {
             justifyContent="center"
             bg="gray.100"
           >
-            <div id="recaptcha-container"></div>
             <Box
               width={"100%"} // Responsive width for different screen sizes
               maxWidth="900px"
@@ -202,7 +97,14 @@ function LoginModal({ isModalOpen, onModalClose }) {
                     mb="4"
                   />
                 </Box>
-                {renderStep()}
+                {step1({
+                  onOpen,
+                  isd_code,
+                  phoneNumber,
+                  setphoneNumber,
+                  handleSubmit,
+                  isLoading,
+                })}
                 {/* Right Section */}
               </Flex>
             </Box>
@@ -279,39 +181,6 @@ const step1 = ({
     >
       New here? Create an account
     </Link>
-  </Box>
-);
-const step2 = ({ setOTP, handleOtpSubmit, isLoading }) => (
-  <Box width={["100%", "100%", "50%", "50%"]} p={["6", "8", "8", "10"]}>
-    <Text fontSize="md" mb="2" fontWeight={600}>
-      Enter OTP
-    </Text>
-    <HStack justify={"space-between"}>
-      <PinInput
-        type="number"
-        onComplete={(value) => {
-          setOTP(value);
-        }}
-      >
-        <PinInputField />
-        <PinInputField />
-        <PinInputField />
-        <PinInputField />
-        <PinInputField />
-        <PinInputField />
-      </PinInput>
-    </HStack>
-
-    <Button
-      mt={5}
-      colorScheme="orange"
-      width="100%"
-      mb="4"
-      onClick={handleOtpSubmit}
-      isLoading={isLoading}
-    >
-      Login
-    </Button>
   </Box>
 );
 

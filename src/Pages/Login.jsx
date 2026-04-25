@@ -26,7 +26,6 @@ import { HiUserCircle } from "react-icons/hi";
 import { IoMdWallet } from "react-icons/io";
 import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import showToast from "../Controllers/ShowToast";
-import { ADD } from "../Controllers/ApiControllers";
 import {
   useNavigate,
   Link as RouterLink,
@@ -35,12 +34,13 @@ import {
 import defaultISD from "../Controllers/defaultISD";
 import { setStorageItem } from "../lib/storage";
 import useSettingsData from "../Hooks/SettingData";
+import api from "../Controllers/api";
 import {
   ensurePatientAuthBackendReady,
   getAuthEndpoint,
 } from "../Controllers/authConfig";
 
-const FirebaseLogin = ({ redirectLocation }) => {
+const PatientLogin = ({ redirectLocation }) => {
   const [isd_code, setIsd_code] = useState(defaultISD);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [phoneNumber, setphoneNumber] = useState("");
@@ -65,6 +65,41 @@ const FirebaseLogin = ({ redirectLocation }) => {
   const appStoreHref = appStoreLink?.value || "#";
   const appGalleryHref = appGalleryLink?.value || "#";
 
+  const normalizePhone = (value) =>
+    String(value || "")
+      .replace(/\D/g, "")
+      .replace(/^0+/, "")
+      .trim();
+
+  const postAuthJson = async (endpoint, payload) => {
+    const response = await fetch(`${api}/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    let body = null;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+
+    if (!response.ok) {
+      const message =
+        body?.message ||
+        body?.error ||
+        body?.details?.phone?.[0] ||
+        body?.details?.password?.[0] ||
+        `Request failed with status code ${response.status}`;
+      throw new Error(message);
+    }
+
+    return body || {};
+  };
+
   const quickAccessItems = [
     { label: "Appointment", icon: <FaCalendarAlt fontSize={26} />, to: "/doctors" },
     { label: "Lab Test", icon: <MdBiotech fontSize={28} />, to: "/lab-tests" },
@@ -78,10 +113,18 @@ const FirebaseLogin = ({ redirectLocation }) => {
 
   // Password login handler
   const handlePasswordLogin = async () => {
-    if (!phoneNumber) {
+    const normalizedPhone = normalizePhone(phoneNumber);
+
+    if (!normalizedPhone) {
       showToast(toast, "error", "Please enter phone number");
       return;
     }
+
+    if (normalizedPhone.length !== 10) {
+      showToast(toast, "error", "Please enter a valid 10-digit mobile number");
+      return;
+    }
+
     if (!password) {
       showToast(toast, "error", "Please enter password");
       return;
@@ -91,21 +134,26 @@ const FirebaseLogin = ({ redirectLocation }) => {
     try {
       await ensurePatientAuthBackendReady();
 
-      let data = {
-        phone: phoneNumber,
+      const data = {
+        phone: normalizedPhone,
         password: password,
       };
-      // Use configurable endpoint (patient/login or legacy login_phone)
       const endpoint = getAuthEndpoint('login');
-      const res = await ADD("", endpoint, data);
+      const res = await postAuthJson(endpoint, data);
       
-      if (res.status === true) {
-        const token = res?.token || res?.data?.token;
-        const user = { ...res.data, token };
+      if (res?.status === true || res?.success === true) {
+        const token = res?.token || res?.data?.token || res?.data?.access_token;
+        const userPayload = res?.data || res?.user || {};
+        const user = { ...userPayload, token };
+
+        if (!user?.token) {
+          throw new Error("Login response is missing token");
+        }
+
         setStorageItem("user", JSON.stringify(user));
         toast({
           title: "Login Success",
-          description: `Welcome ${user.f_name} ${user.l_name}`,
+          description: `Welcome ${user.f_name || ""} ${user.l_name || ""}`.trim(),
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -114,10 +162,14 @@ const FirebaseLogin = ({ redirectLocation }) => {
         navigate(redirectLocation, { replace: true });
         window.location.reload();
       } else {
-        showToast(toast, "error", res.message || "Invalid credentials");
+        showToast(
+          toast,
+          "error",
+          res?.message || res?.error || "Invalid credentials"
+        );
       }
     } catch (error) {
-      showToast(toast, "error", error.message);
+      showToast(toast, "error", error?.message || "Login failed");
     }
     setisLoading(false);
   };
@@ -370,7 +422,7 @@ const Login = () => {
   const ref = searchParams.get("ref");
   return (
     <>
-      <FirebaseLogin redirectLocation={ref ? ref : "/"} />
+      <PatientLogin redirectLocation={ref ? ref : "/"} />
     </>
   );
 };
