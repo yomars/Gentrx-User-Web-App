@@ -1031,7 +1031,7 @@ const Step4 = ({
     user?.patient_code ||
     null;
 
-  const walletAvailable = Number(userData?.wallet_amount || 0);
+  const walletAvailable = Number(userData?.wallet_amount ?? userData?.balance ?? 0);
   const isWalletInsufficient = payableTotal > walletAvailable;
 
   const ValidateCoupon = async () => {
@@ -1536,7 +1536,7 @@ const Step4 = ({
                 }}
               >
                 Pay From Wallet (Available Balance {currency}
-                {userData?.wallet_amount})
+                {userData?.wallet_amount ?? userData?.balance ?? 0})
               </Radio>
             </Stack>
           </RadioGroup>

@@ -292,7 +292,10 @@ const Appointments = () => {
   const [currentStep, setCurrentStep] = useState(1);
 
   const getData = async () => {
-    const res = await GET(`get_appointments?patient_id=${user.patient_code}`);
+    const patientParam = user.patient_code
+      ? `patient_code=${user.patient_code}`
+      : `patient_id=${user.id}`;
+    const res = await GET(`get_appointments?${patientParam}`);
     return res.data;
   };
 

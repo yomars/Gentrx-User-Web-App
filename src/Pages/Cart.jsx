@@ -663,8 +663,10 @@ const Checkout = ({ items, address, setStep }) => {
       parseFloat(toatlBeforeDeliveryTax) + parseFloat(deliveryTax(DeliveryType))
     );
   };
+  const walletBalance = parseFloat(user.wallet_amount ?? user.balance ?? 0);
+
   const GetTotalPaybleAmount = () => {
-    let remainsAfterWallet = GetTotalAmount() - parseFloat(user.wallet_amount);
+    let remainsAfterWallet = GetTotalAmount() - walletBalance;
     if (useWallet) {
       if (remainsAfterWallet > 0) {
         return remainsAfterWallet.toFixed(2);
@@ -676,8 +678,8 @@ const Checkout = ({ items, address, setStep }) => {
     }
   };
   const usedWalletAmount = () => {
-    if (GetTotalAmount() >= user.wallet_amount) {
-      return user.wallet_amount;
+    if (GetTotalAmount() >= walletBalance) {
+      return walletBalance;
     } else {
       return GetTotalAmount();
     }
@@ -938,7 +940,7 @@ const Checkout = ({ items, address, setStep }) => {
                 <IoMdWallet fontSize={32} />
                 <Text>
                   Your Wallet Balance {currency}
-                  {user.wallet_amount.toFixed(2)}
+                  {walletBalance.toFixed(2)}
                 </Text>
               </Flex>
             </Box>
@@ -1117,7 +1119,7 @@ const Checkout = ({ items, address, setStep }) => {
                     m={0}
                     color={"primary.text"}
                   >
-                    {currency} {user.wallet_amount}
+                    {currency} {walletBalance}
                   </Text>
                 </Flex>
                 <Flex gap={2} justify={"space-between"} align={"center"}>

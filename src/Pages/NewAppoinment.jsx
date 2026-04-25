@@ -1332,7 +1332,7 @@ const Step4 = ({
       couponOffAmount
     ).toFixed(2)
   );
-  const walletAvailable = Number(userData?.wallet_amount || 0);
+  const walletAvailable = Number(userData?.wallet_amount ?? userData?.balance ?? 0);
   const isWalletInsufficient = walletAvailable < payableTotal;
   const canonicalDoctorId = Doctordetails?.id || Doctordetails?.doctor_id || null;
   const canonicalPatientCode =
@@ -1806,7 +1806,7 @@ const Step4 = ({
                 }}
               >
                 Pay From Wallet (Available Balance {currency}
-                {userData?.wallet_amount})
+                {userData?.wallet_amount ?? userData?.balance ?? 0})
               </Radio>
             </Stack>
           </RadioGroup>

@@ -39,6 +39,7 @@ import moment from "moment";
 import { setStorageItem } from "../lib/storage";
 
 const getTransaction = async () => {
+  // wallet_transactions keyed by patient ID (stored as user_id in all_transactions table)
   let url = `get_all_transaction?user_id=${user?.id}&is_wallet_txn=1`;
   try {
     const trasection = await GET(url);
@@ -138,8 +139,8 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
                     </Text>
                     <Text fontWeight={500} mt={1} p={0} fontSize={16}>
                       {currency}{" "}
-                      {userData?.wallet_amount !== null
-                        ? userData?.wallet_amount
+                      {(userData?.wallet_amount ?? userData?.balance) !== null
+                        ? (userData?.wallet_amount ?? userData?.balance ?? 0)
                         : 0}
                     </Text>
                     <Flex gap={4} >

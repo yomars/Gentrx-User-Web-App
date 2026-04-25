@@ -39,7 +39,7 @@ const BalanceTransfer = ({ isOpen, onClose, cancelRef }) => {
       return;
     }
 
-    if (parseFloat(amount) > user.wallet_amount) {
+    if (parseFloat(amount) > (user.wallet_amount ?? user.balance ?? 0)) {
       showToast(toast, "error", "Insufficient balance");
       return;
     }
