@@ -32,12 +32,22 @@ class WalletController extends Controller
         $search   = trim($request->query('search', ''));
         $clinicId = $request->query('clinic_id');
 
+        $hasPatientCode = Schema::hasColumn('wallets', 'patient_code');
+        $hasOwnerType = Schema::hasColumn('wallets', 'owner_type');
+
         $query = DB::table('wallets as w')
-            ->join('patients as p', 'p.patient_code', '=', 'w.patient_code')
+            ->join('patients as p', function ($join) use ($hasPatientCode) {
+                if ($hasPatientCode) {
+                    $join->on('p.patient_code', '=', 'w.patient_code');
+                } else {
+                    $join->on('p.patient_code', '=', 'w.owner_id')
+                         ->orOn(DB::raw('CAST(p.id AS TEXT)'), '=', 'w.owner_id');
+                }
+            })
             ->leftJoin('clinics as c', 'c.id', '=', 'p.clinic_id')
             ->select([
                 'w.id',
-                'w.patient_code',
+                $hasPatientCode ? 'w.patient_code' : DB::raw('w.owner_id as patient_code'),
                 'w.balance',
                 'w.currency',
                 'w.created_at',
@@ -45,6 +55,10 @@ class WalletController extends Controller
                 DB::raw("CONCAT(p.f_name, ' ', p.l_name) AS patient_name"),
                 'c.title AS clinic_name',
             ]);
+
+        if ($hasOwnerType) {
+            $query->where('w.owner_type', 'patient');
+        }
 
         if ($clinicId) {
             $query->where('p.clinic_id', $clinicId);
@@ -66,7 +80,15 @@ class WalletController extends Controller
 
         // Summary stats
         $summary = DB::table('wallets as w')
-            ->join('patients as p', 'p.patient_code', '=', 'w.patient_code')
+            ->join('patients as p', function ($join) use ($hasPatientCode) {
+                if ($hasPatientCode) {
+                    $join->on('p.patient_code', '=', 'w.patient_code');
+                } else {
+                    $join->on('p.patient_code', '=', 'w.owner_id')
+                         ->orOn(DB::raw('CAST(p.id AS TEXT)'), '=', 'w.owner_id');
+                }
+            })
+            ->when($hasOwnerType, fn($q) => $q->where('w.owner_type', 'patient'))
             ->when($clinicId, fn($q) => $q->where('p.clinic_id', $clinicId))
             ->selectRaw('SUM(w.balance) AS total_balance, COUNT(*) AS active_wallets')
             ->first();
@@ -245,7 +267,7 @@ class WalletController extends Controller
         if (!$topupPatient || !$topupPatient->patient_code) {
             return response()->json(['response' => 422, 'status' => false, 'message' => 'Patient not found.'], 422);
         }
-        $walletId = $this->ensureWallet($topupPatient->patient_code);
+        $walletId = $this->ensureWallet($topupPatient->patient_code, (int) $topupPatient->id);
 
         DB::table('wallets')
             ->where('id', $walletId)
@@ -316,7 +338,7 @@ class WalletController extends Controller
         if (!$deductPatient || !$deductPatient->patient_code) {
             return response()->json(['response' => 422, 'status' => false, 'message' => 'Patient not found.'], 422);
         }
-        $walletId = $this->ensureWallet($deductPatient->patient_code);
+        $walletId = $this->ensureWallet($deductPatient->patient_code, (int) $deductPatient->id);
         $wallet   = DB::table('wallets')->where('id', $walletId)->first();
 
         if ($wallet->balance < $request->amount) {
@@ -354,19 +376,48 @@ class WalletController extends Controller
     // -----------------------------------------------------------------------
     // Private: ensure wallet row exists for patient, returns wallet id
     // -----------------------------------------------------------------------
-    private function ensureWallet(string $patientCode): int
+    private function ensureWallet(string $patientCode, ?int $patientId = null): int
     {
-        $wallet = DB::table('wallets')->where('patient_code', $patientCode)->first();
+        $hasPatientCode = Schema::hasColumn('wallets', 'patient_code');
+        $hasOwnerType = Schema::hasColumn('wallets', 'owner_type');
+
+        $walletQuery = DB::table('wallets');
+        if ($hasPatientCode) {
+            $walletQuery->where('patient_code', $patientCode);
+        } else {
+            $walletQuery->where(function ($q) use ($patientCode, $patientId) {
+                $q->where('owner_id', $patientCode);
+                if ($patientId !== null) {
+                    $q->orWhere('owner_id', (string) $patientId);
+                }
+            });
+            if ($hasOwnerType) {
+                $walletQuery->where('owner_type', 'patient');
+            }
+        }
+
+        $wallet = $walletQuery->orderByDesc('id')->first();
         if ($wallet) {
             return $wallet->id;
         }
-        return DB::table('wallets')->insertGetId([
-            'patient_code' => $patientCode,
-            'balance'      => 0.00,
-            'currency'     => 'PHP',
-            'created_at'   => Carbon::now(),
-            'updated_at'   => Carbon::now(),
-        ]);
+
+        $insert = [
+            'balance'    => 0.00,
+            'currency'   => 'PHP',
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ];
+
+        if ($hasPatientCode) {
+            $insert['patient_code'] = $patientCode;
+        } else {
+            $insert['owner_id'] = $patientCode;
+            if ($hasOwnerType) {
+                $insert['owner_type'] = 'patient';
+            }
+        }
+
+        return DB::table('wallets')->insertGetId($insert);
     }
 
     private function ensurePatientExists(int $patientId, ?int $clinicId = null): void
