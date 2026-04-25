@@ -19,10 +19,6 @@ require_file() {
 }
 
 require_file "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/PatientAuthController.php"
-require_file "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/Api/PaymentController.php"
-require_file "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/Api/WalletController.php"
-require_file "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/Api/V1/AllTransactionController.php"
-require_file "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/Api/V1/AppointmentController.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/app/Models/Patient.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/app/Models/AuthenticationLog.php"
 require_file "$REPO_ROOT/scripts/backend/laravel/app/Http/Middleware/EnforcePatientIdentity.php"
@@ -52,8 +48,6 @@ fi
 echo "[patient-auth] Using PHP binary: $PHP_CMD"
 
 mkdir -p "$LARAVEL_ROOT/app/Http/Controllers"
-mkdir -p "$LARAVEL_ROOT/app/Http/Controllers/Api"
-mkdir -p "$LARAVEL_ROOT/app/Http/Controllers/Api/V1"
 mkdir -p "$LARAVEL_ROOT/app/Models"
 mkdir -p "$LARAVEL_ROOT/app/Http/Middleware"
 mkdir -p "$LARAVEL_ROOT/app/Services"
@@ -61,10 +55,6 @@ mkdir -p "$LARAVEL_ROOT/routes/api"
 mkdir -p "$LARAVEL_ROOT/database/migrations"
 
 cp "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/PatientAuthController.php" "$LARAVEL_ROOT/app/Http/Controllers/PatientAuthController.php"
-cp "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/Api/PaymentController.php" "$LARAVEL_ROOT/app/Http/Controllers/Api/PaymentController.php"
-cp "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/Api/WalletController.php" "$LARAVEL_ROOT/app/Http/Controllers/Api/WalletController.php"
-cp "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/Api/V1/AllTransactionController.php" "$LARAVEL_ROOT/app/Http/Controllers/Api/V1/AllTransactionController.php"
-cp "$REPO_ROOT/scripts/backend/laravel/app/Http/Controllers/Api/V1/AppointmentController.php" "$LARAVEL_ROOT/app/Http/Controllers/Api/V1/AppointmentController.php"
 cp "$REPO_ROOT/scripts/backend/laravel/app/Models/Patient.php" "$LARAVEL_ROOT/app/Models/Patient.php"
 cp "$REPO_ROOT/scripts/backend/laravel/app/Models/AuthenticationLog.php" "$LARAVEL_ROOT/app/Models/AuthenticationLog.php"
 cp "$REPO_ROOT/scripts/backend/laravel/app/Http/Middleware/EnforcePatientIdentity.php" "$LARAVEL_ROOT/app/Http/Middleware/EnforcePatientIdentity.php"

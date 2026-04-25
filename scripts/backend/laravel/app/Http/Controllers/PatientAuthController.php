@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
-use App\CentralLogics\Helpers;
 
 class PatientAuthController extends Controller
 {
@@ -724,26 +723,11 @@ class PatientAuthController extends Controller
             $lName = $lName !== '' ? $lName : (count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : '');
         }
 
-        // Fetch wallet balance across both legacy (patient_code) and migrated (owner_id/owner_type) schemas.
+        // Fetch wallet balance keyed by patient_code (wallets.patient_id = VARCHAR patient_code).
         $patientCode = $patient->patient_code ?? null;
         $walletAmount = 0;
         if ($patientCode) {
-            $walletsQuery = DB::table('wallets');
-
-            if (Schema::hasColumn('wallets', 'patient_code')) {
-                $walletsQuery->where('patient_code', $patientCode);
-            } else {
-                $walletsQuery->where(function ($q) use ($patientCode, $patient) {
-                    $q->where('owner_id', $patientCode)
-                      ->orWhere('owner_id', (string) ($patient->id ?? ''));
-                });
-
-                if (Schema::hasColumn('wallets', 'owner_type')) {
-                    $walletsQuery->where('owner_type', 'patient');
-                }
-            }
-
-            $wallet = $walletsQuery->orderByDesc('id')->first();
+            $wallet = DB::table('wallets')->where('patient_code', $patientCode)->first();
             $walletAmount = $wallet ? (float) $wallet->balance : 0;
         }
 
@@ -798,35 +782,4 @@ class PatientAuthController extends Controller
             'data'     => $this->formatPatientResponse($patient, $request->bearerToken()),
         ], 200);
     }
-    /**
-     * POST /api/v1/patient/update-image
-     *
-     * Upload and save a new profile picture for the authenticated patient.
-     * Requires Bearer token + multipart/form-data with 'image' file.
-     */
-    public function updateImage(Request $request)
-    {
-        $patient = $this->resolvePatientFromToken($request);
-        if (!$patient) {
-            return response()->json(['success' => false, 'error' => 'Unauthorized'], 401);
-        }
-
-        if (!$request->hasFile('image') || !$request->file('image')->isValid()) {
-            return response()->json(['success' => false, 'error' => 'No valid image file provided'], 422);
-        }
-
-        $imagePath = Helpers::uploadImage('patients/', $request->file('image'));
-
-        $patient->image = $imagePath;
-        $patient->save();
-        $patient->refresh();
-
-        return response()->json([
-            'response' => 200,
-            'status'   => true,
-            'message'  => 'Profile picture updated successfully',
-            'data'     => $this->formatPatientResponse($patient, $request->bearerToken()),
-        ], 200);
-    }
-
 }
