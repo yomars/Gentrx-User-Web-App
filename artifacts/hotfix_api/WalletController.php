@@ -40,8 +40,7 @@ class WalletController extends Controller
                 if ($hasPatientCode) {
                     $join->on('p.patient_code', '=', 'w.patient_code');
                 } else {
-                    $join->on('p.patient_code', '=', 'w.owner_id')
-                         ->orOn(DB::raw('CAST(p.id AS TEXT)'), '=', 'w.owner_id');
+                    $join->on('p.patient_code', '=', 'w.owner_id');
                 }
             })
             ->leftJoin('clinics as c', 'c.id', '=', 'p.clinic_id')
@@ -84,8 +83,7 @@ class WalletController extends Controller
                 if ($hasPatientCode) {
                     $join->on('p.patient_code', '=', 'w.patient_code');
                 } else {
-                    $join->on('p.patient_code', '=', 'w.owner_id')
-                         ->orOn(DB::raw('CAST(p.id AS TEXT)'), '=', 'w.owner_id');
+                    $join->on('p.patient_code', '=', 'w.owner_id');
                 }
             })
             ->when($hasOwnerType, fn($q) => $q->where('w.owner_type', 'patient'))
@@ -129,11 +127,7 @@ class WalletController extends Controller
         if ($hasPatientCode) {
             $walletQuery->where('patient_code', $patientCode);
         } elseif ($hasOwnerId) {
-            // owner_id can be either numeric patient id or patient_code depending on migration state.
-            $walletQuery->where(function ($q) use ($patient, $patientCode) {
-                $q->where('owner_id', (string) $patient->id)
-                  ->orWhere('owner_id', $patientCode);
-            });
+            $walletQuery->where('owner_id', $patientCode);
         }
 
         if ($hasOwnerType) {
@@ -156,7 +150,9 @@ class WalletController extends Controller
             }
 
             if ($hasOwnerId) {
-                // Store patient_code in owner_id to remain compatible with current production data shape.
+                if (!$patientCode) {
+                    throw new \RuntimeException('Missing patient_code for wallet owner mapping');
+                }
                 $insert['owner_id'] = $patientCode;
             }
 
@@ -267,7 +263,7 @@ class WalletController extends Controller
         if (!$topupPatient || !$topupPatient->patient_code) {
             return response()->json(['response' => 422, 'status' => false, 'message' => 'Patient not found.'], 422);
         }
-        $walletId = $this->ensureWallet($topupPatient->patient_code, (int) $topupPatient->id);
+        $walletId = $this->ensureWallet($topupPatient->patient_code);
 
         DB::table('wallets')
             ->where('id', $walletId)
@@ -338,7 +334,7 @@ class WalletController extends Controller
         if (!$deductPatient || !$deductPatient->patient_code) {
             return response()->json(['response' => 422, 'status' => false, 'message' => 'Patient not found.'], 422);
         }
-        $walletId = $this->ensureWallet($deductPatient->patient_code, (int) $deductPatient->id);
+        $walletId = $this->ensureWallet($deductPatient->patient_code);
         $wallet   = DB::table('wallets')->where('id', $walletId)->first();
 
         if ($wallet->balance < $request->amount) {
@@ -376,21 +372,20 @@ class WalletController extends Controller
     // -----------------------------------------------------------------------
     // Private: ensure wallet row exists for patient, returns wallet id
     // -----------------------------------------------------------------------
-    private function ensureWallet(string $patientCode, ?int $patientId = null): int
+    private function ensureWallet(string $patientCode): int
     {
         $hasPatientCode = Schema::hasColumn('wallets', 'patient_code');
         $hasOwnerType = Schema::hasColumn('wallets', 'owner_type');
+
+        if (!$patientCode) {
+            throw new \RuntimeException('Missing patient_code for wallet owner mapping');
+        }
 
         $walletQuery = DB::table('wallets');
         if ($hasPatientCode) {
             $walletQuery->where('patient_code', $patientCode);
         } else {
-            $walletQuery->where(function ($q) use ($patientCode, $patientId) {
-                $q->where('owner_id', $patientCode);
-                if ($patientId !== null) {
-                    $q->orWhere('owner_id', (string) $patientId);
-                }
-            });
+            $walletQuery->where('owner_id', $patientCode);
             if ($hasOwnerType) {
                 $walletQuery->where('owner_type', 'patient');
             }

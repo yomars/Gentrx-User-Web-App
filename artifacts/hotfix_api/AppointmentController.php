@@ -242,10 +242,7 @@ class AppointmentController extends Controller
                     if (Schema::hasColumn('wallets', 'patient_code')) {
                         $walletQuery->where('patient_code', $patientRecord->patient_code);
                     } else {
-                        $walletQuery->where(function ($q) use ($patientRecord) {
-                            $q->where('owner_id', $patientRecord->patient_code)
-                              ->orWhere('owner_id', (string) $patientRecord->id);
-                        });
+                        $walletQuery->where('owner_id', $patientRecord->patient_code);
                         if (Schema::hasColumn('wallets', 'owner_type')) {
                             $walletQuery->where('owner_type', 'patient');
                         }

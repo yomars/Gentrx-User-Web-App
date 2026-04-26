@@ -598,6 +598,9 @@ class PaymentController extends Controller
     {
         // Ensure wallet exists across both legacy and migrated wallet schemas.
         $patientCode = DB::table('patients')->where('id', $patientId)->value('patient_code');
+        if (!$patientCode) {
+            throw new \RuntimeException('Missing patient_code for wallet owner mapping');
+        }
         $hasPatientCode = Schema::hasColumn('wallets', 'patient_code');
         $hasOwnerType = Schema::hasColumn('wallets', 'owner_type');
 
@@ -607,10 +610,7 @@ class PaymentController extends Controller
             if ($hasPatientCode) {
                 $walletQuery->where('patient_code', $patientCode);
             } else {
-                $walletQuery->where(function ($q) use ($patientId, $patientCode) {
-                    $q->where('owner_id', (string) $patientId)
-                      ->orWhere('owner_id', $patientCode);
-                });
+                $walletQuery->where('owner_id', $patientCode);
                 if ($hasOwnerType) {
                     $walletQuery->where('owner_type', 'patient');
                 }
@@ -629,7 +629,7 @@ class PaymentController extends Controller
             if ($hasPatientCode) {
                 $insert['patient_code'] = $patientCode;
             } else {
-                $insert['owner_id'] = $patientCode ?: (string) $patientId;
+                $insert['owner_id'] = $patientCode;
                 if ($hasOwnerType) {
                     $insert['owner_type'] = 'patient';
                 }

@@ -22,17 +22,14 @@ use App\Http\Controllers\Api\V1\NotificationCentralController;
 class AllTransactionController extends Controller
 {
 
-  private function getWalletForPatientCode(string $patientCode, int $patientId)
+  private function getWalletForPatientCode(string $patientCode)
   {
     $query = DB::table('wallets');
 
     if (Schema::hasColumn('wallets', 'patient_code')) {
       $query->where('patient_code', $patientCode);
     } else {
-      $query->where(function ($q) use ($patientCode, $patientId) {
-        $q->where('owner_id', $patientCode)
-          ->orWhere('owner_id', (string) $patientId);
-      });
+      $query->where('owner_id', $patientCode);
       if (Schema::hasColumn('wallets', 'owner_type')) {
         $query->where('owner_type', 'patient');
       }
@@ -41,9 +38,9 @@ class AllTransactionController extends Controller
     return $query->orderByDesc('id')->first();
   }
 
-  private function upsertWalletBalance(string $patientCode, int $patientId, float $newAmount, string $timeStamp)
+  private function upsertWalletBalance(string $patientCode, float $newAmount, string $timeStamp)
   {
-    $wallet = $this->getWalletForPatientCode($patientCode, $patientId);
+    $wallet = $this->getWalletForPatientCode($patientCode);
 
     if ($wallet) {
       return DB::table('wallets')
@@ -162,12 +159,12 @@ class AllTransactionController extends Controller
           DB::rollBack();
           return Helpers::errorResponse("error");
         }
-        $walletRecord = $this->getWalletForPatientCode($patientRecord->patient_code, (int) $request->user_id);
+        $walletRecord = $this->getWalletForPatientCode($patientRecord->patient_code);
         $oldAmount = $walletRecord ? (float) $walletRecord->balance : 0.0;
         $newAmount = $request->transaction_type == "Credited"
             ? $oldAmount + (float) $request->amount
             : $oldAmount - (float) $request->amount;
-        $walletUpdateRes = $this->upsertWalletBalance($patientRecord->patient_code, (int) $request->user_id, (float) $newAmount, $timeStamp);
+        $walletUpdateRes = $this->upsertWalletBalance($patientRecord->patient_code, (float) $newAmount, $timeStamp);
         if (!$walletUpdateRes) {
           DB::rollBack();
           return Helpers::errorResponse("error");

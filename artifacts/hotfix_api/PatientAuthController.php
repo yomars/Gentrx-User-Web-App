@@ -733,10 +733,7 @@ class PatientAuthController extends Controller
             if (Schema::hasColumn('wallets', 'patient_code')) {
                 $walletsQuery->where('patient_code', $patientCode);
             } else {
-                $walletsQuery->where(function ($q) use ($patientCode, $patient) {
-                    $q->where('owner_id', $patientCode)
-                      ->orWhere('owner_id', (string) ($patient->id ?? ''));
-                });
+                $walletsQuery->where('owner_id', $patientCode);
 
                 if (Schema::hasColumn('wallets', 'owner_type')) {
                     $walletsQuery->where('owner_type', 'patient');
