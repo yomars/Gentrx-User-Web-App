@@ -895,10 +895,24 @@ const Step3 = ({ setPatientDetails, setStep }) => {
 const getUserDetails = async () => {
   try {
     const userRes = await GET_AUTH(user.token, "patient/me");
-    if (userRes.response !== 200 && userRes.status !== true) return null;
-    return userRes.data;
+    const isSuccess = userRes?.response === 200 || userRes?.status === true;
+    const payload = userRes?.data;
+
+    if (!isSuccess || !payload || typeof payload !== "object") {
+      return user;
+    }
+
+    const mergedUser = { ...user, ...payload };
+    if (mergedUser.wallet_amount === undefined && mergedUser.balance !== undefined) {
+      mergedUser.wallet_amount = mergedUser.balance;
+    }
+    if (mergedUser.balance === undefined && mergedUser.wallet_amount !== undefined) {
+      mergedUser.balance = mergedUser.wallet_amount;
+    }
+
+    return mergedUser;
   } catch {
-    return null;
+    return user;
   }
 };
 
@@ -1540,7 +1554,7 @@ const Step4 = ({
                 }}
               >
                 Pay From Wallet (Available Balance {currency}
-                {userData?.wallet_amount ?? userData?.balance ?? 0})
+                {walletAvailable})
               </Radio>
             </Stack>
           </RadioGroup>

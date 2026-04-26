@@ -231,8 +231,8 @@ class AppointmentController extends Controller
                 }
                 if ($request->is_wallet_txn) {
 
-                    // Wallet is keyed by patient_code (VARCHAR 15); user_id here is patients.id
-                    $patientRecord = PatientModel::where('id', $request->user_id)->first();
+                    // Always deduct from the appointment's resolved patient record.
+                    $patientRecord = PatientModel::where('id', $patientId)->first();
                     if (!$patientRecord || !$patientRecord->patient_code) {
                         DB::rollBack();
                         return Helpers::errorResponse("error");

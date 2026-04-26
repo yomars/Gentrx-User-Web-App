@@ -28,7 +28,7 @@ import {
 } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
-import { ADD, GET } from "../Controllers/ApiControllers";
+import { ADD, GET, GET_AUTH } from "../Controllers/ApiControllers";
 import currency from "../Controllers/currency";
 import user from "../Controllers/user";
 import Loading from "./Loading";
@@ -54,6 +54,35 @@ const getTransaction = async () => {
   }
 };
 
+const getLiveUserDetails = async () => {
+  if (!user?.token) {
+    return user;
+  }
+
+  try {
+    const userRes = await GET_AUTH(user.token, "patient/me");
+    const isSuccess = userRes?.response === 200 || userRes?.status === true;
+    const payload = userRes?.data;
+
+    if (!isSuccess || !payload || typeof payload !== "object") {
+      return user;
+    }
+
+    const mergedUser = { ...user, ...payload };
+    if (mergedUser.wallet_amount === undefined && mergedUser.balance !== undefined) {
+      mergedUser.wallet_amount = mergedUser.balance;
+    }
+    if (mergedUser.balance === undefined && mergedUser.wallet_amount !== undefined) {
+      mergedUser.balance = mergedUser.wallet_amount;
+    }
+
+    setStorageItem("user", JSON.stringify(mergedUser));
+    return mergedUser;
+  } catch {
+    return user;
+  }
+};
+
 function WalletModel({ isModalOpen, closeModal, openModal }) {
   const toast = useToast();
   const token = user?.token;
@@ -66,10 +95,16 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
   const cancelRef = useRef();
   const [isMobile] = useMediaQuery("(max-width: 600px)");
 
-  // Use existing user data from context instead of refetching re_login_phone
-  // (which is currently broken on backend and returns HTML redirect)
-  const userData = user;
-  const isUserLoading = false;
+  const { data: userData, isLoading: isUserLoading } = useQuery({
+    queryKey: ["wallet-user", user?.id],
+    queryFn: getLiveUserDetails,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0,
+    enabled: !!user?.id,
+  });
+
+  const walletBalance = Number(userData?.wallet_amount ?? userData?.balance ?? 0);
 
   return (
     <>
@@ -138,10 +173,7 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
                       Current Balance
                     </Text>
                     <Text fontWeight={500} mt={1} p={0} fontSize={16}>
-                      {currency}{" "}
-                      {(userData?.wallet_amount ?? userData?.balance) !== null
-                        ? (userData?.wallet_amount ?? userData?.balance ?? 0)
-                        : 0}
+                      {currency} {walletBalance}
                     </Text>
                     <Flex gap={4} >
                         <Button
