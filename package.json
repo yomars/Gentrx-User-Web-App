@@ -2,6 +2,7 @@
   "name": "web-app-new",
   "private": true,
   "version": "0.0.0",
+  "openapiTagPin": "openapi-v1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
