@@ -19,6 +19,7 @@ import imageBaseURL from "./../Controllers/image";
 import { Link, useNavigate } from "react-router-dom";
 import NotAvailable from "./NotAvailable";
 import { useCity } from "../Context/SelectedCity";
+import { buildDoctorEndpoint } from "../lib/doctorQuery";
 import "./DoctorsSection.css";
 
 /* ─────────────────────────────────────────────
@@ -104,9 +105,7 @@ export default function DoctorsSection() {
   const { selectedCity } = useCity();
 
   const getData = async () => {
-    const url = selectedCity
-      ? `get_doctor?active=1&city_id=${selectedCity.id}`
-      : `get_doctor?active=1`;
+    const url = await buildDoctorEndpoint({ selectedCity });
     const res = await GET(url);
     return res.data.length > 6 ? res.data.slice(0, 6) : res.data;
   };

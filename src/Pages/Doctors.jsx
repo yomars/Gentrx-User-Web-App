@@ -31,15 +31,15 @@ import NotAvailable from "../Components/NotAvailable";
 import LocationSeletor from "../Components/LocationSeletor";
 import useSearchFilter from "../Hooks/UseSearchFilter";
 import "../Components/DoctorsSection.css";
+import { buildDoctorEndpoint } from "../lib/doctorQuery";
 
 export default function Doctors() {
   const { selectedCity } = useCity();
   const navigate = useNavigate();
 
   const getData = async () => {
-    const res = await GET(
-      `get_doctor?active=1&city_id=${selectedCity?.id || ""}`
-    );
+    const endpoint = await buildDoctorEndpoint({ selectedCity });
+    const res = await GET(endpoint);
     return res.data;
   };
   const { isLoading, data, error } = useQuery({

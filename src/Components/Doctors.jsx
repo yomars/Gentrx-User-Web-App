@@ -21,14 +21,13 @@ import { useCity } from "../Context/SelectedCity";
 import { BsHospitalFill } from "react-icons/bs";
 import { ImLocation } from "react-icons/im";
 import NotAvailable from "./NotAvailable";
+import { buildDoctorEndpoint } from "../lib/doctorQuery";
 
 export default function Doctors() {
   const { selectedCity } = useCity();
 
   const getData = async () => {
-    const url = selectedCity
-      ? `get_doctor?active=1&city_id=${selectedCity.id}`
-      : `get_doctor?active=1`;
+    const url = await buildDoctorEndpoint({ selectedCity });
     const res = await GET(url);
     return res.data.length > 6 ? res.data.slice(0, 6) : res.data;
   };

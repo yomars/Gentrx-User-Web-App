@@ -25,6 +25,7 @@ import { ImLocation } from "react-icons/im";
 import { FaUserAlt } from "react-icons/fa";
 import LocationSeletor from "../Components/LocationSeletor";
 import NotAvailable from "../Components/NotAvailable";
+import { buildDoctorEndpoint } from "../lib/doctorQuery";
 
 const getDept = async () => {
   const res = await GET("get_department_active");
@@ -43,11 +44,12 @@ function SearchPage() {
   });
 
   const getDoctors = async () => {
-    const res = await GET(
-      `get_doctor?active=1&city_id=${selectedCity?.id || ""}&department=${
-        selectedDept?.id || ""
-      }&search=${searchParams.get("search") || ""}`
-    );
+    const endpoint = await buildDoctorEndpoint({
+      selectedCity,
+      department: selectedDept?.id,
+      search: searchParams.get("search") || "",
+    });
+    const res = await GET(endpoint);
     return res.data;
   };
 

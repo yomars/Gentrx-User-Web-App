@@ -22,13 +22,16 @@ import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import ErrorPage from "./ErrorPage";
 import { useCity } from "../Context/SelectedCity";
+import { buildDoctorEndpoint } from "../lib/doctorQuery";
 
 export default function DoctorsByDeptID({ deptID, deptName }) {
   const { selectedCity } = useCity();
   const getData = async () => {
-    const res = await GET(
-      `get_doctor?department=${deptID}&active=1&city_id=${selectedCity?.id}`
-    );
+    const endpoint = await buildDoctorEndpoint({
+      selectedCity,
+      department: deptID,
+    });
+    const res = await GET(endpoint);
     return res.data;
   };
 
