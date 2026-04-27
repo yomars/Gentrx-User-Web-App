@@ -73,7 +73,19 @@ jobs:
             exit 1
           fi
 
-          if grep -R -s "$TAG" package.json package-lock.json pubspec.yaml pubspec.lock >/dev/null 2>&1; then
+          FILES=""
+          for file in package.json package-lock.json pubspec.yaml pubspec.lock; do
+            if [ -f "$file" ]; then
+              FILES="$FILES $file"
+            fi
+          done
+
+          if [ -z "$FILES" ]; then
+            echo "::error::No supported manifest files found for tag pin enforcement"
+            exit 1
+          fi
+
+          if grep -R -s "$TAG" $FILES >/dev/null 2>&1; then
             echo "Client tag pin found: $TAG"
           else
             echo "::error::Client tag pin missing: $TAG"
