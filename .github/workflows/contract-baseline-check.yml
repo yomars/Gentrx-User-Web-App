@@ -29,6 +29,30 @@ jobs:
       - name: Verify baseline file exists
         run: test -f contract-baseline.json
 
+      - name: Clinic flow contract sync
+        run: |
+          CONTRACT=manifests/contracts/clinic-flow.contract.json
+          if [ ! -f "$CONTRACT" ]; then
+            echo "::error::$CONTRACT is missing. Copy from yomars/API-GENTRX-PH manifests/contracts/clinic-flow.contract.json"
+            exit 1
+          fi
+          check_field() {
+            actual=$(jq -r ".$1" "$CONTRACT")
+            if [ "$actual" != "$2" ]; then
+              echo "::error::$CONTRACT.$1 expected '$2' but got '$actual'"
+              exit 1
+            fi
+          }
+          check_field "clinic_resolution_policy.applicability" "patient_and_guest_patient_facing_apps_only_excludes_admin_and_doc_apps"
+          check_field "clinic_resolution_policy.location_enabled" "nearest_clinic_by_lat_lng"
+          check_field "clinic_resolution_policy.location_disabled_or_unavailable" "patient_profile_clinic"
+          check_field "clinic_resolution_policy.doctor_filtering" "filter_doctors_by_resolved_clinic"
+          check_field "clinic_resolution_policy.guest_behavior" "location_if_available_else_single_global_default_clinic"
+          check_field "wallet_owner_mapping.patient" "owner_id = patients.patient_code"
+          check_field "wallet_owner_mapping.doctor" "owner_id = doctors.user_id"
+          check_field "wallet_owner_mapping.user" "owner_id = users.id"
+          echo "Clinic flow contract sync validated"
+
       - name: Parse baseline
         id: baseline
         run: |
@@ -36,7 +60,6 @@ jobs:
           API_VERSION=$(jq -r '.api_version' contract-baseline.json)
           MIGRATION_VERSION=$(jq -r '.migration_version' contract-baseline.json)
           WARN_UNTIL=$(jq -r '.warn_mode_until_release' contract-baseline.json)
-
           {
             echo "openapi_tag=$OPENAPI_TAG"
             echo "api_version=$API_VERSION"
@@ -63,7 +86,6 @@ jobs:
               echo ""
             fi
           }
-
           CURRENT_RELEASE='${{ github.event.inputs.migration_version || steps.baseline.outputs.migration_version }}'
           WARN_UNTIL='${{ steps.baseline.outputs.warn_until }}'
 
