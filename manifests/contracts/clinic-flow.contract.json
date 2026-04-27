@@ -1,0 +1,31 @@
+{
+  "wallet_owner_mapping": {
+    "patient": "owner_id = patients.patient_code",
+    "doctor": "owner_id = doctors.user_id",
+    "user": "owner_id = users.id"
+  },
+  "clinic_resolution_policy": {
+    "applicability": "patient_and_guest_patient_facing_apps_only_excludes_admin_and_doc_apps",
+    "location_enabled": "nearest_clinic_by_lat_lng",
+    "location_disabled_or_unavailable": "patient_profile_clinic",
+    "doctor_filtering": "filter_doctors_by_resolved_clinic",
+    "guest_behavior": "location_if_available_else_single_global_default_clinic"
+  },
+  "clinic_resolution_db_flow": {
+    "global_default_clinic_config_key": "global_default_clinic_id",
+    "doctor_filter_precedence": "clinic_id_over_city_id",
+    "resolver_source_enum": [
+      "nearest",
+      "patient_profile",
+      "global_default"
+    ]
+  },
+  "compatibility_policy_required_lines": [
+    "- Clinic resolution contract is mandatory across all connected repos:",
+    "  - scope: patient and guest patient-facing apps only; Admin and Doc apps are excluded",
+    "  - if location is enabled, resolve nearest clinic by clinic latitude/longitude",
+    "  - if location is disabled or unavailable for patient flows, fallback to patient profile clinic",
+    "  - doctor queries/lists must be filtered by resolved clinic",
+    "  - guest flows must use location when available, else fallback to a single global default clinic"
+  ]
+}
