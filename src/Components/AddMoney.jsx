@@ -42,6 +42,21 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
     onClose: paymentClose,
   } = useDisclosure();
   const normalizedPaymentMethod = `${paymentMethod || ""}`.trim().toLowerCase();
+  const canonicalPatientCode = String(user?.patient_code || "").trim();
+  const walletOwnerId = canonicalPatientCode || String(user?.id || "").trim();
+
+  const buildWalletCreditPayload = (transactionId) => ({
+    user_id: user.id,
+    patient_code: canonicalPatientCode,
+    owner_id: walletOwnerId,
+    owner_type: "patient",
+    amount: amount,
+    payment_transaction_id: transactionId,
+    transaction_reference: transactionId,
+    payment_method: normalizedPaymentMethod || paymentMethod,
+    transaction_type: "Credited",
+    description: "Amount credited to user wallet",
+  });
 
   useEffect(() => {
     if (paymentGetwaysData) {
@@ -67,6 +82,9 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
   const paymentData = {
     amount: parseFloat(amount).toFixed(2),
     user_id: user.id,
+    patient_code: canonicalPatientCode,
+    owner_id: walletOwnerId,
+    owner_type: "patient",
     desc: `Wallet Recharge Transaction for userid -  ${user.id}`,
     method: normalizedPaymentMethod,
     payment_method: "Online",
@@ -77,13 +95,10 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
 
   // Razorpay success callback — credit the wallet then reopen the wallet modal
   const rzpNextFn = async (paymentId) => {
+    const resolvedTransactionId = paymentId || `rzp-${Date.now()}`;
     const creditData = {
-      user_id: user.id,
-      amount: amount,
-      payment_transaction_id: paymentId || "Razorpay",
+      ...buildWalletCreditPayload(resolvedTransactionId),
       payment_method: "razorpay",
-      transaction_type: "Credited",
-      description: "Amount credited to user wallet",
     };
     setisPaymentLoading(true);
     try {
@@ -111,13 +126,10 @@ const AddMoney = ({ isOpen, onClose, cancelRef, closeModal, openModal }) => {
   };
 
   const AddMoney = async (txnID) => {
+    const resolvedTransactionId = txnID || `wallet-topup-${Date.now()}`;
     let data = {
-      user_id: user.id,
-      amount: amount,
-      payment_transaction_id: txnID || "Test",
+      ...buildWalletCreditPayload(resolvedTransactionId),
       payment_method: paymentMethod,
-      transaction_type: "Credited",
-      description: "Amount credited to user wallet",
     };
     try {
       setisPaymentLoading(true);

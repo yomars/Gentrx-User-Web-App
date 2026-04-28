@@ -111,10 +111,20 @@ function StripePaymentProcess() {
         creditingAt: Date.now(),
       });
 
+      const canonicalPatientCode = String(user?.patient_code || "").trim();
+      const walletOwnerId =
+        canonicalPatientCode || String(user?.id || "").trim();
+      const resolvedTransactionId =
+        paymentIntentId || `stripe-wallet-${Date.now()}`;
+
       const response = await ADD(user.token, "add_wallet_money", {
         user_id: user.id,
+        patient_code: canonicalPatientCode,
+        owner_id: walletOwnerId,
+        owner_type: "patient",
         amount: pendingTopup.amount,
-        payment_transaction_id: paymentIntentId || "Stripe",
+        payment_transaction_id: resolvedTransactionId,
+        transaction_reference: resolvedTransactionId,
         payment_method: pendingTopup.paymentMethod || "stripe",
         transaction_type: "Credited",
         description:
