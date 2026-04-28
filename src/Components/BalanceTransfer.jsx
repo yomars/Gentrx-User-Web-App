@@ -27,6 +27,8 @@ const BalanceTransfer = ({ isOpen, onClose, cancelRef }) => {
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
+  const canonicalPatientCode = String(user?.patient_code || "").trim();
+  const walletOwnerId = canonicalPatientCode || String(user?.id || "").trim();
 
   const handleChange = (e) => {
     const numericValue = e.target.value.replace(/[^0-9]/g, "");
@@ -46,9 +48,13 @@ const BalanceTransfer = ({ isOpen, onClose, cancelRef }) => {
 
     const data = {
       from_user_id: user.id,
+      from_patient_code: canonicalPatientCode,
+      owner_id: walletOwnerId,
+      owner_type: "patient",
       to_phone: phone,
       amount: parseFloat(amount),
       description: description || "Balance transfer between users",
+      transaction_reference: `wallet-transfer-${Date.now()}`,
     };
 
     try {

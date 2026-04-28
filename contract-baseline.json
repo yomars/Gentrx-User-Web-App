@@ -2,5 +2,11 @@
   "api_version": "1.0.0",
   "openapi_tag": "openapi-v1.0.0",
   "migration_version": "2026.04.25.01",
-  "warn_mode_until_release": "2026.05.09.01"
+  "warn_mode_until_release": "2026.05.09.01",
+  "wallet_owner_mapping": {
+    "patient": "owner_id = patients.patient_code",
+    "doctor": "owner_id = doctors.user_id",
+    "user": "owner_id = users.id"
+  },
+  "wallet_sync_process": "patient_code_owner_mapping_idempotent_refs_v1"
 }

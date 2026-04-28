@@ -36,14 +36,26 @@ import moment from "moment";
 import { setStorageItem } from "../lib/storage";
 
 const getTransaction = async () => {
-  // wallet_transactions keyed by patient ID (stored as user_id in all_transactions table)
-  let url = `get_all_transaction?user_id=${user?.id}&is_wallet_txn=1`;
+  const patientCode = String(user?.patient_code || "").trim();
+  const ownerId = patientCode || String(user?.id || "").trim();
+
+  const urls = [];
+  if (patientCode) {
+    urls.push(
+      `get_all_transaction?patient_code=${encodeURIComponent(patientCode)}&owner_id=${encodeURIComponent(ownerId)}&owner_type=patient&is_wallet_txn=1`
+    );
+  }
+  urls.push(`get_all_transaction?user_id=${user?.id}&is_wallet_txn=1`);
+
   try {
-    const trasection = await GET(url);
-    if (trasection.response != 200) {
-      throw Error(trasection.messege || "Failed to fetch transactions");
+    for (const url of urls) {
+      const trasection = await GET(url);
+      if (trasection?.response === 200) {
+        return trasection.data || [];
+      }
     }
-    return trasection.data || [];
+
+    throw Error("Failed to fetch transactions");
   } catch (error) {
     console.error("Transaction fetch error:", error);
     // Return empty array instead of throwing to prevent infinite loading

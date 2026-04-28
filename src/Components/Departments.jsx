@@ -120,8 +120,11 @@ export default function Departments() {
               }}
               gap={{ base: 6, lg: 4 }}
             >
-              {homepageDepartments.map((item) => (
-                <GridItem
+              {homepageDepartments.map((item) => {
+                const specializationTitle =
+                  titleOverrides[item.title] || item.title || "";
+
+                return <GridItem
                   key={item.id}
                   backgroundColor="#d6dce4"
                   borderRadius="16px"
@@ -133,7 +136,7 @@ export default function Departments() {
                     boxShadow: "0 12px 32px rgba(15, 23, 42, 0.08)",
                   }}
                   as={Link}
-                  to="/doctors"
+                  to={`/doctors?specialization=${item.id}&specializationTitle=${encodeURIComponent(specializationTitle)}`}
                 >
                   <Flex
                     flexDir={"column"}
@@ -172,11 +175,11 @@ export default function Departments() {
                       color="#0f2a52"
                       lineHeight={1.25}
                     >
-                      {titleOverrides[item.title] || item.title}
+                      {specializationTitle}
                     </Text>
                   </Flex>
                 </GridItem>
-              ))}
+              })}
             </Grid>
           </Box>
         </>

@@ -49,6 +49,7 @@ export const resolveClinic = async ({ selectedCity } = {}) => {
 export const buildDoctorEndpoint = async ({
   selectedCity,
   department,
+  specialization,
   search,
 } = {}) => {
   const resolved = await resolveClinic({ selectedCity });
@@ -64,6 +65,14 @@ export const buildDoctorEndpoint = async ({
 
   if (department !== undefined && department !== null && department !== "") {
     params.set("department", String(department));
+  }
+
+  if (
+    specialization !== undefined &&
+    specialization !== null &&
+    specialization !== ""
+  ) {
+    params.set("specialization", String(specialization));
   }
 
   if (search !== undefined) {
