@@ -21,7 +21,7 @@ import {
   FaYoutube,
   FaUserAlt,
 } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ErrorPage from "./ErrorPage";
 import { SearchIcon } from "@chakra-ui/icons";
 import { useCity } from "../Context/SelectedCity";
@@ -36,14 +36,21 @@ import { buildDoctorEndpoint } from "../lib/doctorQuery";
 export default function Doctors() {
   const { selectedCity } = useCity();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedSpecialization = searchParams.get("specialization") || "";
+  const selectedSpecializationTitle =
+    searchParams.get("specializationTitle") || "";
 
   const getData = async () => {
-    const endpoint = await buildDoctorEndpoint({ selectedCity });
+    const endpoint = await buildDoctorEndpoint({
+      selectedCity,
+      specialization: selectedSpecialization,
+    });
     const res = await GET(endpoint);
     return res.data;
   };
   const { isLoading, data, error } = useQuery({
-    queryKey: ["Doctors", selectedCity],
+    queryKey: ["Doctors", selectedCity, selectedSpecialization],
     queryFn: getData,
   });
 
@@ -86,6 +93,17 @@ export default function Doctors() {
               Healthcare Specialists
             </Text>
           </Text>
+          {selectedSpecializationTitle ? (
+            <Text
+              mt={3}
+              textAlign={"center"}
+              color={"#1d8f7a"}
+              fontWeight={700}
+              fontSize={{ base: 16, md: 20 }}
+            >
+              Showing specialization: {selectedSpecializationTitle}
+            </Text>
+          ) : null}
         </Box>
       </Box>
       <Box
