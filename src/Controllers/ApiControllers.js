@@ -2,6 +2,82 @@
 import GenerateToken from "./token";
 import api from "./api";
 import { normalizeMediaPayload } from "../lib/media";
+import { getStorageJSON } from "../lib/storage";
+
+const extractCandidateToken = (value) => {
+  if (!value || typeof value !== "object") return "";
+  return (
+    value.token ||
+    value.api_token ||
+    value.access_token ||
+    value.accessToken ||
+    value.data?.token ||
+    ""
+  );
+};
+
+const normalizeTokenString = (tokenValue) => {
+  const initial = typeof tokenValue === "string" ? tokenValue.trim() : "";
+  if (!initial) return "";
+
+  const withoutBearer = initial.replace(/^Bearer\s+/i, "").trim();
+  const withoutQuotes = withoutBearer.replace(/^"|"$/g, "").trim();
+  return withoutQuotes;
+};
+
+const ensureAuthToken = (token) => {
+  let value = normalizeTokenString(token);
+
+  if (!value || value.toLowerCase() === "undefined" || value.toLowerCase() === "null") {
+    const latestUser = getStorageJSON("user");
+    value = normalizeTokenString(extractCandidateToken(latestUser));
+  }
+
+  if (
+    !value ||
+    value.toLowerCase() === "undefined" ||
+    value.toLowerCase() === "null"
+  ) {
+    throw new Error("Session token missing. Please log-in again.");
+  }
+
+  return value;
+};
+
+const sanitizePayload = (data) => {
+  if (!data || typeof data !== "object" || data instanceof FormData) {
+    return data;
+  }
+
+  const sanitized = {};
+  Object.entries(data).forEach(([key, value]) => {
+    if (
+      value === undefined ||
+      value === null ||
+      (typeof value === "string" && value.trim().toLowerCase() === "undefined")
+    ) {
+      return;
+    }
+    sanitized[key] = value;
+  });
+
+  return sanitized;
+};
+
+const withAuthPayloadFallback = (data, token) => {
+  if (!token || !data || typeof data !== "object" || data instanceof FormData) {
+    return data;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(data, "auth_token")) {
+    return data;
+  }
+
+  return {
+    ...data,
+    auth_token: token,
+  };
+};
 
 const handleSessionExpiration = (error) => {
   const reqMethod = String(error?.config?.method || "").toUpperCase();
@@ -65,12 +141,13 @@ const GET = async (endPoint) => {
 };
 
 const GET_AUTH = async (token, endPoint) => {
+  const safeToken = ensureAuthToken(token);
   var config = {
     method: "get",
     maxBodyLength: Infinity,
     url: `${api}/${endPoint}`,
     headers: {
-      Authorization: GenerateToken(token),
+      Authorization: GenerateToken(safeToken),
     },
   };
   try {
@@ -82,15 +159,17 @@ const GET_AUTH = async (token, endPoint) => {
 };
 
 const ADD = async (token, endPoint, data) => {
+  const safeToken = ensureAuthToken(token);
+  const safeData = sanitizePayload(withAuthPayloadFallback(data, safeToken));
   var config = {
     method: "post",
     maxBodyLength: Infinity,
     url: `${api}/${endPoint}`,
     headers: {
-      Authorization: GenerateToken(token),
+      Authorization: GenerateToken(safeToken),
       "Content-Type": "multipart/form-data",
     },
-    data: data,
+    data: safeData,
   };
   try {
     const response = await axios(config);
@@ -100,15 +179,17 @@ const ADD = async (token, endPoint, data) => {
   }
 };
 const ADDMulti = async (token, url, data) => {
+  const safeToken = ensureAuthToken(token);
+  const safeData = sanitizePayload(withAuthPayloadFallback(data, safeToken));
   var config = {
     method: "post",
     maxBodyLength: Infinity,
     url: url,
     headers: {
-      Authorization: GenerateToken(token),
+      Authorization: GenerateToken(safeToken),
       "Content-Type": "multipart/form-data",
     },
-    data: data,
+    data: safeData,
   };
   try {
     const response = await axios(config);
@@ -119,15 +200,17 @@ const ADDMulti = async (token, url, data) => {
 };
 
 const UPDATE = async (token, endPoint, data) => {
+  const safeToken = ensureAuthToken(token);
+  const safeData = sanitizePayload(withAuthPayloadFallback(data, safeToken));
   var config = {
     method: "post",
     maxBodyLength: Infinity,
     url: `${api}/${endPoint}`,
     headers: {
-      Authorization: GenerateToken(token),
+      Authorization: GenerateToken(safeToken),
       "Content-Type": "multipart/form-data",
     },
-    data: data,
+    data: safeData,
   };
   try {
     const response = await axios(config);
@@ -138,15 +221,17 @@ const UPDATE = async (token, endPoint, data) => {
 };
 
 const DELETE = async (token, endPoint, data) => {
+  const safeToken = ensureAuthToken(token);
+  const safeData = sanitizePayload(withAuthPayloadFallback(data, safeToken));
   var config = {
     method: "post",
     maxBodyLength: Infinity,
     url: `${api}/${endPoint}`,
     headers: {
-      Authorization: GenerateToken(token),
+      Authorization: GenerateToken(safeToken),
       "Content-Type": "application/json",
     },
-    data: data,
+    data: safeData,
   };
   try {
     const response = await axios(config);
@@ -157,15 +242,17 @@ const DELETE = async (token, endPoint, data) => {
 };
 
 const UPLOAD = async (token, url, data) => {
+  const safeToken = ensureAuthToken(token);
+  const safeData = sanitizePayload(withAuthPayloadFallback(data, safeToken));
   var config = {
     method: "post",
     maxBodyLength: Infinity,
     url: url,
     headers: {
-      Authorization: GenerateToken(token),
+      Authorization: GenerateToken(safeToken),
       "Content-Type": "multipart/form-data",
     },
-    data: data,
+    data: safeData,
   };
   try {
     const response = await axios(config);
