@@ -54,6 +54,12 @@ import { useForm } from "react-hook-form";
 import user from "../../Controllers/user";
 import showToast from "../../Controllers/ShowToast";
 import { useState } from "react";
+import {
+  buildVitalsByMemberTypeEndpoint,
+  invalidateVitalsQueries,
+  VITALS_QUERY_KEY,
+  VITAL_TYPES,
+} from "./vitalsUtils";
 
 const addData = async (data) => {
   const res = await ADD(user.token, "add_vitals", data);
@@ -92,13 +98,17 @@ function BloodPressure({ selectedMember, startDate, endDate }) {
   } = useDisclosure();
   const theme = useTheme();
   const getData = async () => {
-    const res = await GET(
-      `get_vitals_family_member_id_type?family_member_id=${selectedMember.id}&type=Blood Pressure&start_date=${startDate}&end_date=${endDate}`
+    const endpoint = buildVitalsByMemberTypeEndpoint(
+      selectedMember.id,
+      VITAL_TYPES.BLOOD_PRESSURE,
+      startDate,
+      endDate
     );
+    const res = await GET(endpoint);
     return res.data;
   };
   const { data, isLoading } = useQuery({
-    queryKey: ["vitals", selectedMember, startDate, endDate],
+    queryKey: [...VITALS_QUERY_KEY, "blood-pressure", selectedMember?.id, startDate, endDate],
     queryFn: getData,
     enabled: !!selectedMember,
   });
@@ -350,7 +360,7 @@ const AddNew = ({ onClose, isOpen, selectedMember }) => {
     },
     onSuccess: () => {
       reset();
-      queryClient.invalidateQueries(["vitals", selectedMember]);
+      invalidateVitalsQueries(queryClient);
       showToast(toast, "success", "Success");
       onClose();
     },
@@ -365,7 +375,7 @@ const AddNew = ({ onClose, isOpen, selectedMember }) => {
       ...data,
       user_id: user.id,
       family_member_id: selectedMember.id,
-      type: "Blood Pressure",
+      type: VITAL_TYPES.BLOOD_PRESSURE,
     };
     mutation.mutate(formData);
     // Reset the form after submission
@@ -458,7 +468,7 @@ const Edit = ({ onClose, isOpen, selectedMember, data }) => {
     },
     onSuccess: () => {
       reset();
-      queryClient.invalidateQueries(["vitals", selectedMember]);
+      invalidateVitalsQueries(queryClient);
       showToast(toast, "success", "Success");
       onClose();
     },
@@ -474,7 +484,7 @@ const Edit = ({ onClose, isOpen, selectedMember, data }) => {
       id: data.id,
       user_id: user.id,
       family_member_id: selectedMember.id,
-      type: "Blood Pressure",
+      type: VITAL_TYPES.BLOOD_PRESSURE,
     };
     mutation.mutate(formData);
   };
@@ -568,7 +578,7 @@ const DeleteData = ({ onClose, isOpen, selectedMember, data }) => {
       await handleDelete(formData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["vitals", selectedMember]);
+      invalidateVitalsQueries(queryClient);
       showToast(toast, "success", "Success");
       onClose();
     },
