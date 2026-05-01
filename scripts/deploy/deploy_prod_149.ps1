@@ -1,7 +1,7 @@
 param(
   [string]$Server = "149.28.145.80",
   [string]$User = "root",
-  [string]$DeployDir = "/var/www/gentrx-user-web-app",
+  [string]$DeployDir = "/var/www/gentrx-user",
   [string]$ProcessName = "gentrx-main",
   [int]$AppPort = 3000,
   [string]$VerifyHost = "gentrx.ph",
