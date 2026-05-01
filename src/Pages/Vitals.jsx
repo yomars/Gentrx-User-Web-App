@@ -24,7 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import { GET } from "../Controllers/ApiControllers";
 import user from "../Controllers/user";
 import Loading from "../Components/Loading";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DateRangePicker from "@wojtekmaj/react-daterange-picker";
 import "@wojtekmaj/react-daterange-picker/dist/DateRangePicker.css";
 import "react-calendar/dist/Calendar.css";
@@ -46,7 +46,16 @@ const getFamilyMemberData = async () => {
 };
 
 function Vitals() {
-  const [selectedMember, setSelectedMember] = useState(null);
+  const selfMember = useMemo(
+    () => ({
+      id: user?.id,
+      f_name: user?.f_name || "My",
+      l_name: user?.l_name || "Self",
+      isSelf: true,
+    }),
+    []
+  );
+  const [selectedMember, setSelectedMember] = useState(selfMember);
   const [isOpen, setIsOpen] = useState(false);
   const [Range, setRange] = useState(getLast7DaysRange());
   const dateRangePickerRef = useRef(null);
@@ -65,10 +74,12 @@ function Vitals() {
   });
 
   useEffect(() => {
-    if (familyMembers) {
-      setSelectedMember(familyMembers[0]);
+    // Keep a safe default so vitals can be added for the patient even
+    // when there are no family members.
+    if (!selectedMember?.id) {
+      setSelectedMember(selfMember);
     }
-  }, [familyMembers]);
+  }, [selectedMember, selfMember]);
 
   const vitalsArr = [
     {
@@ -169,9 +180,9 @@ function Vitals() {
                 <FaUsers />
                 {selectedMember ? (
                   <Text>
-                    {" "}
-                    Family Member : {selectedMember.f_name}{" "}
-                    {selectedMember.l_name}
+                    {selectedMember.isSelf
+                      ? "Tracking: Myself"
+                      : `Family Member : ${selectedMember.f_name} ${selectedMember.l_name}`}
                   </Text>
                 ) : (
                   <Text>Select Family Member</Text>
@@ -188,19 +199,32 @@ function Vitals() {
           {isOpen && (
             <Box mt={2} borderRadius="md" boxShadow="sm">
               <Stack spacing={2}>
+                <Box
+                  p={2}
+                  bg="#fff"
+                  borderRadius="md"
+                  cursor="pointer"
+                  _hover={{ bg: "primary.bg", color: "#fff" }}
+                  onClick={() => handleSelection(selfMember)}
+                  fontWeight={600}
+                  display={"flex"}
+                  alignItems={"center"}
+                  gap={3}
+                >
+                  <FaUsers /> Myself
+                </Box>
                 {!familyMembers || !familyMembers.length ? (
                   <Box
                     p={2}
                     bg="#fff"
                     borderRadius="md"
-                    cursor="pointer"
-                    _hover={{ bg: "primary.bg", color: "#fff" }}
+                    cursor="default"
                     fontWeight={600}
                     display={"flex"}
                     alignItems={"center"}
                     gap={3}
                   >
-                    You Dont Added Any family members
+                    No family members yet. You can still track your own vitals.
                   </Box>
                 ) : (
                   familyMembers.map((item) => (
