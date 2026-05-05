@@ -15,6 +15,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTiktok } from "react-icons/fa";
 import { FaCirclePlay } from "react-icons/fa6";
 import useSettingsData from "../Hooks/SettingData";
+import imageBaseURL from "../Controllers/image";
 
 const linkColumns = [
   {
@@ -158,10 +159,18 @@ export default function Footer() {
           </Text>
           <Flex gap={4} mt={4} wrap="wrap">
             <Link href={playStoreHref} isExternal>
-              <Image src="/play store.png" fallbackSrc="/google-play-icon.svg" w={{ base: "170px", md: "210px" }} />
+              <Image src={settingsData?.find((v) => v.id_name === "web_badge_play_store")?.value
+                ? (settingsData.find((v) => v.id_name === "web_badge_play_store").value.startsWith("http")
+                    ? settingsData.find((v) => v.id_name === "web_badge_play_store").value
+                    : `${imageBaseURL}/${settingsData.find((v) => v.id_name === "web_badge_play_store").value}`)
+                : "/play store.png"} fallbackSrc="/google-play-icon.svg" w={{ base: "170px", md: "210px" }} />
             </Link>
             <Link href={appStoreHref} isExternal>
-              <Image src="/app store.png" fallbackSrc="/apple-store-icon.svg" w={{ base: "170px", md: "210px" }} />
+              <Image src={settingsData?.find((v) => v.id_name === "web_badge_app_store")?.value
+                ? (settingsData.find((v) => v.id_name === "web_badge_app_store").value.startsWith("http")
+                    ? settingsData.find((v) => v.id_name === "web_badge_app_store").value
+                    : `${imageBaseURL}/${settingsData.find((v) => v.id_name === "web_badge_app_store").value}`)
+                : "/app store.png"} fallbackSrc="/apple-store-icon.svg" w={{ base: "170px", md: "210px" }} />
             </Link>
           </Flex>
         </Box>

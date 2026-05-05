@@ -26,12 +26,20 @@ import defaultISD from "../Controllers/defaultISD";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { setStorageItem } from "../lib/storage";
 import api from "../Controllers/api";
+import useSettingsData from "../Hooks/SettingData";
+import imageBaseURL from "../Controllers/image";
+
+const resolveSettingImage = (setting, fallback) => {
+  if (!setting?.value) return fallback;
+  return setting.value.startsWith("http") ? setting.value : `${imageBaseURL}/${setting.value}`;
+};
 import {
   ensurePatientAuthBackendReady,
   getAuthEndpoint,
 } from "../Controllers/authConfig";
 
 const Signup = () => {
+  const { settingsData } = useSettingsData();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isd_code, setIsd_code] = useState(defaultISD);
   const toast = useToast();
@@ -634,7 +642,10 @@ const Signup = () => {
             minH={["400px", "500px", "100vh", "100vh"]}
           >
             <Image
-              src="/images/signup-hero.png"
+              src={resolveSettingImage(
+                settingsData?.find((v) => v.id_name === "web_signup_hero_image"),
+                "/images/signup-hero.png"
+              )}
               alt="Doctor"
               w={{ base: "90%", md: "100%" }}
               maxH="600px"

@@ -19,6 +19,7 @@ import { FaEnvelope } from "react-icons/fa";
 import { IoMdCall } from "react-icons/io";
 import { BsChatDots } from "react-icons/bs";
 import useSettingsData from "../Hooks/SettingData";
+import imageBaseURL from "../Controllers/image";
 import user from "../Controllers/user";
 import { ADD } from "../Controllers/ApiControllers";
 import { useMutation } from "@tanstack/react-query";
@@ -37,6 +38,11 @@ const addContactForm = async (data) => {
 
 export default function ContactUs() {
   const { settingsData } = useSettingsData();
+  const contactHeroSrc = (() => {
+    const s = settingsData?.find((v) => v.id_name === "web_contact_hero_image");
+    if (!s?.value) return "/images/contact-hero.png";
+    return s.value.startsWith("http") ? s.value : `${imageBaseURL}/${s.value}`;
+  })();
   const phone1 = settingsData?.find((value) => value.id_name === "phone");
   const phone2 = settingsData?.find(
     (value) => value.id_name === "phone_second"
@@ -92,7 +98,7 @@ export default function ContactUs() {
           {/* Hero Image */}
           <Box flex={1} position="relative" w="full">
             <Image
-              src="/images/contact-hero.png"
+              src={contactHeroSrc}
               alt="Contact Us"
               w="full"
               h={{ base: "180px", md: "300px", lg: "431px" }}

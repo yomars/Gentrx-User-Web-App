@@ -6,7 +6,13 @@ import { IoMdWallet } from "react-icons/io";
 import { Box, Flex, Grid, GridItem, Heading, Image, SimpleGrid, Text } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import useSettingsData from "../Hooks/SettingData";
+import imageBaseURL from "../Controllers/image";
 import Webpage from "./WebPages/Webpage";
+
+const resolveSettingImage = (setting, fallback) => {
+  if (!setting?.value) return fallback;
+  return setting.value.startsWith("http") ? setting.value : `${imageBaseURL}/${setting.value}`;
+};
 
 export default function AboutUs() {
   const { settingsData } = useSettingsData();
@@ -65,7 +71,10 @@ export default function AboutUs() {
       {/* ── Hero Section ── */}
       <Box position="relative" overflow="hidden" bg="#f0faf7">
         <Image
-          src="/images/about-us/main-hero.png"
+          src={resolveSettingImage(
+            settingsData?.find((v) => v.id_name === "web_about_hero_image"),
+            "/images/about-us/main-hero.png"
+          )}
           alt="Doctor at work"
           w="80%"
           maxH={{ base: "256px", md: "384px", lg: "448px" }}
@@ -233,10 +242,10 @@ export default function AboutUs() {
 
               <Flex gap={4} mt={5} wrap="wrap">
                 <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/play store.png" fallbackSrc="/google-play-icon.svg" w={{ base: 140, md: 180 }} />
+                  <Image src={resolveSettingImage(settingsData?.find((v) => v.id_name === "web_badge_play_store"), "/play store.png")} fallbackSrc="/google-play-icon.svg" w={{ base: 140, md: 180 }} />
                 </a>
                 <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src="/app store.png" fallbackSrc="/apple-store-icon.svg" w={{ base: 140, md: 180 }} />
+                  <Image src={resolveSettingImage(settingsData?.find((v) => v.id_name === "web_badge_app_store"), "/app store.png")} fallbackSrc="/apple-store-icon.svg" w={{ base: 140, md: 180 }} />
                 </a>
               </Flex>
             </Box>
@@ -301,7 +310,10 @@ export default function AboutUs() {
             zIndex={2}
           >
               <Image
-                src="/images/about-us/mobile-app.png"
+                src={resolveSettingImage(
+                  settingsData?.find((v) => v.id_name === "web_about_mobile_image"),
+                  "/images/about-us/mobile-app.png"
+                )}
                 alt="GentRx mobile app"
                 w={{ base: "280px", sm: "320px", md: "360px", lg: "390px" }}
                 objectFit="contain"

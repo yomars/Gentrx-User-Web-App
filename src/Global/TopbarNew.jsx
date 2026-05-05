@@ -647,10 +647,18 @@ export default function TopbarNew() {
               <Flex gap={5} justifyContent={"left"} w={"100%"}>
                 <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
                   {" "}
-                  <Image src={"/play store.png"} w={"120px"} />
+                  <Image src={settingsData?.find((v) => v.id_name === "web_badge_play_store")?.value
+                    ? (settingsData.find((v) => v.id_name === "web_badge_play_store").value.startsWith("http")
+                        ? settingsData.find((v) => v.id_name === "web_badge_play_store").value
+                        : `${imageBaseURL}/${settingsData.find((v) => v.id_name === "web_badge_play_store").value}`)
+                    : "/play store.png"} w={"120px"} />
                 </a>
                 <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src={"/app store.png"} w={"120px"} />
+                  <Image src={settingsData?.find((v) => v.id_name === "web_badge_app_store")?.value
+                    ? (settingsData.find((v) => v.id_name === "web_badge_app_store").value.startsWith("http")
+                        ? settingsData.find((v) => v.id_name === "web_badge_app_store").value
+                        : `${imageBaseURL}/${settingsData.find((v) => v.id_name === "web_badge_app_store").value}`)
+                    : "/app store.png"} w={"120px"} />
                 </a>
               </Flex>
             </DrawerFooter>

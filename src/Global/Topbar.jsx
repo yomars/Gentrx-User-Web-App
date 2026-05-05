@@ -528,10 +528,18 @@ export default function TopBar() {
                 <Flex gap={5} justifyContent={"center"} w={"100%"}>
                   <Link isExternal href={play_store_link.value}>
                     {" "}
-                    <Image src={"/play store.png"} w={120} />
+                    <Image src={settingsData?.find((v) => v.id_name === "web_badge_play_store")?.value
+                      ? (settingsData.find((v) => v.id_name === "web_badge_play_store").value.startsWith("http")
+                          ? settingsData.find((v) => v.id_name === "web_badge_play_store").value
+                          : `${imageBaseURL}/${settingsData.find((v) => v.id_name === "web_badge_play_store").value}`)
+                      : "/play store.png"} w={120} />
                   </Link>
                   <Link isExternal href={app_store_link.value}>
-                    <Image src={"/app store.png"} w={120} />
+                    <Image src={settingsData?.find((v) => v.id_name === "web_badge_app_store")?.value
+                      ? (settingsData.find((v) => v.id_name === "web_badge_app_store").value.startsWith("http")
+                          ? settingsData.find((v) => v.id_name === "web_badge_app_store").value
+                          : `${imageBaseURL}/${settingsData.find((v) => v.id_name === "web_badge_app_store").value}`)
+                      : "/app store.png"} w={120} />
                   </Link>
                 </Flex>
               </DrawerFooter>
