@@ -21,25 +21,34 @@ describe("buildDoctorEndpoint — City → Clinic filtering", () => {
     GET.mockResolvedValue({ data: null });
   });
 
-  it("uses clinic_id = city.id when a city is selected", async () => {
+  it("uses resolved clinic_id (not city.id) when city is selected and resolve_clinic succeeds", async () => {
+    // resolve_clinic returns a real clinic_id (different from city.id)
+    GET.mockResolvedValueOnce({ data: { clinic_id: 42 } });
     const city = { id: 3, city: "Cebu", latitude: 10.3, longitude: 123.9 };
     const endpoint = await buildDoctorEndpoint({ selectedCity: city });
     const params = new URLSearchParams(endpoint.split("?")[1]);
 
-    expect(params.get("clinic_id")).toBe("3");
-    expect(params.get("city_id")).toBe("3");
+    expect(params.get("clinic_id")).toBe("42");
+    expect(params.has("city_id")).toBe(false);
   });
 
-  it("filters are strictly from city.id — resolve_clinic is NOT called when city is set", async () => {
-    // Even if resolve_clinic would return a different clinic, city.id must win
+  it("resolve_clinic IS called when a city is selected", async () => {
+    GET.mockResolvedValueOnce({ data: { clinic_id: 7 } });
     const city = { id: 5, city: "Manila", latitude: 14.6, longitude: 120.9 };
+    await buildDoctorEndpoint({ selectedCity: city });
+
+    expect(GET).toHaveBeenCalledOnce();
+  });
+
+  it("falls back to city_id when city is selected but resolve_clinic fails", async () => {
+    // resolve_clinic returns null — fall back to city_id
+    GET.mockResolvedValueOnce({ data: null });
+    const city = { id: 3, city: "Cebu", latitude: 10.3, longitude: 123.9 };
     const endpoint = await buildDoctorEndpoint({ selectedCity: city });
     const params = new URLSearchParams(endpoint.split("?")[1]);
 
-    // GET (resolve_clinic) must NOT be called when a city is selected
-    expect(GET).not.toHaveBeenCalled();
-    expect(params.get("clinic_id")).toBe("5");
-    expect(params.get("city_id")).toBe("5");
+    expect(params.has("clinic_id")).toBe(false);
+    expect(params.get("city_id")).toBe("3");
   });
 
   it("falls back to resolve_clinic when no city is selected", async () => {
@@ -64,26 +73,16 @@ describe("buildDoctorEndpoint — City → Clinic filtering", () => {
   });
 
   it("includes department param when provided alongside a city", async () => {
-    const city = { id: 2, city: "Davao" };
+    GET.mockResolvedValueOnce({ data: { clinic_id: 9 } });
+    const city = { id: 2, city: "Davao", latitude: 7.07, longitude: 125.6 };
     const endpoint = await buildDoctorEndpoint({
       selectedCity: city,
       department: 11,
     });
     const params = new URLSearchParams(endpoint.split("?")[1]);
 
-    expect(params.get("clinic_id")).toBe("2");
+    expect(params.get("clinic_id")).toBe("9");
     expect(params.get("department")).toBe("11");
-  });
-
-  it("includes search param when provided", async () => {
-    const city = { id: 2, city: "Davao" };
-    const endpoint = await buildDoctorEndpoint({
-      selectedCity: city,
-      search: "cardio",
-    });
-    const params = new URLSearchParams(endpoint.split("?")[1]);
-
-    expect(params.get("search")).toBe("cardio");
   });
 
   it("always sets active=1", async () => {

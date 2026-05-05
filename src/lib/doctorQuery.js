@@ -30,6 +30,10 @@ export const resolveClinic = async ({ selectedCity } = {}) => {
     params.set("longitude", String(longitude));
   }
 
+  if (selectedCity?.id !== undefined && selectedCity?.id !== null) {
+    params.set("city_id", String(selectedCity.id));
+  }
+
   try {
     const response = await GET(`resolve_clinic?${params.toString()}`);
     const resolved = response?.data;
@@ -51,21 +55,15 @@ export const buildDoctorEndpoint = async ({
   department,
   search,
 } = {}) => {
-  const selectedCityId =
-    selectedCity?.id !== undefined && selectedCity?.id !== null && selectedCity?.id !== ""
-      ? String(selectedCity.id)
-      : null;
-
-  const resolved = selectedCityId ? null : await resolveClinic({ selectedCity });
+  const resolved = await resolveClinic({ selectedCity });
 
   const params = new URLSearchParams();
   params.set("active", "1");
 
-  if (selectedCityId) {
-    params.set("clinic_id", selectedCityId);
-    params.set("city_id", selectedCityId);
-  } else if (resolved?.clinic_id) {
+  if (resolved?.clinic_id) {
     params.set("clinic_id", String(resolved.clinic_id));
+  } else if (selectedCity?.id) {
+    params.set("city_id", String(selectedCity.id));
   }
 
   if (department !== undefined && department !== null && department !== "") {
