@@ -133,7 +133,7 @@ export default function Departments() {
                     boxShadow: "0 12px 32px rgba(15, 23, 42, 0.08)",
                   }}
                   as={Link}
-                  to={`/doctors?department=${item.id}&departmentName=${encodeURIComponent(titleOverrides[item.title] || item.title)}`}
+                  to={`/doctors?search=${encodeURIComponent(titleOverrides[item.title] || item.title)}&departmentName=${encodeURIComponent(titleOverrides[item.title] || item.title)}`}
                 >
                   <Flex
                     flexDir={"column"}

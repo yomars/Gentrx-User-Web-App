@@ -11,6 +11,7 @@ import {
   InputLeftElement,
   Input,
 } from "@chakra-ui/react";
+import { useEffect } from "react";
 import imageBaseURL from "./../Controllers/image";
 import Loading from "../Components/Loading";
 import RatingStars from "../Hooks/RatingStars";
@@ -40,12 +41,14 @@ export default function Doctors() {
 
   const departmentId = searchParams.get("department");
   const departmentName = searchParams.get("departmentName");
+  const searchQuery = searchParams.get("search") || "";
 
   const clearDepartmentFilter = () => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.delete("department");
       next.delete("departmentName");
+      next.delete("search");
       return next;
     });
   };
@@ -54,17 +57,22 @@ export default function Doctors() {
     const endpoint = await buildDoctorEndpoint({
       selectedCity,
       department: departmentId || undefined,
+      search: searchQuery,
     });
     const res = await GET(endpoint);
     return res.data;
   };
   const { isLoading, data, error } = useQuery({
-    queryKey: ["Doctors", selectedCity, departmentId],
+    queryKey: ["Doctors", selectedCity, departmentId, searchQuery],
     queryFn: getData,
   });
 
-  const { handleSearchChange, searchTerm, filteredData } =
+  const { handleSearchChange, setSearchTerm, searchTerm, filteredData } =
     useSearchFilter(data);
+
+  useEffect(() => {
+    setSearchTerm(searchQuery);
+  }, [searchQuery, setSearchTerm]);
 
   if (isLoading) return <Loading />;
   if (error) return <ErrorPage />;
