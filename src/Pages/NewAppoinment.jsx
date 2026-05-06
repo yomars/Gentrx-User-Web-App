@@ -889,7 +889,7 @@ const Step2 = ({
             borderRadius={4}
           >
             <Text textAlign={"left"} fontWeight={600} fontSize={16} mb={1}>
-              Time Slotes
+              Time Slots
             </Text>
 
             {filteredIntervals?.length ? (
@@ -928,7 +928,7 @@ const Step2 = ({
               </Box>
             ) : (
               <Text color={"red.400"} fontWeight={700} fontSize={"sm"}>
-                Sorry , no available time slotes ware found for the selected
+                Sorry , no available time slots were found for the selected
                 date.
               </Text>
             )}
@@ -1064,7 +1064,7 @@ const Step3 = ({ setPatientDetails, setStep }) => {
 
             <Flex gap={5} justify={"end"} mt={8}>
               <Button w={"30%"} size={"sm"} onClick={() => setaddNew(false)}>
-                Cancle
+                Cancel
               </Button>
               <Button
                 w={"40%"}
@@ -1549,7 +1549,8 @@ const Step4 = ({
   };
 
   // payment data
-
+//Pay And - Appointment Fee(Token)
+//Pay Now (Free Service no payment required)
   if (isLoading || isUserLoading || bookedSlotesLoading) {
     return <Loading />;
   }
@@ -1563,7 +1564,7 @@ const Step4 = ({
         Only One Step Away
       </Text>{" "}
       <Text fontSize={14} fontWeight={500} textAlign={"center"}>
-        Pay And Book your Appointment
+        Book your Appointment  
       </Text>{" "}
       <Divider my={2} />
       <Box w={{ base: "100%", md: "100%" }}>
@@ -1659,7 +1660,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            Appointment Fee
+            Token
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1796,7 +1797,7 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  Pay Now
+                  Free Services (No Payment Required)
                 </Radio>
               )}
               {appoinmentType.id !== 2 && (
@@ -1809,9 +1810,9 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  Pay At Hospital
+                  MCGI Free Check Up (No Payment Required)
                 </Radio>
-              )}
+              )//Pay At Hospital, Pay From Wallet (Available Balance {currency} {walletAvailable})}
 
               <Radio
                 value={"3"}
@@ -1823,8 +1824,7 @@ const Step4 = ({
                   setMethod(e.target.value);
                 }}
               >
-                Pay From Wallet (Available Balance {currency}
-                {walletAvailable})
+                Free Services (No Payment Required)
               </Radio>
             </Stack>
           </RadioGroup>
