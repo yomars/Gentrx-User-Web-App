@@ -555,7 +555,7 @@ const Step2 = ({
             bg={"gray.50"}
           >
             <Text textAlign={"left"} fontWeight={600} fontSize={16} mb={1}>
-              Time Slotes
+              Time Slots
             </Text>
 
             {filteredIntervals?.length ? (
@@ -621,7 +621,7 @@ const Step2 = ({
               </Box>
             ) : (
               <Text color={"red.400"} fontWeight={700} fontSize={"sm"}>
-                Sorry , no available time slotes ware found for the selected
+                Sorry , no available time slots were found for the selected
                 date.
               </Text>
             )}
@@ -1288,7 +1288,7 @@ const Step4 = ({
         Only One Step Away
       </Text>{" "}
       <Text fontSize={14} fontWeight={500} textAlign={"center"} color={"gray.600"}>
-        Pay And Book your Appointment
+        Booking And Appointment
       </Text>{" "}
       <Divider my={3} borderColor={"gray.200"} />
       <Box
@@ -1391,7 +1391,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            Appointment Fee
+            Appointment Token
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1410,7 +1410,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            Tax ({Doctordetails?.clinic_tax}%)
+            --({Doctordetails?.clinic_tax}%)
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1529,7 +1529,7 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  Pay Now
+                  No Payment Required
                 </Radio>
               )}
               {appoinmentType.id !== 2 && (
@@ -1542,7 +1542,7 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  Pay At Hospital
+                  MCGI Free Check Medical Service
                 </Radio>
               )}
               <Radio
@@ -1553,7 +1553,7 @@ const Step4 = ({
                   setMethod(e.target.value);
                 }}
               >
-                Pay From Wallet (Available Balance {currency}
+                Use Appointment Token (Available Balance 
                 {walletAvailable})
               </Radio>
             </Stack>
@@ -1611,8 +1611,8 @@ const Step4 = ({
             }
           }}
         >
-          Pay {currency}
-          {payableTotal.toFixed(2)}
+          MCGI Free Check Medical Service 
+          {payableTotal.toFixed(2)} Token
         </Button>
         {bookingError && (
           <Alert status="error" mt={3} borderRadius={8} fontSize={13}>
