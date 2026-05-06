@@ -21,7 +21,7 @@ import {
   FaYoutube,
   FaUserAlt,
 } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ErrorPage from "./ErrorPage";
 import { SearchIcon } from "@chakra-ui/icons";
 import { useCity } from "../Context/SelectedCity";
@@ -36,14 +36,30 @@ import { buildDoctorEndpoint } from "../lib/doctorQuery";
 export default function Doctors() {
   const { selectedCity } = useCity();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const departmentId = searchParams.get("department");
+  const departmentName = searchParams.get("departmentName");
+
+  const clearDepartmentFilter = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("department");
+      next.delete("departmentName");
+      return next;
+    });
+  };
 
   const getData = async () => {
-    const endpoint = await buildDoctorEndpoint({ selectedCity });
+    const endpoint = await buildDoctorEndpoint({
+      selectedCity,
+      department: departmentId || undefined,
+    });
     const res = await GET(endpoint);
     return res.data;
   };
   const { isLoading, data, error } = useQuery({
-    queryKey: ["Doctors", selectedCity],
+    queryKey: ["Doctors", selectedCity, departmentId],
     queryFn: getData,
   });
 
@@ -130,6 +146,37 @@ export default function Doctors() {
             />
           </InputGroup>
         </Flex>
+
+        {departmentName && (
+          <Flex justify="center" mt={2} mb={1}>
+            <Flex
+              align="center"
+              gap={2}
+              bg="green.50"
+              border="1px solid"
+              borderColor="green.200"
+              borderRadius="full"
+              px={4}
+              py={1}
+            >
+              <Text fontSize={13} fontWeight={600} color="green.700">
+                Department: {departmentName}
+              </Text>
+              <Button
+                size="xs"
+                variant="ghost"
+                colorScheme="green"
+                onClick={clearDepartmentFilter}
+                aria-label="Clear department filter"
+                borderRadius="full"
+                minW="auto"
+                px={1}
+              >
+                ✕
+              </Button>
+            </Flex>
+          </Flex>
+        )}
 
         {filteredData ? (
           <>
