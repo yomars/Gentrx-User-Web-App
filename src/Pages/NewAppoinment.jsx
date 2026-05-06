@@ -1812,7 +1812,7 @@ const Step4 = ({
                 >
                   MCGI Free Check Up (No Payment Required)
                 </Radio>
-              )//Pay At Hospital, Pay From Wallet (Available Balance {currency} {walletAvailable})}
+              )}
 
               <Radio
                 value={"3"}
