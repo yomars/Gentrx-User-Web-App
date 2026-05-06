@@ -1549,8 +1549,7 @@ const Step4 = ({
   };
 
   // payment data
-//Pay And - Appointment Fee(Token)
-//Pay Now (Free Service no payment required)
+
   if (isLoading || isUserLoading || bookedSlotesLoading) {
     return <Loading />;
   }
@@ -1564,7 +1563,7 @@ const Step4 = ({
         Only One Step Away
       </Text>{" "}
       <Text fontSize={14} fontWeight={500} textAlign={"center"}>
-        Book your Appointment  
+         Booking and Appointment
       </Text>{" "}
       <Divider my={2} />
       <Box w={{ base: "100%", md: "100%" }}>
@@ -1660,7 +1659,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            Token
+            Appointment Token
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1797,7 +1796,7 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  Free Services (No Payment Required)
+                  No Payment Required
                 </Radio>
               )}
               {appoinmentType.id !== 2 && (
@@ -1810,7 +1809,7 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  MCGI Free Check Up (No Payment Required)
+                  --
                 </Radio>
               )}
 
@@ -1824,7 +1823,8 @@ const Step4 = ({
                   setMethod(e.target.value);
                 }}
               >
-                Free Services (No Payment Required)
+                MCGI Free Check Checkup (Available Token {currency}
+                {walletAvailable})
               </Radio>
             </Stack>
           </RadioGroup>
@@ -1879,7 +1879,7 @@ const Step4 = ({
             }
           }}
         >
-          Pay {currency}
+          Use Token {currency}
           {getTotal(
             getfee(appoinmentType.title, Doctordetails).toFixed(2),
             taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
