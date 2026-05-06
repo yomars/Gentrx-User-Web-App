@@ -8,6 +8,7 @@ function useSearchFilter(initialData) {
   };
 
   const filterData = () => {
+    if (!initialData) return undefined;
     if (!searchTerm) {
       return initialData;
     }

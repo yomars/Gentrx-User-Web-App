@@ -65,12 +65,12 @@ function NotificationIcon() {
   const theme = useTheme();
 
   const { data } = useQuery({
-    queryKey: ["notification"],
+    queryKey: ["notification", user?.id],
     queryFn: getData,
     enabled: Boolean(user?.id && user?.created_at),
   });
   const { data: dotStatus } = useQuery({
-    queryKey: ["dot-status"],
+    queryKey: ["dot-status", user?.id],
     queryFn: getDotStatus,
     enabled: Boolean(user?.id),
   });
@@ -79,8 +79,8 @@ function NotificationIcon() {
     mutationFn: async () => {
       await updateReadStatus();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["dot-status", user.id]);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["dot-status", user?.id] });
     },
   });
 
@@ -127,7 +127,7 @@ function NotificationIcon() {
               <Flex gap={5} align={"center"}>
                 <Box>
                   {" "}
-                  {item?.image !== null ? (
+                  {!!item?.image ? (
                     <Image
                       src={`${imageBaseURL}/${item.image}`}
                       fallbackSrc="/imagePlaceholder.png"
