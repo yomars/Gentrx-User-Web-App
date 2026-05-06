@@ -1399,7 +1399,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            {getfee(appoinmentType.title, Doctordetails)} {currency}
+            {getfee(appoinmentType.title, Doctordetails)} 
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1418,7 +1418,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            {taxAmount(getfee(appoinmentType.title, Doctordetails))} {currency}
+            {taxAmount(getfee(appoinmentType.title, Doctordetails))} 
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1542,7 +1542,7 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  MCGI Free Check Medical Service
+                  MCGI Free Medical Services
                 </Radio>
               )}
               <Radio
@@ -1610,7 +1610,7 @@ const Step4 = ({
             }
           }}
         >
-          MCGI Free Medical Services {payableTotal.toFixed(2)} Token 
+          MCGI Free Medical Services {payableTotal.toFixed(0)} Token 
         </Button>
         {bookingError && (
           <Alert status="error" mt={3} borderRadius={8} fontSize={13}>

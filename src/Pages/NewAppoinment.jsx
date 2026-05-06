@@ -1667,7 +1667,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            {getfee(appoinmentType.title, Doctordetails)} {currency}
+            {getfee(appoinmentType.title, Doctordetails)} 
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1686,7 +1686,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            {taxAmount(getfee(appoinmentType.title, Doctordetails))} {currency}
+            {taxAmount(getfee(appoinmentType.title, Doctordetails))}
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1857,9 +1857,9 @@ const Step4 = ({
               showToast(
                 toast,
                 "error",
-                `Insufficient wallet balance. Please load ${currency}${(
-                  payableTotal - walletAvailable
-                ).toFixed(2)} or more before booking.`
+                `Insufficient wallet balance. Please load ${(
+                  payableTotal - walletAvailable 
+                ).toFixed(0)} token or more before booking.`
               );
               return;
             }
@@ -1881,7 +1881,7 @@ const Step4 = ({
         >
           Use Token 
           {getTotal(
-            getfee(appoinmentType.title, Doctordetails).toFixed(2),
+            getfee(appoinmentType.title, Doctordetails).toFixed(0),
             taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
             discountAmount(
               getfee(appoinmentType.title, Doctordetails),
