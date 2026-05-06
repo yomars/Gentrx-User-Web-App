@@ -79,7 +79,7 @@ const AppointmentSuccess = () => {
       : "Appointment recorded";
   const confirmationDescription =
     savedStatus === "Pending" || savedPaymentStatus === "Unpaid"
-      ? "Your booking was saved and is currently pending. Payment is due at the hospital unless advised otherwise."
+      ? "Your booking was saved and is currently pending. Token will be deducted at the hospital unless advised otherwise."
       : data?.type?.toUpperCase() === "OPD"
       ? "Visit the clinic and scan the provided QR code to instantly generate your appointment queue number"
       : "Click join meeting or scan the QR code to join the meeting.";
@@ -228,7 +228,7 @@ const AppointmentSuccess = () => {
             fontWeight={700}
             colorScheme={paymentToBadgeColor[savedPaymentStatus] || "gray"}
           >
-            Payment: {savedPaymentStatus}
+            Save QR Code for Checkin
           </Badge>
         </Flex>
 
