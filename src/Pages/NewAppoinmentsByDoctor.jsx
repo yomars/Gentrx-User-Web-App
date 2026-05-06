@@ -1410,7 +1410,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            --({Doctordetails?.clinic_tax}%)
+
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1460,7 +1460,7 @@ const Step4 = ({
               getfee(appoinmentType.title, Doctordetails),
               SelectedCoupon?.value
             )}{" "}
-            {currency}
+            
           </Text>{" "}
         </Flex>
       </Box>
@@ -1483,7 +1483,7 @@ const Step4 = ({
             color={"gray.800"}
           >
             {payableTotal}{" "}
-            {currency}
+            Token
           </Text>{" "}
         </Flex>
 
@@ -1529,11 +1529,11 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  No Payment Required
+                  No Payment Required.
                 </Radio>
               )}
               {appoinmentType.id !== 2 && (
-                <Radio
+                <Radio disabled
                   value={"2"}
                   fontWeight={700}
                   onChange={(e) => {
@@ -1553,8 +1553,7 @@ const Step4 = ({
                   setMethod(e.target.value);
                 }}
               >
-                Use Appointment Token (Available Balance 
-                {walletAvailable})
+                Use Appointment Token (Available Balance {walletAvailable})                
               </Radio>
             </Stack>
           </RadioGroup>
@@ -1611,8 +1610,7 @@ const Step4 = ({
             }
           }}
         >
-          MCGI Free Check Medical Service 
-          {payableTotal.toFixed(2)} Token
+          MCGI Free Medical Services {payableTotal.toFixed(2)} Token 
         </Button>
         {bookingError && (
           <Alert status="error" mt={3} borderRadius={8} fontSize={13}>

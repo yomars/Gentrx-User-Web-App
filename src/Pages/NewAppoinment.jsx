@@ -1678,7 +1678,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            Tax
+           --
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1728,7 +1728,7 @@ const Step4 = ({
               getfee(appoinmentType.title, Doctordetails),
               SelectedCoupon?.value
             )}{" "}
-            {currency}
+            
           </Text>{" "}
         </Flex>
       </Box>
@@ -1823,7 +1823,7 @@ const Step4 = ({
                   setMethod(e.target.value);
                 }}
               >
-                MCGI Free Check Checkup (Available Token {currency}
+                MCGI Free Checkup (Available Token 
                 {walletAvailable})
               </Radio>
             </Stack>
@@ -1879,7 +1879,7 @@ const Step4 = ({
             }
           }}
         >
-          Use Token {currency}
+          Use Token 
           {getTotal(
             getfee(appoinmentType.title, Doctordetails).toFixed(2),
             taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
