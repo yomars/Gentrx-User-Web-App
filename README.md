@@ -64,11 +64,11 @@ scp artifacts/gentrx-user-web-dist-<timestamp>.tar.gz root@api.gentrx.ph:/tmp/
 
 2. Extract bundle and start app:
 
-	mkdir -p /var/www/gentrx-user-web-app
-	cd /var/www/gentrx-user-web-app
+	mkdir -p /var/www/gentrx-user-web
+	cd /var/www/gentrx-user-web
 	tar -xzf /tmp/gentrx-user-web-dist-<timestamp>.tar.gz
 
-	pm2 describe gentrx-main >/dev/null 2>&1 || pm2 start serve --name gentrx-main --cwd /var/www/gentrx-user-web-app -- -s dist -l 3000
+	pm2 describe gentrx-main >/dev/null 2>&1 || pm2 start serve --name gentrx-main --cwd /var/www/gentrx-user-web -- -s dist -l 3000
 	pm2 restart gentrx-main
 	pm2 save
 
@@ -87,7 +87,7 @@ scp artifacts/gentrx-user-web-dist-<timestamp>.tar.gz root@api.gentrx.ph:/tmp/
 
 On a fresh Ubuntu/Vultr server, run:
 
-	sudo bash scripts/deploy/bootstrap-user-web-on-ubuntu.sh /var/www/gentrx-user-web-app
+	sudo bash scripts/deploy/bootstrap-user-web-on-ubuntu.sh /var/www/gentrx-user-web
 
 This installs Node + PM2 + Nginx, builds the app, starts PM2 process `gentrx-main` on `:3000`, and validates Nginx.
 
@@ -147,7 +147,7 @@ sudo REPO=yomars/Gentrx-User-Web-App \
 	WORKFLOW_FILE=dist-artifact.yml \
 	ARTIFACT_NAME=gentrx-user-web-dist \
 	BRANCH=main \
-	DEPLOY_DIR=/var/www/gentrx-user-web-app \
+	DEPLOY_DIR=/var/www/gentrx-user-web \
 	PM2_APP_NAME=gentrx-main \
 	APP_PORT=3000 \
 	bash scripts/deploy/deploy-from-github-actions.sh

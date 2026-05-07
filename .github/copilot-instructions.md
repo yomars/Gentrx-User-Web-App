@@ -5,7 +5,7 @@
 - `admin.gentrx.ph` is `yomars/Gentrx-Admin-Web-App-Vultr`.
 - `api.gentrx.ph` is the Laravel backend on the same Vultr server.
 - Server IP is `149.28.145.80`.
-- Frontend runtime path is `/var/www/gentrx-user-web-app`.
+- Frontend runtime path is `/var/www/gentrx-user-web`.
 - Frontend PM2 process is `gentrx-main`.
 - Nginx fronts the public site.
 
