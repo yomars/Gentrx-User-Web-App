@@ -2,7 +2,6 @@
 import { useRef } from "react";
 import { Box, IconButton, Image, useToast } from "@chakra-ui/react";
 import { BiEdit } from "react-icons/bi";
-import imageBaseURL from "../Controllers/image";
 import { ADD } from "../Controllers/ApiControllers";
 import user from "../Controllers/user";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -64,7 +63,7 @@ function ProfilePicture({ img }) {
     <Box w={"100%"}>
       <Box pos={"relative"} w={"fit-content"}>
         <Image
-          src={resolveMediaUrl(img) || `${imageBaseURL}/${img}`}
+          src={resolveMediaUrl(img)}
           w={32}
           h={32}
           fallbackSrc="/user.png"

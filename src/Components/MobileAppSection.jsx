@@ -2,12 +2,7 @@ import { Box, Flex, Image, Text, Heading, Grid, GridItem, Link } from "@chakra-u
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import user from "../Controllers/user";
 import useSettingsData from "../Hooks/SettingData";
-import imageBaseURL from "../Controllers/image";
-
-const resolveSettingImage = (setting, fallback) => {
-  if (!setting?.value) return fallback;
-  return setting.value.startsWith("http") ? setting.value : `${imageBaseURL}/${setting.value}`;
-};
+import { resolveMediaUrl } from "../lib/media";
 
 function MobileAppSection() {
   const navigate = useNavigate();
@@ -134,10 +129,7 @@ function MobileAppSection() {
           mr={{ base: 0, md: "50px" }}
         >
           <Image
-            src={resolveSettingImage(
-              settingsData?.find((v) => v.id_name === "web_mobile_promo_image"),
-              "/mobile-promotion.png"
-            )}
+            src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_mobile_promo_image")?.value) || "/mobile-promotion.png"}
             h={{ base: "500px", md: "782px" }}
             w={{ base: "auto", md: "404px" }}
             objectFit="contain"

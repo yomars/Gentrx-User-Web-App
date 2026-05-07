@@ -105,11 +105,12 @@ export default function Main() {
     (value) => value.id_name === "web_technical_issue_enable"
   );
 
-  if (settingsLoading) return <Loading />;
+  // Don't block render on settings — show page immediately, switch to maintenance if needed after load
+  const isMaintenanceMode = !settingsLoading && web_technical_issue?.value === "true";
 
   return (
     <div>
-      {web_technical_issue?.value === "true" ? (
+      {isMaintenanceMode ? (
         <Suspense fallback={<Loading />}>
           {" "}
           <TechnicalError />

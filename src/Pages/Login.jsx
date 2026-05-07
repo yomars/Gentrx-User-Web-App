@@ -34,13 +34,8 @@ import {
 import defaultISD from "../Controllers/defaultISD";
 import { setStorageItem } from "../lib/storage";
 import useSettingsData from "../Hooks/SettingData";
-import imageBaseURL from "../Controllers/image";
+import { resolveMediaUrl } from "../lib/media";
 import api from "../Controllers/api";
-
-const resolveSettingImage = (setting, fallback) => {
-  if (!setting?.value) return fallback;
-  return setting.value.startsWith("http") ? setting.value : `${imageBaseURL}/${setting.value}`;
-};
 import {
   ensurePatientAuthBackendReady,
   getAuthEndpoint,
@@ -203,10 +198,7 @@ const PatientLogin = ({ redirectLocation }) => {
             position="relative"
           >
             <Image
-              src={resolveSettingImage(
-                settingsData?.find((v) => v.id_name === "web_login_hero_image"),
-                "/images/login-hero.png"
-              )}
+              src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_login_hero_image")?.value) || "/images/login-hero.png"}
               alt="GentRx Login Hero"
               width="100%"
               maxH={{ base: "320px", md: "400px", lg: "480px" }}
@@ -357,7 +349,7 @@ const PatientLogin = ({ redirectLocation }) => {
       <Box maxW="1320px" mx="auto" px={{ base: 4, md: 6 }} mt={{ base: 7, md: 9 }}>
         <Flex gap={8} pt={1} flexDir={{ base: "column", md: "row" }} align="flex-start">
           <Flex flex={1} justify={{ base: "center", md: "left" }}>
-            <Image src={resolveSettingImage(settingsData?.find((v) => v.id_name === "web_mobile_promo_image"), "/mobile-promotion.png")} fallbackSrc="/doctor-2.png" w={{ base: 360, md: 500 }} objectFit="contain" />
+            <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_mobile_promo_image")?.value) || "/mobile-promotion.png"} fallbackSrc="/doctor-2.png" w={{ base: 360, md: 500 }} objectFit="contain" />
           </Flex>
           <Box flex={1} pb={10}>
             <Text
@@ -375,13 +367,13 @@ const PatientLogin = ({ redirectLocation }) => {
 
             <Flex gap={4} mt={4} wrap="wrap">
               <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
-                <Image src={resolveSettingImage(settingsData?.find((v) => v.id_name === "web_badge_play_store"), "/play store.png")} fallbackSrc="/google-play-icon.svg" w={180} />
+                <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_badge_play_store")?.value) || "/play store.png"} fallbackSrc="/google-play-icon.svg" w={180} />
               </a>
               <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-                <Image src={resolveSettingImage(settingsData?.find((v) => v.id_name === "web_badge_app_store"), "/app store.png")} fallbackSrc="/apple-store-icon.svg" w={180} />
+                <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_badge_app_store")?.value) || "/app store.png"} fallbackSrc="/apple-store-icon.svg" w={180} />
               </a>
               <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
-                <Image src={resolveSettingImage(settingsData?.find((v) => v.id_name === "web_badge_app_gallery"), "/appgallery.png")} fallbackSrc="/vite.svg" w={180} />
+                <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_badge_app_gallery")?.value) || "/appgallery.png"} fallbackSrc="/vite.svg" w={180} />
               </a>
             </Flex>
 

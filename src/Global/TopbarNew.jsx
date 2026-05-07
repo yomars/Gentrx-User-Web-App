@@ -45,7 +45,7 @@ import { HamburgerIcon, SearchIcon } from "@chakra-ui/icons";
 import useSettingsData from "../Hooks/SettingData";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import imageBaseURL from "../Controllers/image";
+import { resolveMediaUrl } from "../lib/media";
 import user from "../Controllers/user";
 import NotificationIcon from "../Components/Notification";
 import moment from "moment";
@@ -137,7 +137,7 @@ export default function TopbarNew() {
   const app_store_link = settingsData?.find(
     (value) => value.id_name === "app_store_link"
   );
-  const logoSrc = logo?.value ? `${imageBaseURL}/${logo.value}` : "/favicon.png";
+  const logoSrc = resolveMediaUrl(logo?.value) || "/favicon.png";
   const playStoreHref = play_store_link?.value || "#";
   const appStoreHref = app_store_link?.value || "#";
 
@@ -242,7 +242,7 @@ export default function TopbarNew() {
                     >
                       <Avatar
                         size={"sm"}
-                        src={`${imageBaseURL}/${user.image}`}
+                        src={resolveMediaUrl(user?.image)}
                         name={`${user?.f_name} ${user?.l_name} `}
                         color={"#fff"}
                       />
@@ -647,18 +647,10 @@ export default function TopbarNew() {
               <Flex gap={5} justifyContent={"left"} w={"100%"}>
                 <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
                   {" "}
-                  <Image src={settingsData?.find((v) => v.id_name === "web_badge_play_store")?.value
-                    ? (settingsData.find((v) => v.id_name === "web_badge_play_store").value.startsWith("http")
-                        ? settingsData.find((v) => v.id_name === "web_badge_play_store").value
-                        : `${imageBaseURL}/${settingsData.find((v) => v.id_name === "web_badge_play_store").value}`)
-                    : "/play store.png"} w={"120px"} />
+                  <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_badge_play_store")?.value) || "/play store.png"} w={"120px"} />
                 </a>
                 <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src={settingsData?.find((v) => v.id_name === "web_badge_app_store")?.value
-                    ? (settingsData.find((v) => v.id_name === "web_badge_app_store").value.startsWith("http")
-                        ? settingsData.find((v) => v.id_name === "web_badge_app_store").value
-                        : `${imageBaseURL}/${settingsData.find((v) => v.id_name === "web_badge_app_store").value}`)
-                    : "/app store.png"} w={"120px"} />
+                  <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_badge_app_store")?.value) || "/app store.png"} w={"120px"} />
                 </a>
               </Flex>
             </DrawerFooter>

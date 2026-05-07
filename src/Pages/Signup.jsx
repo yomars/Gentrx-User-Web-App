@@ -27,12 +27,7 @@ import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { setStorageItem } from "../lib/storage";
 import api from "../Controllers/api";
 import useSettingsData from "../Hooks/SettingData";
-import imageBaseURL from "../Controllers/image";
-
-const resolveSettingImage = (setting, fallback) => {
-  if (!setting?.value) return fallback;
-  return setting.value.startsWith("http") ? setting.value : `${imageBaseURL}/${setting.value}`;
-};
+import { resolveMediaUrl } from "../lib/media";
 import {
   ensurePatientAuthBackendReady,
   getAuthEndpoint,
@@ -642,10 +637,7 @@ const Signup = () => {
             minH={["400px", "500px", "100vh", "100vh"]}
           >
             <Image
-              src={resolveSettingImage(
-                settingsData?.find((v) => v.id_name === "web_signup_hero_image"),
-                "/images/signup-hero.png"
-              )}
+              src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_signup_hero_image")?.value) || "/images/signup-hero.png"}
               alt="Doctor"
               w={{ base: "90%", md: "100%" }}
               maxH="600px"

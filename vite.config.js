@@ -67,8 +67,12 @@ export default defineConfig({
             return "vendor-maps";
           }
 
-          if (normalizedId.includes("react-calendar") || normalizedId.includes("react-date-picker") || normalizedId.includes("wojtekmaj")) {
+          if (normalizedId.includes("react-calendar") || normalizedId.includes("react-date-picker") || normalizedId.includes("wojtekmaj") || normalizedId.includes("react-datepicker") || normalizedId.includes("react-day-picker")) {
             return "vendor-datepickers";
+          }
+
+          if (normalizedId.includes("@tanstack/react-query") || normalizedId.includes("@tanstack/query")) {
+            return "vendor-query";
           }
 
           if (normalizedId.includes("moment")) {

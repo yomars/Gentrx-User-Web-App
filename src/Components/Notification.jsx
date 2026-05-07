@@ -16,7 +16,7 @@ import { BiBell } from "react-icons/bi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ADD, GET } from "../Controllers/ApiControllers";
 import user from "../Controllers/user";
-import imageBaseURL from "../Controllers/image";
+import { resolveMediaUrl } from "../lib/media";
 
 const getData = async () => {
   if (!user?.id || !user?.created_at) {
@@ -129,7 +129,7 @@ function NotificationIcon() {
                   {" "}
                   {!!item?.image ? (
                     <Image
-                      src={`${imageBaseURL}/${item.image}`}
+                      src={resolveMediaUrl(item.image)}
                       fallbackSrc="/imagePlaceholder.png"
                       w={8}
                     />

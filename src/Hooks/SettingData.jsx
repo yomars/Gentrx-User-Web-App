@@ -17,6 +17,8 @@ const useSettingsData = () => {
     queryKey: ["settings"],
     queryFn: getData,
     retry: 1,
+    staleTime: 5 * 60 * 1000,  // treat settings as fresh for 5 minutes
+    gcTime: 30 * 60 * 1000,    // keep in cache for 30 minutes
   });
   return { settingsData, settingsLoading, settingsError };
 };

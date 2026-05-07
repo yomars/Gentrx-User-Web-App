@@ -10,12 +10,7 @@ import { IoMdWallet } from "react-icons/io";
 import Testimonials from "../Components/Testimonials";
 import DoctorsSection from "../Components/DoctorsSection";
 import { Link as RouterLink } from "react-router-dom";
-import imageBaseURL from "../Controllers/image";
-
-const resolveSettingImage = (setting, fallback) => {
-  if (!setting?.value) return fallback;
-  return setting.value.startsWith("http") ? setting.value : `${imageBaseURL}/${setting.value}`;
-};
+import { resolveMediaUrl } from "../lib/media";
 
 export default function HomePage() {
   const { settingsData } = useSettingsData();
@@ -35,10 +30,7 @@ export default function HomePage() {
   const playStoreHref = playStoreLink?.value || "#";
   const appStoreHref = appStoreLink?.value || "#";
   const appGalleryHref = appGalleryLink?.value || "#";
-  const heroImageSrc = resolveSettingImage(
-    settingsData?.find((v) => v.id_name === "web_home_hero_image"),
-    "/both-doctors.png"
-  );
+  const heroImageSrc = resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_home_hero_image")?.value) || "/both-doctors.png";
   const [isHeroImageLoaded, setIsHeroImageLoaded] = useState(false);
 
   useEffect(() => {
@@ -207,10 +199,7 @@ export default function HomePage() {
         <div className="container">
           <Flex gap={8} pt={6} flexDir={{ base: "column", md: "row" }}>
             <Flex flex={1} justify={{ base: "center", md: "left" }}>
-              <Image src={resolveSettingImage(
-                settingsData?.find((v) => v.id_name === "web_mobile_promo_image"),
-                "/mobile-promotion.png"
-              )} fallbackSrc="/doctor-2.png" w={{ base: 360, md: 460 }} objectFit="contain" />
+              <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_mobile_promo_image")?.value) || "/mobile-promotion.png"} fallbackSrc="/doctor-2.png" w={{ base: 360, md: 460 }} objectFit="contain" />
             </Flex>
             <Box flex={1} pb={10}>
               <Text
@@ -228,13 +217,13 @@ export default function HomePage() {
 
               <Flex gap={4} mt={4} wrap="wrap">
                 <a href={playStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src={resolveSettingImage(settingsData?.find((v) => v.id_name === "web_badge_play_store"), "/play store.png")} fallbackSrc="/google-play-icon.svg" w={180} />
+                  <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_badge_play_store")?.value) || "/play store.png"} fallbackSrc="/google-play-icon.svg" w={180} />
                 </a>
                 <a href={appStoreHref} target="_blank" rel="noopener noreferrer">
-                  <Image src={resolveSettingImage(settingsData?.find((v) => v.id_name === "web_badge_app_store"), "/app store.png")} fallbackSrc="/apple-store-icon.svg" w={180} />
+                  <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_badge_app_store")?.value) || "/app store.png"} fallbackSrc="/apple-store-icon.svg" w={180} />
                 </a>
                 <a href={appGalleryHref} target="_blank" rel="noopener noreferrer">
-                  <Image src={resolveSettingImage(settingsData?.find((v) => v.id_name === "web_badge_app_gallery"), "/appgallery.png")} fallbackSrc="/vite.svg" w={180} />
+                  <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_badge_app_gallery")?.value) || "/appgallery.png"} fallbackSrc="/vite.svg" w={180} />
                 </a>
               </Flex>
 
@@ -400,10 +389,7 @@ export default function HomePage() {
             {/* Right Side: Doctor Image */}
             <Box flex={1} display="flex" justifyContent="center" alignItems="flex-start">
               <Image
-                src={resolveSettingImage(
-                  settingsData?.find((v) => v.id_name === "web_home_steps_image"),
-                  "/yourstepbystepheronew.png"
-                )}
+                src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_home_steps_image")?.value) || "/yourstepbystepheronew.png"}
                 fallbackSrc="/doctor-2.png"
                 w={{ base: "100%", md: "100%" }}
                 maxH={{ base: "420px", md: "600px" }}
@@ -434,10 +420,7 @@ export default function HomePage() {
               </Text>
             </Box>
             <Flex flex={1} justify={{ base: "center", md: "flex-end" }}>
-              <Image src={resolveSettingImage(
-                settingsData?.find((v) => v.id_name === "web_home_quality_care_image"),
-                "/images/quality-care.png"
-              )} fallbackSrc="/doctor-2.png" maxW={{ base: "90%", md: "420px" }} objectFit="contain" />
+              <Image src={resolveMediaUrl(settingsData?.find((v) => v.id_name === "web_home_quality_care_image")?.value) || "/images/quality-care.png"} fallbackSrc="/doctor-2.png" maxW={{ base: "90%", md: "420px" }} objectFit="contain" />
             </Flex>
           </Flex>
         </div>
