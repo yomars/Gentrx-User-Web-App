@@ -42,17 +42,9 @@ const handleUpdate = async (data) => {
   return res;
 };
 
-const UserProfile = () => {
+const UserProfile = ({ userData, isLoading, error }) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const {
-    data: userData,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["user"],
-    queryFn: getData,
-  });
 
   // If patient/me returns 401 (stale/invalid token), clear session and redirect to login
   useEffect(() => {
@@ -92,7 +84,7 @@ const UserProfile = () => {
     },
     onSuccess: () => {
       showToast(toast, "success", "User Details Updated");
-      queryClient.invalidateQueries("user");
+      queryClient.invalidateQueries({ queryKey: ["user", user?.id] });
       updateUserLocalStorage();
     },
     onError: (error) => {
@@ -107,7 +99,11 @@ const UserProfile = () => {
   const cardBg = useColorModeValue("white", "gray.800");
 
   if (isLoading) return <Loading />;
-  if (error) return null; // logoutFn() redirect handles the 401 case
+  if (error) {
+    const status = error?.response?.status ?? error?.cause?.status;
+    if (status === 401) return null;
+    return <ErrorPage />;
+  }
 
   return (
     <>
