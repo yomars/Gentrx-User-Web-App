@@ -33,8 +33,11 @@ function LaboratoryRequests() {
   const debouncedSearchQuery = useDebounce(searchQuery, 1000);
 
   const getData = async () => {
+    if (!user?.patient_code) {
+      return [];
+    }
     const res = await GET(
-      `get_laboratory_requests?user_id=${user.id}&search=${debouncedSearchQuery}`
+      `get_laboratory_requests?patient_code=${encodeURIComponent(user.patient_code)}&search=${encodeURIComponent(debouncedSearchQuery || "")}`
     );
     return res.data;
   };
@@ -177,7 +180,7 @@ function LaboratoryRequests() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   openFile(
-                                    `${api}/laboratory_request/generatePDF/${request.id}`
+                                    `${api}/laboratory_requests/generatePDF/${request.id}`
                                   );
                                 }}
                               />

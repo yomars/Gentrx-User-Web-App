@@ -338,7 +338,7 @@ const AppointmentDetails = () => {
                 <Button
                   size="sm" variant="outline" colorScheme="green" borderRadius="full"
                   rightIcon={<AiOutlineDownload fontSize={16} />}
-                  onClick={() => printPDF(`${api}/laboratory_request/generatePDF/${request.id}`)}
+                  onClick={() => printPDF(`${api}/laboratory_requests/generatePDF/${request.id}`)}
                 >
                   Lab Request #{index + 1}
                 </Button>

@@ -159,6 +159,7 @@ class AllTransactionController extends Controller
           DB::rollBack();
           return Helpers::errorResponse("error");
         }
+        $dataModel->patient_code = $patientRecord->patient_code;
         $walletRecord = $this->getWalletForPatientCode($patientRecord->patient_code);
         $oldAmount = $walletRecord ? (float) $walletRecord->balance : 0.0;
         $newAmount = $request->transaction_type == "Credited"
@@ -239,12 +240,13 @@ class AllTransactionController extends Controller
           DB::rollBack();
           return Helpers::errorResponse("error");
         }
-        $walletRecord2 = $this->getWalletForPatientCode($patientRecord2->patient_code, (int) $request->user_id);
+        $dataModel->patient_code = $patientRecord2->patient_code;
+        $walletRecord2 = $this->getWalletForPatientCode($patientRecord2->patient_code);
         $oldAmount = $walletRecord2 ? (float) $walletRecord2->balance : 0.0;
         $newAmount = $request->transaction_type == "Credited"
             ? $oldAmount + (float) $request->amount
             : $oldAmount - (float) $request->amount;
-        $walletUpdateRes = $this->upsertWalletBalance($patientRecord2->patient_code, (int) $request->user_id, (float) $newAmount, $timeStamp);
+        $walletUpdateRes = $this->upsertWalletBalance($patientRecord2->patient_code, (float) $newAmount, $timeStamp);
 
         if (!$walletUpdateRes) {
             dd("error3");
@@ -355,7 +357,7 @@ class AllTransactionController extends Controller
         'users.f_name as user_f_name',
         'users.l_name as user_l_name'
       )
-      ->LeftJoin('patients', 'patients.id', '=', 'all_transaction.patient_id')
+      ->LeftJoin('patients', 'patients.patient_code', '=', 'all_transaction.patient_code')
       ->LeftJoin('users', 'users.id', '=', 'all_transaction.user_id')
       ->Where('all_transaction.id', '=', $id)
       ->OrderBy('all_transaction.created_at', 'DESC')
@@ -384,7 +386,7 @@ class AllTransactionController extends Controller
         'users.l_name as user_l_name',
         'appointments.doct_id'
       )
-      ->leftJoin('patients', 'patients.id', '=', 'all_transaction.patient_id')
+      ->leftJoin('patients', 'patients.patient_code', '=', 'all_transaction.patient_code')
       ->leftJoin('users', 'users.id', '=', 'all_transaction.user_id')
       ->leftJoin('appointments', 'appointments.id', '=', 'all_transaction.appointment_id')
       ->orderBy('all_transaction.created_at', 'DESC');
@@ -400,6 +402,10 @@ class AllTransactionController extends Controller
 
     if ($request->filled('user_id')) {
       $query->where("all_transaction.user_id", "=", $request->user_id);
+    }
+
+    if ($request->filled('patient_code')) {
+      $query->where("all_transaction.patient_code", "=", $request->patient_code);
     }
 
 
@@ -427,7 +433,7 @@ class AllTransactionController extends Controller
           ->orWhereRaw("CONCAT(users.f_name, ' ' , users.l_name) LIKE ?", ["%$search%"])
           ->orWhere('all_transaction.id', 'like', "%$search%")
           ->orWhere('all_transaction.user_id', 'like', "%$search%")
-          ->orWhere('all_transaction.patient_id', 'like', "%$search%")
+          ->orWhere('all_transaction.patient_code', 'like', "%$search%")
           ->orWhere('all_transaction.appointment_id', 'like', "%$search%")
           ->orWhere('all_transaction.payment_transaction_id', 'like', "%$search%")
           ->orWhere('all_transaction.amount', 'like', "%$search%")

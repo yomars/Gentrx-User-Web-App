@@ -36,8 +36,12 @@ import moment from "moment";
 import { setStorageItem } from "../lib/storage";
 
 const getTransaction = async () => {
-  // wallet_transactions keyed by patient ID (stored as user_id in all_transactions table)
-  let url = `get_all_transaction?user_id=${user?.id}&is_wallet_txn=1`;
+  // wallet transactions are now keyed by patient_code in all_transaction.
+  const patientCode = user?.patient_code;
+  if (!patientCode) {
+    return [];
+  }
+  let url = `get_all_transaction?patient_code=${encodeURIComponent(patientCode)}&is_wallet_txn=1`;
   try {
     const trasection = await GET(url);
     if (trasection.response != 200) {
