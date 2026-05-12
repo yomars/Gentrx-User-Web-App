@@ -41,7 +41,7 @@ import Loading from "../Components/Loading";
 import { ADD, GET } from "../Controllers/ApiControllers";
 import imageBaseURL from "../Controllers/image";
 import { CalendarIcon } from "@chakra-ui/icons";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import user from "../Controllers/user";
 import showToast from "../Controllers/ShowToast";
 import api from "../Controllers/api";
@@ -97,10 +97,15 @@ const AppointmentDetails = () => {
     return res.data;
   };
   const getQueueNumber = async () => {
-    const res = await GET(
-      `get_appointment_check_in?doctor_id=${doctorIdentifier}&start_date=${appointmentData?.date}&end_date=${appointmentData?.date}`
-    );
-    return res.data;
+    for (const candidate of queueDoctorCandidates) {
+      const res = await GET(
+        `get_appointment_check_in?doctor_id=${candidate}&start_date=${appointmentData?.date}&end_date=${appointmentData?.date}`
+      );
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    }
+    return [];
   };
   const getPatientFiles = async () => {
     const res = await GET(
@@ -134,6 +139,23 @@ const AppointmentDetails = () => {
     appointmentData,
     "AppointmentDetails:get_patient_file"
   );
+  const queueDoctorCandidates = useMemo(() => {
+    const candidates = [];
+    const legacyDoctorId = appointmentData?.doct_id;
+    const canonicalDoctorId = appointmentData?.doctor_id;
+
+    if (legacyDoctorId !== undefined && legacyDoctorId !== null && String(legacyDoctorId).trim() !== "") {
+      candidates.push(String(legacyDoctorId));
+    }
+    if (canonicalDoctorId !== undefined && canonicalDoctorId !== null && String(canonicalDoctorId).trim() !== "") {
+      const normalizedCanonical = String(canonicalDoctorId);
+      if (!candidates.includes(normalizedCanonical)) {
+        candidates.push(normalizedCanonical);
+      }
+    }
+
+    return candidates;
+  }, [appointmentData?.doct_id, appointmentData?.doctor_id]);
 
   // Add the missing queries:
   const { 
@@ -141,9 +163,9 @@ const AppointmentDetails = () => {
     isFetching: queueIsFetching,
     refetch 
   } = useQuery({
-    queryKey: ["queue", doctorIdentifier, appointmentData?.date],
+    queryKey: ["queue", queueDoctorCandidates.join("|"), appointmentData?.date],
     queryFn: getQueueNumber,
-    enabled: !!doctorIdentifier && !!appointmentData?.date && appointmentData?.type === "OPD" && appointmentData?.status === "Confirmed",
+    enabled: queueDoctorCandidates.length > 0 && !!appointmentData?.date && appointmentData?.type === "OPD" && appointmentData?.status === "Confirmed",
   });
 
   const { isLoading: patientFilesLoading, data: patientFilesData } = useQuery({
@@ -166,7 +188,7 @@ const AppointmentDetails = () => {
 
   const { month, date, year } = formatDate(appointmentData?.date);
   const queueNumb = queueData?.findIndex((queue) => {
-    return queue?.appointment_id == id;
+    return Number(queue?.appointment_id) === Number(id);
   });
 
   if (
@@ -265,7 +287,7 @@ const AppointmentDetails = () => {
                   flex={1} minW="120px" rightIcon={<IoMdRefresh />}
                   onClick={() => {
                     // @ts-ignore
-                    queryClient.invalidateQueries(["queue", doctorIdentifier, appointmentData?.date]);
+                    queryClient.invalidateQueries(["queue", queueDoctorCandidates.join("|"), appointmentData?.date]);
                     refetch();
                   }}
                 >

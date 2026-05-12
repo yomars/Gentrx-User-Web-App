@@ -97,6 +97,8 @@ const AppointmentSuccess = () => {
   const QrData = {
     booking_number: bookingNumber || null,
     appointment_id: appointmentId,
+    doctor_id: data?.doctor_id ?? null,
+    doct_id: data?.doct_id ?? null,
     date: data?.date,
     time: data?.time_slots,
   };
