@@ -34,7 +34,8 @@ const AppointmentSuccess = () => {
       return null;
     }
     const res = await GET_AUTH(currentUser.token, `get_appointment/${id}`);
-    if (res?.response !== 200) {
+    const isSuccess = res?.response === 200 || res?.status === true || res?.success === true;
+    if (!isSuccess) {
       throw new Error(res?.message || "Failed to fetch appointment details");
     }
     return res.data;

@@ -755,7 +755,7 @@ const Step3 = ({ setPatientDetails, setStep }) => {
 
             <Flex gap={5} justify={"end"} mt={8}>
               <Button w={"30%"} size={"sm"} onClick={() => setaddNew(false)}>
-                Cancle
+                Cancel
               </Button>
               <Button
                 w={"40%"}

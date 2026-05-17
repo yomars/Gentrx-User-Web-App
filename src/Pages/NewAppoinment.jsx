@@ -120,10 +120,10 @@ function NewAppointment() {
   const [patientDetails, setpatientDetails] = useState(null);
 
   const handleNextStep = (nextStep) => {
-    if (appoinmentType.id === 3 && step === 1) {
+    if (appoinmentType?.id === 3 && step === 1) {
       setStep(3);
     }
-    if (appoinmentType.id === 3 && nextStep === 2) {
+    if (appoinmentType?.id === 3 && nextStep === 2) {
       return;
     }
 
@@ -470,16 +470,16 @@ const Step1 = ({
                     borderRadius={8}
                     cursor={
                       doc.stop_booking === 1 ||
-                      stopBooking.value === true ||
-                      stopBooking.value === "true"
+                      stopBooking?.value === true ||
+                      stopBooking?.value === "true"
                         ? "not-allowed"
                         : "pointer"
                     }
                     onClick={() => {
                       if (
                         doc.stop_booking === 1 ||
-                        stopBooking.value === true ||
-                        stopBooking.value === "true"
+                        stopBooking?.value === true ||
+                        stopBooking?.value === "true"
                       ) {
                         return;
                       }
@@ -523,9 +523,9 @@ const Step1 = ({
                         </Text>
                       </Box>
                     </Flex>
-                    {doc?.stop_booking === 1 ||
-                      stopBooking.value === true ||
-                      (stopBooking.value === "true" && (
+                    {(doc?.stop_booking === 1 ||
+                      stopBooking?.value === true ||
+                      stopBooking?.value === "true") && (
                         <Alert
                           status="error"
                           size={"xs"}
@@ -540,7 +540,7 @@ const Step1 = ({
                             Currently Not Accepting Appointments
                           </AlertTitle>
                         </Alert>
-                      ))}
+                      )}
                     <AnimatePresence>
                       {Doctordetails?.id === doc.id && (
                         <motion.div
@@ -1321,7 +1321,7 @@ const Step4 = ({
   };
 
   const taxAmount = (amount) => {
-    return (Number(amount) * (Number(tax.value) || 0)) / 100;
+    return (Number(amount) * (Number(tax?.value) || 0)) / 100;
   };
   const discountAmount = (amount, value) => {
     if (value) {
@@ -1383,7 +1383,7 @@ const Step4 = ({
       paymentStatusOverride || (selectedMethod === 2 ? "Unpaid" : "Paid"),
     fee: feeAmount,
     service_charge: 0,
-    tax: tax.value,
+    tax: tax?.value,
     unit_tax_amount: unitTaxAmount,
     total_amount: payableTotal,
     unit_total_amount: unitTotalAmount,
@@ -1522,7 +1522,7 @@ const Step4 = ({
     payment_status: "Paid",
     fee: String(feeAmount.toFixed(2)), // Convert to string
     service_charge: "0.0", // Ensure this is a string with decimal
-    tax: String(tax.value), // Convert to string
+    tax: String(tax?.value ?? "0"), // Convert to string
     unit_tax_amount: String(
       unitTaxAmount.toFixed(2)
     ), // String and formatted

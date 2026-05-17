@@ -257,7 +257,7 @@ export default function Main() {
                 />
                 <Route path="*" element={<NotFoundPage />} />
                 {/* login signup */}
-                <Route path="/Login" element={<Login relode={true} />} />
+                <Route path="/login" element={<Login relode={true} />} />
                 <Route path="/signup" element={<Signup relode={true} />} />
                 <Route path="/contact-us" element={<ContactUs />} />
                 <Route

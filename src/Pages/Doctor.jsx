@@ -96,9 +96,9 @@ export default function Doctor() {
   const isDisableTypeButton = (ID, doc) => {
     switch (ID) {
       case 1:
-        return doc.video_appointment;
-      case 2:
         return doc.clinic_appointment;
+      case 2:
+        return doc.video_appointment;
       case 3:
         return doc.emergency_appointment;
       default:
@@ -176,7 +176,7 @@ export default function Doctor() {
           color="primary.text"
           mb={{ base: 6, md: 8 }}
         >
-          Doctor's Profile Details
+          Doctor&apos;s Profile Details
         </Text>
 
         <Grid
