@@ -33,6 +33,7 @@ import BloodSugar from "./Vitals/BloodSugar";
 import Weight from "./Vitals/Weigjht";
 import Temperature from "./Vitals/Temp";
 import SpO2 from "./Vitals/Spo2";
+import logoutFn from "../Controllers/logout";
 
 const getLast7DaysRange = () => {
   const endDate = moment().startOf("day");
@@ -41,6 +42,9 @@ const getLast7DaysRange = () => {
 };
 
 const getFamilyMemberData = async () => {
+  if (!user?.id) {
+    throw new Error("Missing user id.");
+  }
   const res = await GET(`get_family_members/user/${user.id}`);
   return res.data;
 };
@@ -53,7 +57,7 @@ function Vitals() {
       l_name: user?.l_name || "Self",
       isSelf: true,
     }),
-    []
+    [user?.id, user?.f_name, user?.l_name]
   );
   const [selectedMember, setSelectedMember] = useState(selfMember);
   const [isOpen, setIsOpen] = useState(false);
@@ -71,7 +75,14 @@ function Vitals() {
   const { data: familyMembers, isLoading: familyLoading } = useQuery({
     queryKey: ["family-members"],
     queryFn: getFamilyMemberData,
+    enabled: !!user?.id,
   });
+
+  useEffect(() => {
+    if (!user?.id || !user?.token) {
+      logoutFn();
+    }
+  }, []);
 
   useEffect(() => {
     // Keep a safe default so vitals can be added for the patient even

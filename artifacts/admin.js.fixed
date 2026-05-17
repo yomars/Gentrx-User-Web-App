@@ -1,0 +1,33 @@
+const adminBase =
+  import.meta.env.BASE_URL && import.meta.env.BASE_URL !== "/"
+    ? import.meta.env.BASE_URL
+    : "/admin/";
+
+let admin = null;
+try {
+  const stored = localStorage.getItem("admin");
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    // Backward compat: old sessions stored role as a plain string; new format is {role_id, name}
+    if (parsed && typeof parsed.role === "string") {
+      localStorage.removeItem("admin");
+      window.location.replace(adminBase);
+    } else {
+      admin = parsed
+        ? {
+            ...parsed,
+            token:
+              parsed.token ||
+              parsed.api_token ||
+              parsed.access_token ||
+              parsed.auth_token ||
+              null,
+            id: parsed.id || parsed.admin_id || parsed.user_id || null,
+          }
+        : null;
+    }
+  }
+} catch (e) {
+  localStorage.removeItem("admin");
+}
+export default admin;

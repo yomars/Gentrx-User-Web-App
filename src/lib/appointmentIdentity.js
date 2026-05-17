@@ -14,7 +14,7 @@ export const USE_CANONICAL_APPOINTMENT_KEYS = toBooleanFlag(
 
 const ENABLE_FALLBACK_LOGS = toBooleanFlag(
   import.meta.env.VITE_LOG_APPOINTMENT_FALLBACKS,
-  true
+  false
 );
 
 const isIdentifierPresent = (value) => value !== undefined && value !== null && String(value).trim() !== "";
@@ -44,6 +44,7 @@ const warnFallback = (field, context, canonicalValue, legacyValue) => {
   writeCounter(nextCount);
 
   if (!ENABLE_FALLBACK_LOGS) return;
+  if (nextCount > 5 && nextCount % 25 !== 0) return;
 
   const label = context || "unknown";
   console.warn(

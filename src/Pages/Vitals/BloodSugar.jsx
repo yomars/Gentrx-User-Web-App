@@ -55,8 +55,10 @@ import user from "../../Controllers/user";
 import showToast from "../../Controllers/ShowToast";
 import { useState } from "react";
 import {
+  buildVitalsMutationPayload,
   buildVitalsByMemberTypeEndpoint,
   invalidateVitalsQueries,
+  resolveVitalsMemberId,
   VITALS_QUERY_KEY,
   VITAL_TYPES,
 } from "./vitalsUtils";
@@ -98,8 +100,9 @@ function BloodSugar({ selectedMember, startDate, endDate }) {
   } = useDisclosure();
   const theme = useTheme();
   const getData = async () => {
+    const memberId = resolveVitalsMemberId(selectedMember, user);
     const endpoint = buildVitalsByMemberTypeEndpoint(
-      selectedMember.id,
+      memberId,
       VITAL_TYPES.SUGAR,
       startDate,
       endDate
@@ -110,7 +113,7 @@ function BloodSugar({ selectedMember, startDate, endDate }) {
   const { data, isLoading } = useQuery({
     queryKey: [...VITALS_QUERY_KEY, "sugar", selectedMember?.id, startDate, endDate],
     queryFn: getData,
-    enabled: !!selectedMember,
+    enabled: !!resolveVitalsMemberId(selectedMember, user),
   });
 
   const chartData = data?.map((item) => ({
@@ -377,12 +380,18 @@ const AddNew = ({ onClose, isOpen, selectedMember }) => {
   });
 
   const onSubmit = (data) => {
-    let formData = {
-      ...data,
-      user_id: user.id,
-      family_member_id: selectedMember.id,
+    const memberId = resolveVitalsMemberId(selectedMember, user);
+    if (!memberId) {
+      showToast(toast, "error", "Session expired. Please log-in again.");
+      return;
+    }
+
+    const formData = buildVitalsMutationPayload({
+      data,
+      selectedMember,
+      currentUser: user,
       type: VITAL_TYPES.SUGAR,
-    };
+    });
     mutation.mutate(formData);
     // Reset the form after submission
   };
@@ -486,13 +495,19 @@ const Edit = ({ onClose, isOpen, selectedMember, data }) => {
   });
 
   const onSubmit = (dataFromInput) => {
-    let formData = {
-      ...dataFromInput,
-      id: data.id,
-      user_id: user.id,
-      family_member_id: selectedMember.id,
+    const memberId = resolveVitalsMemberId(selectedMember, user);
+    if (!memberId) {
+      showToast(toast, "error", "Session expired. Please log-in again.");
+      return;
+    }
+
+    const formData = buildVitalsMutationPayload({
+      data: dataFromInput,
+      selectedMember,
+      currentUser: user,
       type: VITAL_TYPES.SUGAR,
-    };
+      recordId: data.id,
+    });
     mutation.mutate(formData);
   };
   return (
