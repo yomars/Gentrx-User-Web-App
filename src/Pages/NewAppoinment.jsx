@@ -1550,7 +1550,7 @@ const Step4 = ({
 
   // payment data
 
-  if (isLoading || isUserLoading || bookedSlotesLoading) {
+ if (isLoading || isUserLoading || bookedSlotesLoading) {
     return <Loading />;
   }
   return (
@@ -1563,7 +1563,7 @@ const Step4 = ({
         Only One Step Away
       </Text>{" "}
       <Text fontSize={14} fontWeight={500} textAlign={"center"}>
-         Booking and Appointment
+        Pay And Book your Appointment
       </Text>{" "}
       <Divider my={2} />
       <Box w={{ base: "100%", md: "100%" }}>
@@ -1659,7 +1659,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            Appointment Token
+            Appointment Fee
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1667,7 +1667,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            {getfee(appoinmentType.title, Doctordetails)} 
+            {getfee(appoinmentType.title, Doctordetails)} {currency}
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1678,7 +1678,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-           --
+            Tax
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1686,7 +1686,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            {taxAmount(getfee(appoinmentType.title, Doctordetails))}
+            {taxAmount(getfee(appoinmentType.title, Doctordetails))} {currency}
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1728,7 +1728,7 @@ const Step4 = ({
               getfee(appoinmentType.title, Doctordetails),
               SelectedCoupon?.value
             )}{" "}
-            
+            {currency}
           </Text>{" "}
         </Flex>
       </Box>
@@ -1796,7 +1796,7 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  No Payment Required
+                  Pay Now
                 </Radio>
               )}
               {appoinmentType.id !== 2 && (
@@ -1809,7 +1809,7 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  --
+                  Pay At Hospital
                 </Radio>
               )}
 
@@ -1823,7 +1823,7 @@ const Step4 = ({
                   setMethod(e.target.value);
                 }}
               >
-                MCGI Free Checkup (Available Token 
+                Pay From Wallet (Available Balance {currency}
                 {walletAvailable})
               </Radio>
             </Stack>
@@ -1857,9 +1857,9 @@ const Step4 = ({
               showToast(
                 toast,
                 "error",
-                `Insufficient wallet balance. Please load ${(
-                  payableTotal - walletAvailable 
-                ).toFixed(0)} token or more before booking.`
+                `Insufficient wallet balance. Please load ${currency}${(
+                  payableTotal - walletAvailable
+                ).toFixed(2)} or more before booking.`
               );
               return;
             }
@@ -1879,9 +1879,9 @@ const Step4 = ({
             }
           }}
         >
-          Use Token 
+          Pay {currency}
           {getTotal(
-            getfee(appoinmentType.title, Doctordetails).toFixed(0),
+            getfee(appoinmentType.title, Doctordetails).toFixed(2),
             taxAmount(getfee(appoinmentType.title, Doctordetails).toFixed(2)),
             discountAmount(
               getfee(appoinmentType.title, Doctordetails),

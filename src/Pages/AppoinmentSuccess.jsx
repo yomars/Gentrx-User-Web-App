@@ -194,7 +194,7 @@ const AppointmentSuccess = () => {
       mt={10}
       bg={"#fff"}
     >
-      <VStack spacing={4}>
+<VStack spacing={4}>
         <Image
           boxSize="60px"
           objectFit="cover"
@@ -230,7 +230,7 @@ const AppointmentSuccess = () => {
             fontWeight={700}
             colorScheme={paymentToBadgeColor[savedPaymentStatus] || "gray"}
           >
-            Save QR Code for Checkin
+            Payment: {savedPaymentStatus}
           </Badge>
         </Flex>
 

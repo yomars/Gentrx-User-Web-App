@@ -1275,7 +1275,7 @@ const Step4 = ({
 
   // payment data
 
-  if (isLoading || isUserLoading || bookedSlotesLoading) {
+if (isLoading || isUserLoading || bookedSlotesLoading) {
     return <Loading />;
   }
   return (
@@ -1288,7 +1288,7 @@ const Step4 = ({
         Only One Step Away
       </Text>{" "}
       <Text fontSize={14} fontWeight={500} textAlign={"center"} color={"gray.600"}>
-        Booking And Appointment
+        Pay And Book your Appointment
       </Text>{" "}
       <Divider my={3} borderColor={"gray.200"} />
       <Box
@@ -1391,7 +1391,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            Appointment Token
+            Appointment Fee
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1399,7 +1399,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            {getfee(appoinmentType.title, Doctordetails)} 
+            {getfee(appoinmentType.title, Doctordetails)} {currency}
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1410,7 +1410,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-
+            Tax ({Doctordetails?.clinic_tax}%)
           </Text>{" "}
           <Text
             fontSize={15}
@@ -1418,7 +1418,7 @@ const Step4 = ({
             textAlign={"center"}
             color={"gray.600"}
           >
-            {taxAmount(getfee(appoinmentType.title, Doctordetails))} 
+            {taxAmount(getfee(appoinmentType.title, Doctordetails))} {currency}
           </Text>{" "}
         </Flex>
         <Flex justify={"space-between"} mb={1}>
@@ -1460,7 +1460,7 @@ const Step4 = ({
               getfee(appoinmentType.title, Doctordetails),
               SelectedCoupon?.value
             )}{" "}
-            
+            {currency}
           </Text>{" "}
         </Flex>
       </Box>
@@ -1483,7 +1483,7 @@ const Step4 = ({
             color={"gray.800"}
           >
             {payableTotal}{" "}
-            Token
+            {currency}
           </Text>{" "}
         </Flex>
 
@@ -1529,11 +1529,11 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  No Payment Required.
+                  Pay Now
                 </Radio>
               )}
               {appoinmentType.id !== 2 && (
-                <Radio disabled
+                <Radio
                   value={"2"}
                   fontWeight={700}
                   onChange={(e) => {
@@ -1542,7 +1542,7 @@ const Step4 = ({
                     setMethod(e.target.value);
                   }}
                 >
-                  MCGI Free Medical Services
+                  Pay At Hospital
                 </Radio>
               )}
               <Radio
@@ -1553,7 +1553,8 @@ const Step4 = ({
                   setMethod(e.target.value);
                 }}
               >
-                Use Appointment Token (Available Balance {walletAvailable})                
+                Pay From Wallet (Available Balance {currency}
+                {walletAvailable})
               </Radio>
             </Stack>
           </RadioGroup>
@@ -1610,7 +1611,8 @@ const Step4 = ({
             }
           }}
         >
-          MCGI Free Medical Services {payableTotal.toFixed(0)} Token 
+          Pay {currency}
+          {payableTotal.toFixed(2)}
         </Button>
         {bookingError && (
           <Alert status="error" mt={3} borderRadius={8} fontSize={13}>
