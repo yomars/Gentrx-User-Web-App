@@ -1348,7 +1348,11 @@ const Step4 = ({
   );
   const walletAvailable = Number(userData?.wallet_amount ?? userData?.balance ?? 0);
   const isWalletInsufficient = walletAvailable < payableTotal;
-  const canonicalDoctorId = Doctordetails?.id || Doctordetails?.doctor_id || null;
+  const canonicalDoctorId =
+    Doctordetails?.id ||
+    Doctordetails?.doctor_id ||
+    Doctordetails?.user_id ||
+    null;
   const canonicalPatientCode =
     patientDetails?.patient_code ||
     userData?.patient_code ||

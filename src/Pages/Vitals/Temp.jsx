@@ -49,7 +49,7 @@ import { useTheme } from "@emotion/react";
 import moment from "moment";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Loading from "../../Components/Loading";
-import { ADD, GET } from "../../Controllers/ApiControllers";
+import { ADD, GET_AUTH } from "../../Controllers/ApiControllers";
 import { useForm } from "react-hook-form";
 import user from "../../Controllers/user";
 import showToast from "../../Controllers/ShowToast";
@@ -109,7 +109,7 @@ function Temperature({ selectedMember, startDate, endDate }) {
       startDate,
       endDate
     );
-    const res = await GET(endpoint);
+    const res = await GET_AUTH(user.token, endpoint);
     return res.data;
   };
 
