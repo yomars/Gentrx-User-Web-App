@@ -42,6 +42,25 @@ const getLast7DaysRange = () => {
   return [startDate.toDate(), endDate.toDate()];
 };
 
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+
+const isLikelySelfMember = (member, currentUser) => {
+  const memberFirstName = normalizeText(member?.f_name);
+  const memberLastName = normalizeText(member?.l_name);
+  const userFirstName = normalizeText(currentUser?.f_name);
+  const userLastName = normalizeText(currentUser?.l_name);
+
+  if (memberFirstName && memberLastName && userFirstName && userLastName) {
+    if (memberFirstName === userFirstName && memberLastName === userLastName) {
+      return true;
+    }
+  }
+
+  const memberPhone = normalizeText(member?.phone);
+  const userPhone = normalizeText(currentUser?.phone);
+  return !!memberPhone && !!userPhone && memberPhone === userPhone;
+};
+
 const getFamilyMemberData = async () => {
   const patientCode = resolvePatientCode(user);
   if (!patientCode) {
@@ -71,6 +90,10 @@ function Vitals() {
     queryFn: getFamilyMemberData,
     enabled: !!patientCode,
   });
+  const members = Array.isArray(familyMembers) ? familyMembers : [];
+  const selfMember =
+    members.find((member) => isLikelySelfMember(member, user)) || members[0] || null;
+  const selfMemberId = selfMember?.id;
 
   useEffect(() => {
     if (!user?.id || !user?.token) {
@@ -82,14 +105,12 @@ function Vitals() {
     if (selectedMember) {
       return;
     }
-    const members = Array.isArray(familyMembers) ? familyMembers : [];
     if (members.length === 0) {
       return;
     }
 
-    const selfFromBackend = members.find((member) => member?.patient_code === patientCode);
-    setSelectedMember(selfFromBackend || members[0]);
-  }, [selectedMember, familyMembers, patientCode]);
+    setSelectedMember(selfMember || members[0]);
+  }, [selectedMember, members, selfMember]);
 
   const vitalsArr = [
     {
@@ -190,7 +211,7 @@ function Vitals() {
                 <FaUsers />
                 {selectedMember ? (
                   <Text>
-                    {selectedMember?.patient_code === patientCode
+                    {selectedMember?.id === selfMemberId
                       ? "Tracking: Myself"
                       : `Family Member : ${selectedMember.f_name} ${selectedMember.l_name}`}
                   </Text>
@@ -223,7 +244,7 @@ function Vitals() {
                     No family members yet. You can still track your own vitals.
                   </Box>
                 ) : (
-                  familyMembers.map((item) => (
+                  members.map((item) => (
                     <Box
                       key={item.id}
                       p={2}
@@ -237,7 +258,7 @@ function Vitals() {
                       alignItems={"center"}
                       gap={3}
                     >
-                      <FaUsers /> {item.patient_code === patientCode ? "Myself" : `${item.f_name} ${item.l_name}`}
+                      <FaUsers /> {item.id === selfMemberId ? "Myself" : `${item.f_name} ${item.l_name}`}
                     </Box>
                   ))
                 )}
