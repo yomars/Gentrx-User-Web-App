@@ -24,7 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import { GET } from "../Controllers/ApiControllers";
 import user from "../Controllers/user";
 import Loading from "../Components/Loading";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DateRangePicker from "@wojtekmaj/react-daterange-picker";
 import "@wojtekmaj/react-daterange-picker/dist/DateRangePicker.css";
 import "react-calendar/dist/Calendar.css";
@@ -34,6 +34,7 @@ import Weight from "./Vitals/Weigjht";
 import Temperature from "./Vitals/Temp";
 import SpO2 from "./Vitals/Spo2";
 import logoutFn from "../Controllers/logout";
+import { resolvePatientCode } from "./Vitals/vitalsUtils";
 
 const getLast7DaysRange = () => {
   const endDate = moment().startOf("day");
@@ -42,24 +43,17 @@ const getLast7DaysRange = () => {
 };
 
 const getFamilyMemberData = async () => {
-  if (!user?.id) {
-    throw new Error("Missing user id.");
+  const patientCode = resolvePatientCode(user);
+  if (!patientCode) {
+    throw new Error("Missing patient code.");
   }
-  const res = await GET(`get_family_members/user/${user.id}`);
+  const res = await GET(`get_family_members/patient/${encodeURIComponent(patientCode)}`);
   return res.data;
 };
 
 function Vitals() {
-  const selfMember = useMemo(
-    () => ({
-      id: user?.id,
-      f_name: user?.f_name || "My",
-      l_name: user?.l_name || "Self",
-      isSelf: true,
-    }),
-    [user?.id, user?.f_name, user?.l_name]
-  );
-  const [selectedMember, setSelectedMember] = useState(selfMember);
+  const patientCode = resolvePatientCode(user);
+  const [selectedMember, setSelectedMember] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [Range, setRange] = useState(getLast7DaysRange());
   const dateRangePickerRef = useRef(null);
@@ -73,9 +67,9 @@ function Vitals() {
   };
   const theme = useTheme();
   const { data: familyMembers, isLoading: familyLoading } = useQuery({
-    queryKey: ["family-members"],
+    queryKey: ["family-members", patientCode || "missing-patient-code"],
     queryFn: getFamilyMemberData,
-    enabled: !!user?.id,
+    enabled: !!patientCode,
   });
 
   useEffect(() => {
@@ -85,12 +79,17 @@ function Vitals() {
   }, []);
 
   useEffect(() => {
-    // Keep a safe default so vitals can be added for the patient even
-    // when there are no family members.
-    if (!selectedMember?.id) {
-      setSelectedMember(selfMember);
+    if (selectedMember) {
+      return;
     }
-  }, [selectedMember, selfMember]);
+    const members = Array.isArray(familyMembers) ? familyMembers : [];
+    if (members.length === 0) {
+      return;
+    }
+
+    const selfFromBackend = members.find((member) => member?.patient_code === patientCode);
+    setSelectedMember(selfFromBackend || members[0]);
+  }, [selectedMember, familyMembers, patientCode]);
 
   const vitalsArr = [
     {
@@ -191,7 +190,7 @@ function Vitals() {
                 <FaUsers />
                 {selectedMember ? (
                   <Text>
-                    {selectedMember.isSelf
+                    {selectedMember?.patient_code === patientCode
                       ? "Tracking: Myself"
                       : `Family Member : ${selectedMember.f_name} ${selectedMember.l_name}`}
                   </Text>
@@ -210,20 +209,6 @@ function Vitals() {
           {isOpen && (
             <Box mt={2} borderRadius="md" boxShadow="sm">
               <Stack spacing={2}>
-                <Box
-                  p={2}
-                  bg="#fff"
-                  borderRadius="md"
-                  cursor="pointer"
-                  _hover={{ bg: "primary.bg", color: "#fff" }}
-                  onClick={() => handleSelection(selfMember)}
-                  fontWeight={600}
-                  display={"flex"}
-                  alignItems={"center"}
-                  gap={3}
-                >
-                  <FaUsers /> Myself
-                </Box>
                 {!familyMembers || !familyMembers.length ? (
                   <Box
                     p={2}
@@ -252,7 +237,7 @@ function Vitals() {
                       alignItems={"center"}
                       gap={3}
                     >
-                      <FaUsers /> {item.f_name} {item.l_name}
+                      <FaUsers /> {item.patient_code === patientCode ? "Myself" : `${item.f_name} ${item.l_name}`}
                     </Box>
                   ))
                 )}

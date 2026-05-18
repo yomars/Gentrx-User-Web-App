@@ -108,7 +108,8 @@ function SpO2({ selectedMember, startDate, endDate }) {
       memberId,
       VITAL_TYPES.SPO2,
       startDate,
-      endDate
+      endDate,
+      user
     );
     const res = await GET_AUTH(user.token, endpoint);
 
@@ -116,9 +117,9 @@ function SpO2({ selectedMember, startDate, endDate }) {
   };
 
   const { data, isLoading } = useQuery({
-    queryKey: [...VITALS_QUERY_KEY, "spo2", selectedMember?.id, startDate, endDate],
+    queryKey: [...VITALS_QUERY_KEY, "spo2", selectedMember?.id || selectedMember?.patient_code || "self", startDate, endDate],
     queryFn: getData,
-    enabled: !!resolveVitalsMemberId(selectedMember, user),
+    enabled: !!(resolveVitalsMemberId(selectedMember, user) || user?.patient_code),
   });
 
   const chartData = data?.map((item) => ({

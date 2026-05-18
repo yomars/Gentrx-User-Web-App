@@ -105,16 +105,17 @@ function Weight({ selectedMember, startDate, endDate }) {
       memberId,
       VITAL_TYPES.WEIGHT,
       startDate,
-      endDate
+      endDate,
+      user
     );
     const res = await GET_AUTH(user.token, endpoint);
 
     return res.data;
   };
   const { data, isLoading } = useQuery({
-    queryKey: [...VITALS_QUERY_KEY, "weight", selectedMember?.id, startDate, endDate],
+    queryKey: [...VITALS_QUERY_KEY, "weight", selectedMember?.id || selectedMember?.patient_code || "self", startDate, endDate],
     queryFn: getData,
-    enabled: !!resolveVitalsMemberId(selectedMember, user),
+    enabled: !!(resolveVitalsMemberId(selectedMember, user) || user?.patient_code),
   });
 
   const chartData = data?.map((item) => ({

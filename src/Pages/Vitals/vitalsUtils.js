@@ -12,18 +12,30 @@ export const buildVitalsByMemberTypeEndpoint = (
   familyMemberId,
   type,
   startDate,
-  endDate
+  endDate,
+  currentUser
 ) => {
-  if (familyMemberId === undefined || familyMemberId === null || String(familyMemberId).trim() === "") {
-    throw new Error("Unable to load vitals: missing member id. Please sign in again.");
+  const params = new URLSearchParams({ type, start_date: startDate, end_date: endDate });
+
+  const normalizedFamilyMemberId =
+    familyMemberId === undefined || familyMemberId === null
+      ? ""
+      : String(familyMemberId).trim();
+
+  if (normalizedFamilyMemberId) {
+    params.set("family_member_id", normalizedFamilyMemberId);
   }
 
-  const params = new URLSearchParams({
-    family_member_id: String(familyMemberId),
-    type,
-    start_date: startDate,
-    end_date: endDate,
-  });
+  const patientCode = resolvePatientCode(currentUser);
+  if (patientCode) {
+    params.set("patient_code", patientCode);
+    params.set("owner_id", patientCode);
+    params.set("owner_type", "patient");
+  }
+
+  if (!normalizedFamilyMemberId && !patientCode) {
+    throw new Error("Unable to load vitals: missing patient identity. Please sign in again.");
+  }
 
   return `get_vitals_family_member_id_type?${params.toString()}`;
 };
@@ -32,7 +44,11 @@ export const invalidateVitalsQueries = (queryClient) =>
   queryClient.invalidateQueries({ queryKey: VITALS_QUERY_KEY });
 
 export const resolveVitalsMemberId = (selectedMember, currentUser) => {
-  return selectedMember?.id || currentUser?.id || null;
+  if (!selectedMember) return null;
+  if (selectedMember.isSelf) {
+    return selectedMember?.id || selectedMember?.family_member_id || null;
+  }
+  return selectedMember?.id || null;
 };
 
 const normalizeValue = (value) => {
@@ -66,7 +82,7 @@ export const buildVitalsMutationPayload = ({
   }
 
   const memberId = resolveVitalsMemberId(selectedMember, currentUser);
-  if (!selectedMember?.isSelf && memberId) {
+  if (memberId) {
     payload.family_member_id = memberId;
   }
 
