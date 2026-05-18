@@ -22,6 +22,7 @@
     "preflight:db": "node scripts/ci/preflight_env.mjs db",
     "smoke:deploy": "node scripts/ci/smoke_check.mjs",
     "smoke:clinics-city": "powershell -ExecutionPolicy Bypass -File scripts/ci/clinics_city_filter_smoke.ps1",
+    "smoke:vitals-patient-code": "powershell -ExecutionPolicy Bypass -File scripts/ci/vitals_patient_code_smoke.ps1",
     "verify:deploy-sync": "node scripts/ci/verify_deploy_sync.mjs",
     "check:system": "powershell -ExecutionPolicy Bypass -File scripts/ci/check_system_requirements.ps1",
     "db:schema:dry-run": "node scripts/db-sync/schema_sync.mjs dry-run",
