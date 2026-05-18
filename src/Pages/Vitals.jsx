@@ -24,7 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import { GET } from "../Controllers/ApiControllers";
 import user from "../Controllers/user";
 import Loading from "../Components/Loading";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DateRangePicker from "@wojtekmaj/react-daterange-picker";
 import "@wojtekmaj/react-daterange-picker/dist/DateRangePicker.css";
 import "react-calendar/dist/Calendar.css";
@@ -43,6 +43,18 @@ const getLast7DaysRange = () => {
 };
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const SELF_ALIAS_NAMES = new Set(["self patient", "myself", "my self", "self"]);
+
+const isSelfAliasByName = (member) => {
+  const fullName = `${normalizeText(member?.f_name)} ${normalizeText(member?.l_name)}`.trim();
+  if (SELF_ALIAS_NAMES.has(fullName)) {
+    return true;
+  }
+
+  const first = normalizeText(member?.f_name);
+  const last = normalizeText(member?.l_name);
+  return first === "myself" || (first === "self" && last === "patient");
+};
 
 const isLikelySelfMember = (member, currentUser) => {
   const memberFirstName = normalizeText(member?.f_name);
@@ -90,10 +102,35 @@ function Vitals() {
     queryFn: getFamilyMemberData,
     enabled: !!patientCode,
   });
-  const members = Array.isArray(familyMembers) ? familyMembers : [];
-  const selfMember =
-    members.find((member) => isLikelySelfMember(member, user)) || members[0] || null;
+  const members = useMemo(
+    () => (Array.isArray(familyMembers) ? familyMembers : []),
+    [familyMembers]
+  );
+  const selfMember = useMemo(
+    () => members.find((member) => isLikelySelfMember(member, user)) || members[0] || null,
+    [members]
+  );
   const selfMemberId = selfMember?.id;
+  const displayMembers = useMemo(() => {
+    const seen = new Set();
+    const list = [];
+
+    members.forEach((member) => {
+      if (!member?.id || seen.has(member.id)) {
+        return;
+      }
+
+      const isSelfLike = member.id === selfMemberId || isLikelySelfMember(member, user) || isSelfAliasByName(member);
+      if (isSelfLike && selfMemberId && member.id !== selfMemberId) {
+        return;
+      }
+
+      seen.add(member.id);
+      list.push(member);
+    });
+
+    return list;
+  }, [members, selfMemberId]);
 
   useEffect(() => {
     if (!user?.id || !user?.token) {
@@ -102,15 +139,20 @@ function Vitals() {
   }, []);
 
   useEffect(() => {
-    if (selectedMember) {
-      return;
-    }
-    if (members.length === 0) {
+    if (displayMembers.length === 0) {
       return;
     }
 
-    setSelectedMember(selfMember || members[0]);
-  }, [selectedMember, members, selfMember]);
+    const selectedStillVisible = selectedMember?.id
+      ? displayMembers.some((member) => member.id === selectedMember.id)
+      : false;
+
+    if (selectedStillVisible) {
+      return;
+    }
+
+    setSelectedMember(selfMember || displayMembers[0]);
+  }, [selectedMember, displayMembers, selfMember]);
 
   const vitalsArr = [
     {
@@ -230,7 +272,7 @@ function Vitals() {
           {isOpen && (
             <Box mt={2} borderRadius="md" boxShadow="sm">
               <Stack spacing={2}>
-                {!familyMembers || !familyMembers.length ? (
+                {!displayMembers.length ? (
                   <Box
                     p={2}
                     bg="#fff"
@@ -244,7 +286,7 @@ function Vitals() {
                     No family members yet. You can still track your own vitals.
                   </Box>
                 ) : (
-                  members.map((item) => (
+                  displayMembers.map((item) => (
                     <Box
                       key={item.id}
                       p={2}
