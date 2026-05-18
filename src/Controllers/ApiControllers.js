@@ -105,6 +105,10 @@ const handleSessionExpiration = (error) => {
     );
   }
 
+  if (error?.response?.data?.message) {
+    return new Error(String(error.response.data.message));
+  }
+
   return error instanceof Error
     ? error
     : new Error(error?.response?.data?.message || "Request failed");
@@ -241,6 +245,27 @@ const DELETE = async (token, endPoint, data) => {
   }
 };
 
+const POST_JSON = async (token, endPoint, data) => {
+  const safeToken = ensureAuthToken(token);
+  const safeData = sanitizePayload(withAuthPayloadFallback(data, safeToken));
+  var config = {
+    method: "post",
+    maxBodyLength: Infinity,
+    url: `${api}/${endPoint}`,
+    headers: {
+      Authorization: GenerateToken(safeToken),
+      "Content-Type": "application/json",
+    },
+    data: safeData,
+  };
+  try {
+    const response = await axios(config);
+    return normalizeMediaPayload(response.data);
+  } catch (error) {
+    return handleMutationError(error);
+  }
+};
+
 const UPLOAD = async (token, url, data) => {
   const safeToken = ensureAuthToken(token);
   const safeData = sanitizePayload(withAuthPayloadFallback(data, safeToken));
@@ -262,4 +287,4 @@ const UPLOAD = async (token, url, data) => {
   }
 };
 
-export { GET, GET_AUTH, ADD, DELETE, UPDATE, UPLOAD, ADDMulti };
+export { GET, GET_AUTH, ADD, DELETE, UPDATE, UPLOAD, ADDMulti, POST_JSON };

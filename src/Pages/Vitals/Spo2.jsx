@@ -49,7 +49,7 @@ import { useTheme } from "@emotion/react";
 import moment from "moment";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Loading from "../../Components/Loading";
-import { ADD, GET_AUTH } from "../../Controllers/ApiControllers";
+import { GET_AUTH, POST_JSON } from "../../Controllers/ApiControllers";
 import { useForm } from "react-hook-form";
 import user from "../../Controllers/user";
 import showToast from "../../Controllers/ShowToast";
@@ -64,7 +64,7 @@ import {
 } from "./vitalsUtils";
 
 const addData = async (data) => {
-  const res = await ADD(user.token, "add_vitals", data);
+  const res = await POST_JSON(user.token, "add_vitals", data);
   if (res.response !== 200) {
     throw new Error(res.message);
   }
@@ -72,7 +72,7 @@ const addData = async (data) => {
 };
 
 const handleDelete = async (data) => {
-  const res = await ADD(user.token, "delete_vitals", data);
+  const res = await POST_JSON(user.token, "delete_vitals", data);
   if (res.response !== 200) {
     throw new Error(res.message);
   }
@@ -80,7 +80,7 @@ const handleDelete = async (data) => {
 };
 
 const handleUpdate = async (data) => {
-  const res = await ADD(user.token, "update_vitals", data);
+  const res = await POST_JSON(user.token, "update_vitals", data);
   if (res.response !== 200) {
     throw new Error(res.message);
   }
