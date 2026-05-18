@@ -90,7 +90,8 @@ export const buildVitalsMutationPayload = ({
     payload.user_id = currentUser.id;
   }
 
-  const patientCode = resolvePatientCode(currentUser);
+  const patientCode =
+    resolvePatientCode(currentUser) || normalizeValue(selectedMember?.patient_code);
   if (patientCode) {
     payload.patient_code = patientCode;
     payload.owner_id = patientCode;
