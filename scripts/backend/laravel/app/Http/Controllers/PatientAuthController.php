@@ -90,14 +90,41 @@ class PatientAuthController extends Controller
      * Public endpoint — no authentication required.
      * Returns: id, name, clinic_code for each active clinic.
      */
-    public function getClinics()
+    public function getClinics(Request $request)
     {
         try {
-            $clinics = DB::table('clinics')
-                ->where('active', 1)
-                ->select('id', 'title', 'clinic_code')
-                ->orderBy('title')
-                ->get();
+            $cityId = $request->query('city_id');
+            $limit = $request->query('limit');
+
+            $query = DB::table('clinics as c')
+                ->leftJoin('cities as ci', 'ci.id', '=', 'c.city_id')
+                ->where('c.active', 1)
+                ->where(function ($subQuery) {
+                    $subQuery->whereNull('c.is_active')
+                        ->orWhere('c.is_active', 1);
+                })
+                ->select(
+                    'c.id',
+                    'c.title',
+                    'c.clinic_code',
+                    'c.city_id',
+                    'c.image',
+                    'c.phone',
+                    'c.email',
+                    'c.address',
+                    DB::raw('ci.title as city_title')
+                )
+                ->orderBy('c.title');
+
+            if (is_numeric($cityId) && (int) $cityId > 0) {
+                $query->where('c.city_id', (int) $cityId);
+            }
+
+            if (is_numeric($limit) && (int) $limit > 0) {
+                $query->limit(min((int) $limit, 100));
+            }
+
+            $clinics = $query->get();
 
             return response()->json([
                 'response' => 200,

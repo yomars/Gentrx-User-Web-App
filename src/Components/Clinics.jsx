@@ -18,20 +18,20 @@ import { Link } from "react-router-dom";
 import ErrorPage from "../Pages/ErrorPage";
 import { useCity } from "../Context/SelectedCity";
 import NotAvailable from "./NotAvailable";
+import { buildClinicEndpoint } from "../lib/clinicQuery";
 
 export default function Clinics() {
   const { selectedCity } = useCity();
+  const selectedCityId = selectedCity?.id ? String(selectedCity.id) : "";
 
   const getData = async () => {
-    const url = selectedCity
-      ? `get_clinic?start=0&end=3&active=1&city_id=${selectedCity.id}`
-      : `get_clinic?start=0&end=3&active=1`;
+    const url = buildClinicEndpoint({ selectedCity, limit: 3 });
     const res = await GET(url);
-    return res.data;
+    return Array.isArray(res?.data) ? res.data : [];
   };
 
   const { isLoading, data, error } = useQuery({
-    queryKey: ["clinics", selectedCity?.id],
+    queryKey: ["clinics", "home", selectedCityId],
     queryFn: getData,
   });
 

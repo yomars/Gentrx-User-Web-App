@@ -21,20 +21,20 @@ import ErrorPage from "../Pages/ErrorPage";
 import { useCity } from "../Context/SelectedCity";
 import NotAvailable from "../Components/NotAvailable";
 import LocationSeletor from "../Components/LocationSeletor";
+import { buildClinicEndpoint } from "../lib/clinicQuery";
 
 export default function Clinics() {
   const { selectedCity } = useCity();
+  const selectedCityId = selectedCity?.id ? String(selectedCity.id) : "";
 
   const getData = async () => {
-    const url = selectedCity
-      ? `get_clinic?active=1&city_id=${selectedCity.id}`
-      : `get_clinic?active=1`;
+    const url = buildClinicEndpoint({ selectedCity });
     const res = await GET(url);
-    return res.data;
+    return Array.isArray(res?.data) ? res.data : [];
   };
 
   const { isLoading, data, error } = useQuery({
-    queryKey: ["clinics", selectedCity?.id, "1000"],
+    queryKey: ["clinics", selectedCityId],
     queryFn: getData,
   });
 
