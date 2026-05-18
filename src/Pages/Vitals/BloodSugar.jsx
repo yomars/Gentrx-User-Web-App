@@ -595,9 +595,13 @@ const DeleteData = ({ onClose, isOpen, selectedMember, data }) => {
   const toast = useToast();
   const mutation = useMutation({
     mutationFn: async () => {
-      let formData = {
-        id: data.id,
-      };
+      const formData = buildVitalsMutationPayload({
+        data: {},
+        selectedMember,
+        currentUser: user,
+        type: VITAL_TYPES.SUGAR,
+        recordId: data.id,
+      });
       await handleDelete(formData);
     },
     onSuccess: () => {
