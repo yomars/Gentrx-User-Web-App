@@ -6,7 +6,9 @@
   FormControl,
   Grid,
   GridItem,
+  HStack,
   Image,
+  Icon,
   Input,
   SkeletonCircle,
   SkeletonText,
@@ -23,6 +25,7 @@ import RatingStars from "../Hooks/RatingStars";
 import { BsHospitalFill } from "react-icons/bs";
 import { ImLocation } from "react-icons/im";
 import { FaUserAlt } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 import LocationSeletor from "../Components/LocationSeletor";
 import NotAvailable from "../Components/NotAvailable";
 import { buildDoctorEndpoint } from "../lib/doctorQuery";
@@ -72,18 +75,50 @@ function SearchPage() {
 
   return (
     <Box>
-      <Box bg={"primary.main"} p={4} py={{ base: "4", md: "10" }}>
-        <Box className="container">
-          <Text
-            fontFamily={"Quicksand, sans-serif"}
-            fontSize={{ base: 20, md: 28 }}
-            fontWeight={700}
-            textAlign={"center"}
-            mt={0}
-            color={"#fff"}
-          >
-            Search doctor
-          </Text>
+      <Box
+        bg="linear-gradient(135deg, #34C38F 0%, #2db580 100%)"
+        pt={{ base: 8, md: 12 }}
+        pb={{ base: 12, md: 16 }}
+        px={4}
+        position="relative"
+        overflow="hidden"
+      >
+        <Box
+          position="absolute"
+          top="-40px"
+          right="-40px"
+          w="200px"
+          h="200px"
+          borderRadius="full"
+          bg="whiteAlpha.100"
+        />
+        <Box
+          position="absolute"
+          bottom="-60px"
+          left="-20px"
+          w="160px"
+          h="160px"
+          borderRadius="full"
+          bg="whiteAlpha.50"
+        />
+
+        <Box className="container" position="relative">
+          <HStack spacing={3} justify="center">
+            <Box bg="whiteAlpha.200" p={2} borderRadius="12px">
+              <Icon as={FaSearch} color="white" boxSize={5} />
+            </Box>
+            <Text
+              fontFamily={"Quicksand, sans-serif"}
+              fontSize={{ base: "xl", md: "2xl" }}
+              fontWeight={800}
+              textAlign="center"
+              mt={0}
+              color="white"
+              letterSpacing="-0.02em"
+            >
+              Search doctor
+            </Text>
+          </HStack>
         </Box>
       </Box>
       <Box className="container" mt={4}>
@@ -103,15 +138,27 @@ function SearchPage() {
                   <Input
                     borderLeftRadius={{ base: 6, md: 0 }}
                     borderRightRadius={{ base: 6, md: 0 }}
+                    bg="#123A74"
+                    color="#FFFFFF"
+                    borderColor="#123A74"
                     autoFocus={true}
                     onChange={(e) => setsearchTerm(e.target.value)}
-                    placeholder="Search for doctors, clinics, and specializations."
+                    placeholder="Search for Specialists."
                     value={searchTerm}
+                    _placeholder={{ color: "rgba(255, 255, 255, 0.72)" }}
+                    _hover={{ borderColor: "#123A74" }}
+                    _focusVisible={{
+                      borderColor: "#123A74",
+                      boxShadow: "0 0 0 1px #123A74",
+                    }}
                   />
                 </FormControl>
                 <Button
                   borderLeftRadius={{ base: 6, md: 0 }}
-                  colorScheme="facebook"
+                  bg="#123A74"
+                  color="#FFFFFF"
+                  _hover={{ bg: "#0F3161" }}
+                  _active={{ bg: "#0B244A" }}
                   onClick={() => {
                     if (searchTerm) {
                       setSearchParams({ search: searchTerm });

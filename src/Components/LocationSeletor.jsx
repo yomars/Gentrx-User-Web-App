@@ -202,23 +202,23 @@ const LocationSeletor = ({ type }) => {
             as={Button}
             leftIcon={<FaMapMarkerAlt />}
             variant={"ghost"}
-            color={"gray.900"}
-            _hover={{ bg: "none", borderColor: "gray.300" }}
-            _active={{ bg: "none" }}
+            color={"white"}
+            _hover={{ bg: "#123A74", borderColor: "#123A74" }}
+            _active={{ bg: "#123A74" }}
             rightIcon={<BiChevronDown />}
             fontSize={{ base: "sm", md: "md" }}
             border={"1px solid"}
-            borderColor={"gray.200"}
+            borderColor={"#123A74"}
             px={4}
             w={"100%"}
             borderRightRadius={{ base: 1, md: 0 }}
             borderRight={{ base: "1px solid", md: "none" }}
-            borderRightColor={{ base: "gray.200", md: "none" }}
+            borderRightColor={{ base: "#123A74", md: "none" }}
             borderRadius={{ base: "md", md: 0 }}
             borderLeftRadius={{ base: "md", md: "md" }}
             textAlign={"left"}
             fontWeight={600}
-            bg={"white"}
+            bg={"#123A74"}
           >
             {isLoading ? (
               <LoadingText />
