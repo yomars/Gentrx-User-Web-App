@@ -623,6 +623,7 @@ app.post('/api/v1/add_payment', async (req, res) => {
 
         const chargeAmount = toMoney(service_charge ?? amount, 0);
         const paymentReference = String(payment_transaction_id || transaction_reference || '').trim() || null;
+        const walletDistribution = normalizeOwnerWalletIdentity(req.body || {});
 
         // Wallet deduction for wallet-based payments (atomic, with balance lock)
         if (is_wallet_txn) {
@@ -637,6 +638,20 @@ app.post('/api/v1/add_payment', async (req, res) => {
                 `INSERT INTO wallet_transactions (wallet_id, patient_code, appointment_id, amount, type, description) VALUES ($1,$2,$3,$4,'debit',$5)`,
                 [wallet.id, resolvedPatientCode, appointment_id, chargeAmount, invoice_description || 'Appointment Payment']
             );
+        }
+
+        if (String(payment_status || '').trim().toLowerCase() === 'paid') {
+            await applyWalletDistributionCredits(client, {
+                appointmentId: appointment_id,
+                patientCode: resolvedPatientCode,
+                invoiceDescription: invoice_description || 'Appointment Payment',
+                doctorOwnerId: walletDistribution.doctorOwnerId,
+                clinicOwnerId: walletDistribution.clinicOwnerId,
+                pipeOwnerId: walletDistribution.pipeOwnerId,
+                doctorFee: walletDistribution.doctorFee,
+                clinicFee: walletDistribution.clinicFee,
+                pipeFee: walletDistribution.pipeFee,
+            });
         }
 
         const py = await client.query(
@@ -732,6 +747,7 @@ app.post('/api/v1/confirm_schedule_wallet_payment', async (req, res) => {
         }
 
         const paymentAmount = toMoney(service_charge ?? amount, 0);
+        const walletDistribution = normalizeOwnerWalletIdentity(req.body || {});
         if (paymentAmount < 0) {
             await client.query('ROLLBACK');
             return res.status(422).json({
@@ -773,6 +789,18 @@ app.post('/api/v1/confirm_schedule_wallet_payment', async (req, res) => {
                 ]
             );
         }
+
+        await applyWalletDistributionCredits(client, {
+            appointmentId,
+            patientCode,
+            invoiceDescription: invoice_description || 'Appointment payment',
+            doctorOwnerId: walletDistribution.doctorOwnerId,
+            clinicOwnerId: walletDistribution.clinicOwnerId,
+            pipeOwnerId: walletDistribution.pipeOwnerId,
+            doctorFee: walletDistribution.doctorFee,
+            clinicFee: walletDistribution.clinicFee,
+            pipeFee: walletDistribution.pipeFee,
+        });
 
         const walletPaymentReference = String(payment_transaction_id || transaction_reference || '').trim() || `wallet_${Date.now()}`;
 
@@ -2959,6 +2987,200 @@ function normalizePatientWalletIdentity(source = {}) {
     };
 }
 
+function normalizeOwnerWalletIdentity(source = {}) {
+    const toTrimmedString = (value) => String(value || '').trim();
+
+    const doctorOwnerId = toTrimmedString(
+        source.doctor_wallet_owner_id || source.doct_id || source.doctor_id
+    );
+    const clinicOwnerId = toTrimmedString(
+        source.clinic_wallet_owner_id || source.clinic_id
+    );
+    const pipeOwnerId = toTrimmedString(source.pipe_wallet_owner_id);
+
+    const doctorFee = toMoney(source.doctor_fee ?? source.opd_fee, 0);
+    const clinicFee = toMoney(source.clinic_fee, 0);
+    const pipeFee = toMoney(source.pipe_fee, 0);
+    const fallbackDoctorFee = toMoney(source.fee ?? source.amount, 0);
+
+    if (doctorFee === 0 && clinicFee === 0 && pipeFee === 0 && fallbackDoctorFee > 0) {
+        return {
+            doctorOwnerId,
+            clinicOwnerId,
+            pipeOwnerId,
+            doctorFee: fallbackDoctorFee,
+            clinicFee: 0,
+            pipeFee: 0,
+        };
+    }
+
+    return {
+        doctorOwnerId,
+        clinicOwnerId,
+        pipeOwnerId,
+        doctorFee,
+        clinicFee,
+        pipeFee,
+    };
+}
+
+async function findOwnerWallet(db, ownerId, ownerType, { forUpdate = false } = {}) {
+    const resolvedOwnerId = String(ownerId || '').trim();
+    const resolvedOwnerType = String(ownerType || '').trim().toLowerCase();
+    if (!resolvedOwnerId || !resolvedOwnerType) {
+        return null;
+    }
+
+    const walletColumns = await getTableColumns('wallets');
+    if (!hasTableColumn(walletColumns, 'owner_id') || !hasTableColumn(walletColumns, 'owner_type')) {
+        return null;
+    }
+
+    const orderClauses = [];
+    if (hasTableColumn(walletColumns, 'updated_at')) {
+        orderClauses.push('updated_at DESC NULLS LAST');
+    } else {
+        orderClauses.push('id DESC');
+    }
+
+    const result = await db.query(
+        `SELECT
+            id,
+            ${optionalColumn('', walletColumns, 'patient_code')},
+            ${optionalColumn('', walletColumns, 'owner_id')},
+            ${optionalColumn('', walletColumns, 'owner_type')},
+            ${optionalColumn('', walletColumns, 'balance')},
+            ${optionalColumn('', walletColumns, 'currency')},
+            ${optionalColumn('', walletColumns, 'created_at')},
+            ${optionalColumn('', walletColumns, 'updated_at')}
+         FROM wallets
+         WHERE owner_id = $1
+           AND LOWER(COALESCE(owner_type, '')) = $2
+         ORDER BY ${orderClauses.join(', ')}
+         LIMIT 1${forUpdate ? ' FOR UPDATE' : ''}`,
+        [resolvedOwnerId, resolvedOwnerType]
+    );
+
+    return result.rows[0] || null;
+}
+
+async function ensureOwnerWallet(db, ownerId, ownerType) {
+    const resolvedOwnerId = String(ownerId || '').trim();
+    const resolvedOwnerType = String(ownerType || '').trim().toLowerCase();
+    if (!resolvedOwnerId || !resolvedOwnerType) {
+        return null;
+    }
+
+    const existingWallet = await findOwnerWallet(db, resolvedOwnerId, resolvedOwnerType);
+    if (existingWallet) {
+        return existingWallet;
+    }
+
+    const walletColumns = await getTableColumns('wallets');
+    const insertColumns = [];
+    const insertValues = [];
+    const insertParams = [];
+    const addInsertValue = (columnName, value) => {
+        if (!hasTableColumn(walletColumns, columnName)) {
+            return;
+        }
+        insertColumns.push(columnName);
+        insertParams.push(value);
+        insertValues.push(`$${insertParams.length}`);
+    };
+
+    if (hasTableColumn(walletColumns, 'patient_code') && resolvedOwnerType === 'patient') {
+        addInsertValue('patient_code', resolvedOwnerId);
+    }
+    addInsertValue('owner_id', resolvedOwnerId);
+    addInsertValue('owner_type', resolvedOwnerType);
+    addInsertValue('balance', 0);
+    addInsertValue('currency', 'PHP');
+    if (hasTableColumn(walletColumns, 'created_at')) {
+        insertColumns.push('created_at');
+        insertValues.push('NOW()');
+    }
+    if (hasTableColumn(walletColumns, 'updated_at')) {
+        insertColumns.push('updated_at');
+        insertValues.push('NOW()');
+    }
+
+    if (insertColumns.length) {
+        await db.query(
+            `INSERT INTO wallets (${insertColumns.join(', ')}) VALUES (${insertValues.join(', ')}) ON CONFLICT DO NOTHING`,
+            insertParams
+        );
+    }
+
+    return findOwnerWallet(db, resolvedOwnerId, resolvedOwnerType, { forUpdate: true });
+}
+
+async function applyWalletDistributionCredits(db, {
+    appointmentId,
+    patientCode,
+    invoiceDescription,
+    doctorOwnerId,
+    clinicOwnerId,
+    pipeOwnerId,
+    doctorFee,
+    clinicFee,
+    pipeFee,
+}) {
+    const entries = [
+        {
+            ownerType: 'doctor',
+            ownerId: doctorOwnerId,
+            amount: toMoney(doctorFee, 0),
+            label: 'Doctor fee credit',
+        },
+        {
+            ownerType: 'clinic',
+            ownerId: clinicOwnerId,
+            amount: toMoney(clinicFee, 0),
+            label: 'Clinic fee credit',
+        },
+        {
+            ownerType: 'pipe',
+            ownerId: pipeOwnerId,
+            amount: toMoney(pipeFee, 0),
+            label: 'Pipe fee credit',
+        },
+    ];
+
+    for (const entry of entries) {
+        if (entry.amount <= 0) {
+            continue;
+        }
+
+        const resolvedOwnerId = String(entry.ownerId || '').trim();
+        if (!resolvedOwnerId) {
+            throw new Error(`${entry.ownerType}_wallet_owner_id is required when ${entry.ownerType}_fee is greater than zero`);
+        }
+
+        const wallet = await ensureOwnerWallet(db, resolvedOwnerId, entry.ownerType);
+        if (!wallet?.id) {
+            throw new Error(`Unable to resolve ${entry.ownerType} wallet for owner_id=${resolvedOwnerId}`);
+        }
+
+        await db.query(
+            `UPDATE wallets SET balance = COALESCE(balance, 0) + $1, updated_at=NOW() WHERE id=$2`,
+            [entry.amount, wallet.id]
+        );
+
+        await db.query(
+            `INSERT INTO wallet_transactions (wallet_id, patient_code, appointment_id, amount, type, description)
+             VALUES ($1,$2,$3,$4,'credit',$5)`,
+            [
+                wallet.id,
+                patientCode || null,
+                appointmentId || null,
+                entry.amount,
+                invoiceDescription || entry.label,
+            ]
+        );
+    }
+}
+
 function clinicActiveClause(columns, alias = '') {
     if (hasTableColumn(columns, 'is_active')) {
         return ` WHERE COALESCE((${alias}is_active)::text, 'true') NOT IN ('false', 'f', '0')`;
@@ -3098,6 +3320,16 @@ async function fetchClinicRecords({ singleId = null, start = 0, end = 49, search
     const phoneExpression = hasTableColumn(clinicColumns, 'phone')
         ? `COALESCE(c.phone, ${fallbackPhoneExpression}) AS phone`
         : `${fallbackPhoneExpression} AS phone`;
+    const clinicFeeExpression = hasTableColumn(clinicColumns, 'clinic_fee')
+        ? 'c.clinic_fee AS clinic_fee'
+        : hasTableColumn(clinicColumns, 'fee')
+            ? 'c.fee AS clinic_fee'
+            : '0 AS clinic_fee';
+    const feeExpression = hasTableColumn(clinicColumns, 'fee')
+        ? 'c.fee AS fee'
+        : hasTableColumn(clinicColumns, 'clinic_fee')
+            ? 'c.clinic_fee AS fee'
+            : '0 AS fee';
     const joins = [
         hasCityJoin ? 'LEFT JOIN cities ci ON ci.id = c.city_id' : '',
         hasStateJoin ? 'LEFT JOIN states st ON st.id = ci.state_id' : '',
@@ -3158,6 +3390,8 @@ async function fetchClinicRecords({ singleId = null, start = 0, end = 49, search
         ${optionalColumn('c.', clinicColumns, 'stop_booking')},
         ${optionalColumn('c.', clinicColumns, 'coupon_enable')},
         ${optionalColumn('c.', clinicColumns, 'tax')},
+        ${clinicFeeExpression},
+        ${feeExpression},
         ${optionalColumn('c.', clinicColumns, 'created_at')},
         ${optionalColumn('c.', clinicColumns, 'updated_at')},
         ${imageExpression},

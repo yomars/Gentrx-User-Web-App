@@ -51,6 +51,8 @@ import ISDCODEMODAL from "../Components/ISDCODEMODAL";
 import PaymentGetwayData from "../Hooks/Paymntgetways";
 const StripePaymentController = lazy(() => import("../Controllers/StripePayController"));
 import { clearPendingAppointmentPayment } from "../lib/walletTopup";
+import useSettingsData from "../Hooks/SettingData";
+import { getAppointmentFeeBreakdown } from "../lib/appointmentFee";
 
 const steps = [
   {
@@ -137,6 +139,18 @@ function NewAppoinmentsByDoctor() {
     queryFn: getData,
   });
 
+  const getClinicData = async () => {
+    const res = await GET(`get_clinic/${Doctordetails?.clinic_id}`);
+    return res.data;
+  };
+
+  const { data: clinicDetails } = useQuery({
+    queryKey: ["ClinicPricing", Doctordetails?.clinic_id],
+    queryFn: getClinicData,
+    enabled: Boolean(Doctordetails?.clinic_id),
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (doctorLoading) {
     return <Loading />;
   }
@@ -211,6 +225,7 @@ function NewAppoinmentsByDoctor() {
           <Step4
             patientDetails={patientDetails}
             Doctordetails={Doctordetails}
+            clinicDetails={clinicDetails}
             selectedDate={selectedDate}
             selectedSlot={selectedSlot}
             appoinmentType={appoinmentType}
@@ -919,11 +934,13 @@ const getUserDetails = async () => {
 const Step4 = ({
   patientDetails,
   Doctordetails,
+  clinicDetails,
   selectedDate,
   selectedSlot,
   appoinmentType,
   setAllNull,
 }) => {
+  const { settingsData } = useSettingsData();
   const toast = useToast();
   const [isLoading, setisLoading] = useState(false);
   const navigate = useNavigate();
@@ -1001,17 +1018,8 @@ const Step4 = ({
   });
 
   const getfee = (type, doc) => {
-    const feeSource = doc || {};
-    switch (type) {
-      case "OPD":
-        return Number(feeSource.opd_fee) || 0;
-      case "Video Consultant":
-        return Number(feeSource.video_fee) || 0;
-      case "Emergency":
-        return Number(feeSource.emg_fee) || 0;
-      default:
-        return Number(feeSource.emg_fee) || 0;
-    }
+    return getAppointmentFeeBreakdown(type, doc, settingsData, clinicDetails)
+      .feeAmount;
   };
 
   const taxAmount = (amount) => {
@@ -1029,6 +1037,15 @@ const Step4 = ({
   };
 
   const feeAmount = Number(getfee(appoinmentType.title, Doctordetails)) || 0;
+  const feeBreakdown = getAppointmentFeeBreakdown(
+    appoinmentType.title,
+    Doctordetails,
+    settingsData,
+    clinicDetails
+  );
+  const doctorFeeAmount = Number(feeBreakdown?.doctorFee) || 0;
+  const clinicFeeAmount = Number(feeBreakdown?.clinicFee) || 0;
+  const pipeFeeAmount = Number(feeBreakdown?.pipeFee) || 0;
   const unitTaxAmount = taxAmount(feeAmount);
   const couponOffAmount = discountAmount(feeAmount, SelectedCoupon?.value);
   const unitTotalAmount = getTotal(feeAmount, unitTaxAmount, 0);
@@ -1043,11 +1060,32 @@ const Step4 = ({
     Doctordetails?.doctor_id ||
     Doctordetails?.user_id ||
     null;
+  const canonicalClinicId =
+    Doctordetails?.clinic_id ||
+    clinicDetails?.id ||
+    null;
   const canonicalPatientCode =
     patientDetails?.patient_code ||
     userData?.patient_code ||
     user?.patient_code ||
     null;
+  const pipeWalletOwnerId = (() => {
+    if (!Array.isArray(settingsData)) {
+      return null;
+    }
+
+    const pipeOwnerSetting = settingsData.find((item) =>
+      [
+        "pipe_user_id",
+        "pipe_wallet_user_id",
+        "pipe_owner_user_id",
+        "pipe_owner_id",
+      ].includes(String(item?.id_name || "").trim())
+    );
+
+    const value = String(pipeOwnerSetting?.value || "").trim();
+    return value || null;
+  })();
 
   const walletAvailable = Number(userData?.wallet_amount ?? userData?.balance ?? 0);
   const isWalletInsufficient = payableTotal > walletAvailable;
@@ -1093,6 +1131,12 @@ const Step4 = ({
       owner_id: canonicalPatientCode,
       owner_type: "patient",
       doctor_id: canonicalDoctorId,
+      doctor_fee: doctorFeeAmount,
+      clinic_fee: clinicFeeAmount,
+      pipe_fee: pipeFeeAmount,
+      doctor_wallet_owner_id: Doctordetails?.user_id || null,
+      clinic_wallet_owner_id: canonicalClinicId,
+      pipe_wallet_owner_id: pipeWalletOwnerId,
       status:
         appointmentStatusOverride ||
         (selectedMethod === 2 ? "Pending" : "Confirmed"),
@@ -1236,6 +1280,14 @@ const Step4 = ({
     owner_id: canonicalPatientCode ? String(canonicalPatientCode) : "",
     owner_type: "patient",
     doctor_id: canonicalDoctorId ? String(canonicalDoctorId) : "",
+    doctor_fee: String(doctorFeeAmount.toFixed(2)),
+    clinic_fee: String(clinicFeeAmount.toFixed(2)),
+    pipe_fee: String(pipeFeeAmount.toFixed(2)),
+    doctor_wallet_owner_id: Doctordetails?.user_id
+      ? String(Doctordetails.user_id)
+      : "",
+    clinic_wallet_owner_id: canonicalClinicId ? String(canonicalClinicId) : "",
+    pipe_wallet_owner_id: pipeWalletOwnerId ? String(pipeWalletOwnerId) : "",
     status: "Confirmed",
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
     time_slots: selectedSlot
