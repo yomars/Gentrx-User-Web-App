@@ -46,6 +46,8 @@ import { EmailIcon, PhoneIcon } from "@chakra-ui/icons";
 import { ImLocation } from "react-icons/im";
 import GlightBoxSwiper from "./GlightBoxSwiper";
 import MobileAppSection from "../Components/MobileAppSection";
+import useSettingsData from "../Hooks/SettingData";
+import { getAppointmentFeeBreakdown } from "../lib/appointmentFee";
 
 const feeData = [
   {
@@ -81,6 +83,7 @@ export default function Doctor() {
   const [appointmentType, setappointmentType] = useState();
   const navigate = useNavigate();
   const location = useLocation();
+  const { settingsData } = useSettingsData();
 
   const getData = async () => {
     const res = await GET(`get_doctor/${id}`);
@@ -89,6 +92,18 @@ export default function Doctor() {
   const { isLoading, data } = useQuery({
     queryKey: ["Doctor", id],
     queryFn: getData,
+  });
+
+  const getClinicData = async () => {
+    const res = await GET(`get_clinic/${data?.clinic_id}`);
+    return res.data;
+  };
+
+  const { data: clinicDetails } = useQuery({
+    queryKey: ["ClinicPricing", data?.clinic_id],
+    queryFn: getClinicData,
+    enabled: Boolean(data?.clinic_id),
+    staleTime: 5 * 60 * 1000,
   });
 
   //
@@ -107,16 +122,8 @@ export default function Doctor() {
   };
 
   const getfee = (type, doc) => {
-    switch (type) {
-      case "OPD":
-        return doc.opd_fee;
-      case "Video Consultant":
-        return doc.video_fee;
-      case "Emergency":
-        return doc.emg_fee;
-      default:
-        return doc.emg_fee;
-    }
+    return getAppointmentFeeBreakdown(type, doc, settingsData, clinicDetails)
+      .feeAmount;
   };
 
   const googleMapsUrl = `https://www.google.com/maps?q=${data?.clinic_latitude},${data?.clinic_longitude}`;

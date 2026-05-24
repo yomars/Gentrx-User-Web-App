@@ -24,6 +24,37 @@ use App\Models\PatientClinicModel;
 
 class AppointmentController extends Controller
 {
+    private function isOpdOrVideoType($type)
+    {
+        $normalizedType = strtolower(trim((string) $type));
+        return in_array($normalizedType, ['opd', 'video consultant', 'video call'], true);
+    }
+
+    private function getPipeFee()
+    {
+        $config = DB::table('configurations')
+            ->select('value')
+            ->where('id_name', '=', 'pipe_fee')
+            ->first();
+
+        return (float) ($config->value ?? 20);
+    }
+
+    private function getDoctorFeeForType($type, $doctorPricing)
+    {
+        $normalizedType = strtolower(trim((string) $type));
+        if ($normalizedType === 'emergency') {
+            return (float) ($doctorPricing->emg_fee ?? 0);
+        }
+
+        // OPD and Video use doctors.opd_fee by business rule.
+        if ($this->isOpdOrVideoType($normalizedType)) {
+            return (float) ($doctorPricing->opd_fee ?? 0);
+        }
+
+        return (float) ($doctorPricing->opd_fee ?? 0);
+    }
+
     //update status to paid
     function updateStatusToPaid(Request $request)
     {
@@ -145,6 +176,35 @@ class AppointmentController extends Controller
                 return Helpers::errorResponse("error");
             }
 
+            $doctorPricing = DB::table('doctors')
+                ->leftJoin('clinics', 'clinics.id', '=', 'doctors.clinic_id')
+                ->select('doctors.opd_fee', 'doctors.emg_fee', 'clinics.clinic_fee')
+                ->where('doctors.user_id', '=', $request->doct_id)
+                ->first();
+
+            if ($doctorPricing == null) {
+                DB::rollBack();
+                return Helpers::errorResponse("error");
+            }
+
+            $doctorFee = $this->getDoctorFeeForType($request->type, $doctorPricing);
+            $clinicFee = $this->isOpdOrVideoType($request->type)
+                ? (float) ($doctorPricing->clinic_fee ?? 0)
+                : 0;
+            $pipeFee = $this->isOpdOrVideoType($request->type)
+                ? $this->getPipeFee()
+                : 0;
+
+            $calculatedFee = $doctorFee + $clinicFee + $pipeFee;
+            $taxPercent = (float) ($request->tax ?? 0);
+            $unitTaxAmount = round(($calculatedFee * $taxPercent) / 100, 2);
+            $couponOffAmount = (float) ($request->coupon_off_amount ?? 0);
+            $unitTotalAmount = round($calculatedFee + $unitTaxAmount, 2);
+            $totalAmount = round($unitTotalAmount - $couponOffAmount, 2);
+            if ($totalAmount < 0) {
+                $totalAmount = 0;
+            }
+
             $patientId = $request->patient_id;
 
             // Handle patient_code string passed as patient_id (new PatientAuth flow)
@@ -216,7 +276,7 @@ class AppointmentController extends Controller
 
                 $dataTXNModel = new AllTransactionModel;
                 $dataTXNModel->payment_transaction_id = $request->payment_transaction_id;
-                $dataTXNModel->amount  = $request->total_amount;
+                $dataTXNModel->amount  = $totalAmount;
                 $dataTXNModel->user_id  = $request->user_id;
                 $dataTXNModel->patient_id  = $patientId;
                 $dataTXNModel->clinic_id = $clinicId;
@@ -243,7 +303,7 @@ class AppointmentController extends Controller
                         return Helpers::errorResponse("error");
                     }
                     $userOldAmount = (float) ($walletRecord->balance ?? 0);
-                    $deductAmount = (float) $request->total_amount;
+                    $deductAmount = (float) $totalAmount;
                     if ($userOldAmount < $deductAmount) {
                         DB::rollBack();
                         return Helpers::errorResponse("Insufficient amount in wallet");
@@ -325,7 +385,7 @@ class AppointmentController extends Controller
                 $dataInvoiceModel->clinic_id = $clinicId;
                 $dataInvoiceModel->appointment_id  = $dataModel->id;
                 $dataInvoiceModel->status = $request->payment_status;
-                $dataInvoiceModel->total_amount  = $request->total_amount;
+                $dataInvoiceModel->total_amount  = $totalAmount;
                 $dataInvoiceModel->invoice_date = $date;
                 $dataInvoiceModel->created_at = $timeStamp;
                 $dataInvoiceModel->updated_at = $timeStamp;
@@ -342,11 +402,11 @@ class AppointmentController extends Controller
                     $dataInvoiceItemModel->description  = $request->invoice_description;
                     $dataInvoiceItemModel->quantity = 1;
                     $dataInvoiceItemModel->clinic_id = $clinicId;
-                    $dataInvoiceItemModel->unit_price  = $request->fee;
-                    $dataInvoiceItemModel->service_charge =  $request->service_charge;
-                    $dataInvoiceItemModel->total_price = $request->unit_total_amount;
-                    $dataInvoiceItemModel->unit_tax  = $request->tax ?? 0;
-                    $dataInvoiceItemModel->unit_tax_amount  = $request->unit_tax_amount ?? 0;
+                    $dataInvoiceItemModel->unit_price  = $calculatedFee;
+                    $dataInvoiceItemModel->service_charge =  0;
+                    $dataInvoiceItemModel->total_price = $unitTotalAmount;
+                    $dataInvoiceItemModel->unit_tax  = $taxPercent;
+                    $dataInvoiceItemModel->unit_tax_amount  = $unitTaxAmount;
 
                     $dataInvoiceItemModel->created_at = $timeStamp;
                     $dataInvoiceItemModel->updated_at = $timeStamp;
@@ -357,7 +417,7 @@ class AppointmentController extends Controller
                             $dataPaymentModel = new AppointmentPaymentModel;
                             $dataPaymentModel->txn_id = $dataTXNModel->id;
                             $dataPaymentModel->invoice_id   = $dataInvoiceModel->id;
-                            $dataPaymentModel->amount   = $request->total_amount;
+                            $dataPaymentModel->amount   = $totalAmount;
                             $dataPaymentModel->payment_time_stamp   = $timeStamp;
                             $dataPaymentModel->clinic_id = $clinicId;
                             $dataPaymentModel->payment_method   = $request->payment_method;
