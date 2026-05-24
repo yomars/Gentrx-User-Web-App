@@ -634,10 +634,14 @@ app.post('/api/v1/add_payment', async (req, res) => {
                 return res.status(422).json({ response: 422, status: false, message: 'Insufficient wallet balance.' });
             }
             await client.query(`UPDATE wallets SET balance = COALESCE(balance, 0) - $1, updated_at=NOW() WHERE id=$2`, [chargeAmount, wallet.id]);
-            await client.query(
-                `INSERT INTO wallet_transactions (wallet_id, patient_code, appointment_id, amount, type, description) VALUES ($1,$2,$3,$4,'debit',$5)`,
-                [wallet.id, resolvedPatientCode, appointment_id, chargeAmount, invoice_description || 'Appointment Payment']
-            );
+            await insertWalletTransaction(client, {
+                walletId: wallet.id,
+                patientCode: resolvedPatientCode,
+                appointmentId: appointment_id,
+                amount: chargeAmount,
+                type: 'debit',
+                description: invoice_description || 'Appointment Payment',
+            });
         }
 
         if (String(payment_status || '').trim().toLowerCase() === 'paid') {
@@ -777,17 +781,14 @@ app.post('/api/v1/confirm_schedule_wallet_payment', async (req, res) => {
                 `UPDATE wallets SET balance = COALESCE(balance, 0) - $1, updated_at=NOW() WHERE id=$2`,
                 [paymentAmount, walletRes.id]
             );
-            await client.query(
-                `INSERT INTO wallet_transactions (wallet_id, patient_code, appointment_id, amount, type, description)
-                 VALUES ($1,$2,$3,$4,'debit',$5)`,
-                [
-                    walletRes.id,
-                    patientCode,
-                    appointmentId,
-                    paymentAmount,
-                    invoice_description || 'Appointment payment',
-                ]
-            );
+            await insertWalletTransaction(client, {
+                walletId: walletRes.id,
+                patientCode,
+                appointmentId,
+                amount: paymentAmount,
+                type: 'debit',
+                description: invoice_description || 'Appointment payment',
+            });
         }
 
         await applyWalletDistributionCredits(client, {
@@ -1485,10 +1486,13 @@ app.post('/api/v1/wallet_topup', async (req, res) => {
         const wallet = await findPatientWallet(client, walletLookupCode, { forUpdate: true });
         await client.query(`UPDATE wallets SET balance = COALESCE(balance, 0) + $1, updated_at=NOW() WHERE id=$2`, [numAmount, wallet.id]);
         const updatedWallet = await findPatientWallet(client, walletLookupCode);
-        await client.query(
-            `INSERT INTO wallet_transactions (wallet_id, patient_code, amount, type, description) VALUES ($1,$2,$3,'topup',$4)`,
-            [wallet.id, resolvedPatientCode || wallet.patient_code || walletLookupCode, numAmount, (txnRef ? `Admin wallet top-up [${txnRef}]` : 'Admin wallet top-up') || description || 'Admin wallet top-up']
-        );
+        await insertWalletTransaction(client, {
+            walletId: wallet.id,
+            patientCode: resolvedPatientCode || wallet.patient_code || walletLookupCode,
+            amount: numAmount,
+            type: 'topup',
+            description: (txnRef ? `Admin wallet top-up [${txnRef}]` : 'Admin wallet top-up') || description || 'Admin wallet top-up',
+        });
         await client.query(
             `INSERT INTO transactions (transaction_id, patient_code, amount, type, status, description, reference) VALUES (CONCAT('TXN-', EXTRACT(YEAR FROM NOW()), '-', LPAD(NEXTVAL('seq_transaction_number')::TEXT, 6, '0')),$1,$2,'credit','success',$3,$4)`,
             [resolvedPatientCode || wallet.patient_code || walletLookupCode, numAmount, description || 'Wallet top-up', txnRef]
@@ -1552,10 +1556,13 @@ app.post('/api/v1/wallet_deduct', async (req, res) => {
             return res.status(422).json({ response: 422, status: false, message: 'Insufficient wallet balance.' });
         }
         await client.query(`UPDATE wallets SET balance = COALESCE(balance, 0) - $1, updated_at=NOW() WHERE id=$2`, [numAmount, wallet.id]);
-        await client.query(
-            `INSERT INTO wallet_transactions (wallet_id, patient_code, amount, type, description) VALUES ($1,$2,$3,'debit',$4)`,
-            [wallet.id, resolvedPatientCode || wallet.patient_code || walletLookupCode, numAmount, (txnRef ? `Admin wallet deduction [${txnRef}]` : 'Admin wallet deduction') || description || 'Admin wallet deduction']
-        );
+        await insertWalletTransaction(client, {
+            walletId: wallet.id,
+            patientCode: resolvedPatientCode || wallet.patient_code || walletLookupCode,
+            amount: numAmount,
+            type: 'debit',
+            description: (txnRef ? `Admin wallet deduction [${txnRef}]` : 'Admin wallet deduction') || description || 'Admin wallet deduction',
+        });
         const updated = await findPatientWallet(client, walletLookupCode);
         await client.query('COMMIT');
         res.json({ response: 200, status: true, message: 'Amount deducted.', new_balance: updated?.balance ?? 0, idempotent_replay: false });
@@ -3175,18 +3182,63 @@ async function applyWalletDistributionCredits(db, {
             [entry.amount, wallet.id]
         );
 
-        await db.query(
-            `INSERT INTO wallet_transactions (wallet_id, patient_code, appointment_id, amount, type, description)
-             VALUES ($1,$2,$3,$4,'credit',$5)`,
-            [
-                wallet.id,
-                patientCode || null,
-                appointmentId || null,
-                entry.amount,
-                invoiceDescription || entry.label,
-            ]
-        );
+        await insertWalletTransaction(db, {
+            walletId: wallet.id,
+            patientCode: patientCode || null,
+            appointmentId: appointmentId || null,
+            amount: entry.amount,
+            type: 'credit',
+            description: invoiceDescription || entry.label,
+        });
     }
+}
+
+async function insertWalletTransaction(db, {
+    walletId,
+    patientCode = null,
+    appointmentId = null,
+    amount,
+    type,
+    description,
+}) {
+    const walletTransactionColumns = await getTableColumns('wallet_transactions');
+    const insertColumns = [];
+    const insertValues = [];
+    const insertParams = [];
+
+    const addInsertValue = (columnName, value) => {
+        if (!hasTableColumn(walletTransactionColumns, columnName)) {
+            return;
+        }
+        insertColumns.push(columnName);
+        insertParams.push(value);
+        insertValues.push(`$${insertParams.length}`);
+    };
+
+    addInsertValue('wallet_id', walletId);
+    addInsertValue('patient_code', patientCode);
+    addInsertValue('appointment_id', appointmentId);
+    addInsertValue('amount', amount);
+    addInsertValue('type', type);
+    addInsertValue('description', description || null);
+
+    if (hasTableColumn(walletTransactionColumns, 'created_at')) {
+        insertColumns.push('created_at');
+        insertValues.push('NOW()');
+    }
+    if (hasTableColumn(walletTransactionColumns, 'updated_at')) {
+        insertColumns.push('updated_at');
+        insertValues.push('NOW()');
+    }
+
+    if (!insertColumns.length) {
+        throw new Error('wallet_transactions insert failed: table has no compatible columns');
+    }
+
+    await db.query(
+        `INSERT INTO wallet_transactions (${insertColumns.join(', ')}) VALUES (${insertValues.join(', ')})`,
+        insertParams
+    );
 }
 
 function clinicActiveClause(columns, alias = '') {
@@ -5511,14 +5563,20 @@ app.post('/api/v1/balance_transfer', async (req, res) => {
         await client.query(`UPDATE wallets SET balance = COALESCE(balance, 0) - $1, updated_at=NOW() WHERE id=$2`, [amount, senderWallet.id]);
         await client.query(`UPDATE wallets SET balance = COALESCE(balance, 0) + $1, updated_at=NOW() WHERE id=$2`, [amount, recipientWallet.id]);
 
-        await client.query(
-            `INSERT INTO wallet_transactions (wallet_id, patient_code, amount, type, description) VALUES ($1,$2,$3,'debit',$4)`,
-            [senderWallet.id, fromPatientCode, amount, `Transfer to ${recipient.phone || toPhone}${txRef ? ` [${txRef}]` : ''}: ${description}`]
-        );
-        await client.query(
-            `INSERT INTO wallet_transactions (wallet_id, patient_code, amount, type, description) VALUES ($1,$2,$3,'credit',$4)`,
-            [recipientWallet.id, recipient.patient_code, amount, `Transfer from ${fromPatientCode}${txRef ? ` [${txRef}]` : ''}: ${description}`]
-        );
+        await insertWalletTransaction(client, {
+            walletId: senderWallet.id,
+            patientCode: fromPatientCode,
+            amount,
+            type: 'debit',
+            description: `Transfer to ${recipient.phone || toPhone}${txRef ? ` [${txRef}]` : ''}: ${description}`,
+        });
+        await insertWalletTransaction(client, {
+            walletId: recipientWallet.id,
+            patientCode: recipient.patient_code,
+            amount,
+            type: 'credit',
+            description: `Transfer from ${fromPatientCode}${txRef ? ` [${txRef}]` : ''}: ${description}`,
+        });
 
         await client.query(
             `INSERT INTO transactions (transaction_id, patient_code, amount, type, status, description, reference)
