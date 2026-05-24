@@ -2996,7 +2996,12 @@ function normalizeOwnerWalletIdentity(source = {}) {
     const clinicOwnerId = toTrimmedString(
         source.clinic_wallet_owner_id || source.clinic_id
     );
-    const pipeOwnerId = toTrimmedString(source.pipe_wallet_owner_id);
+    const pipeOwnerId = toTrimmedString(
+        source.pipe_wallet_owner_id ||
+        source.pipe_user_id ||
+        source.pipe_owner_user_id ||
+        source.pipe_owner_id
+    );
 
     const doctorFee = toMoney(source.doctor_fee ?? source.opd_fee, 0);
     const clinicFee = toMoney(source.clinic_fee, 0);
@@ -3154,7 +3159,10 @@ async function applyWalletDistributionCredits(db, {
 
         const resolvedOwnerId = String(entry.ownerId || '').trim();
         if (!resolvedOwnerId) {
-            throw new Error(`${entry.ownerType}_wallet_owner_id is required when ${entry.ownerType}_fee is greater than zero`);
+            const message = entry.ownerType === 'pipe'
+                ? 'pipe_wallet_owner_id (users.id of pipe owner) is required when pipe_fee is greater than zero'
+                : `${entry.ownerType}_wallet_owner_id is required when ${entry.ownerType}_fee is greater than zero`;
+            throw new Error(message);
         }
 
         const wallet = await ensureOwnerWallet(db, resolvedOwnerId, entry.ownerType);
