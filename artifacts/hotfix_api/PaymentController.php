@@ -21,6 +21,173 @@ use Carbon\Carbon;
 
 class PaymentController extends Controller
 {
+    private function isPaidStatus($status): bool
+    {
+        return strtolower(trim((string) $status)) === 'paid';
+    }
+
+    private function normalizeOwnerId($ownerId): ?string
+    {
+        $value = trim((string) ($ownerId ?? ''));
+        return $value !== '' ? $value : null;
+    }
+
+    private function getPipeOwnerIdSetting(): ?string
+    {
+        $config = DB::table('configurations')
+            ->select('id_name', 'value')
+            ->whereIn('id_name', ['pipe_user_id', 'pipe_wallet_user_id', 'pipe_owner_user_id', 'pipe_owner_id'])
+            ->first();
+
+        if (!$config) {
+            return null;
+        }
+
+        $value = trim((string) ($config->value ?? ''));
+        return $value !== '' ? $value : null;
+    }
+
+    private function resolvePatientCodeFromIds(?int $patientId, ?string $fallback = null): ?string
+    {
+        $fallbackValue = trim((string) ($fallback ?? ''));
+        if ($fallbackValue !== '') {
+            return $fallbackValue;
+        }
+
+        if (!$patientId) {
+            return null;
+        }
+
+        $value = DB::table('patients')->where('id', $patientId)->value('patient_code');
+        $code = trim((string) ($value ?? ''));
+        return $code !== '' ? $code : null;
+    }
+
+    private function ensureOwnerWallet(string $ownerId, string $ownerType): int
+    {
+        if (!Schema::hasColumn('wallets', 'owner_id')) {
+            throw new \RuntimeException('wallets.owner_id is required for split wallet credits');
+        }
+
+        $hasOwnerType = Schema::hasColumn('wallets', 'owner_type');
+        $walletQuery = DB::table('wallets')->where('owner_id', $ownerId);
+        if ($hasOwnerType) {
+            $walletQuery->where('owner_type', $ownerType);
+        }
+
+        $wallet = $walletQuery->orderByDesc('id')->lockForUpdate()->first();
+        if ($wallet) {
+            return (int) $wallet->id;
+        }
+
+        $insert = [
+            'owner_id' => $ownerId,
+            'balance' => 0,
+            'currency' => 'PHP',
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ];
+        if ($hasOwnerType) {
+            $insert['owner_type'] = $ownerType;
+        }
+
+        return (int) DB::table('wallets')->insertGetId($insert);
+    }
+
+    private function applySplitCreditsFromRequest(Request $request, string $paymentReference): void
+    {
+        $appointmentId = (int) ($request->appointment_id ?? 0);
+        if ($appointmentId <= 0) {
+            return;
+        }
+
+        $patientId = $request->patient_id ? (int) $request->patient_id : null;
+        $patientCode = $this->resolvePatientCodeFromIds(
+            $patientId,
+            $request->patient_code ?? $request->owner_id ?? null
+        );
+        $clinicId = $request->clinic_id ? (int) $request->clinic_id : null;
+
+        $entries = [
+            [
+                'owner_type' => 'doctor',
+                'owner_id' => $this->normalizeOwnerId($request->doctor_wallet_owner_id ?? $request->doctor_id ?? null),
+                'amount' => (float) ($request->doctor_fee ?? 0),
+                'description' => 'Split: Doctor fee credit',
+            ],
+            [
+                'owner_type' => 'clinic',
+                'owner_id' => $this->normalizeOwnerId($request->clinic_wallet_owner_id ?? $request->clinic_id ?? null),
+                'amount' => (float) ($request->clinic_fee ?? 0),
+                'description' => 'Split: Clinic fee credit',
+            ],
+            [
+                'owner_type' => 'pipe',
+                'owner_id' => $this->normalizeOwnerId($request->pipe_wallet_owner_id ?? $this->getPipeOwnerIdSetting()),
+                'amount' => (float) ($request->pipe_fee ?? 0),
+                'description' => 'Split: Pipe fee credit',
+            ],
+        ];
+
+        foreach ($entries as $entry) {
+            if ($entry['amount'] <= 0) {
+                continue;
+            }
+
+            if (!$entry['owner_id']) {
+                throw new \RuntimeException($entry['owner_type'] . '_wallet_owner_id is required when split amount is greater than zero');
+            }
+
+            $walletId = $this->ensureOwnerWallet($entry['owner_id'], $entry['owner_type']);
+
+            $existsQuery = DB::table('wallet_transactions')
+                ->where('wallet_id', $walletId)
+                ->where('type', 'credit')
+                ->where('description', $entry['description']);
+            if (Schema::hasColumn('wallet_transactions', 'appointment_id')) {
+                $existsQuery->where('appointment_id', $appointmentId);
+            } elseif (Schema::hasColumn('wallet_transactions', 'payment_transaction_id')) {
+                $existsQuery->where('payment_transaction_id', $paymentReference);
+            }
+            if ($existsQuery->exists()) {
+                continue;
+            }
+
+            DB::table('wallets')
+                ->where('id', $walletId)
+                ->increment('balance', $entry['amount'], ['updated_at' => Carbon::now()]);
+
+            $insert = [
+                'wallet_id' => $walletId,
+                'amount' => $entry['amount'],
+                'type' => 'credit',
+                'description' => $entry['description'],
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ];
+            if (Schema::hasColumn('wallet_transactions', 'appointment_id')) {
+                $insert['appointment_id'] = $appointmentId;
+            }
+            if (Schema::hasColumn('wallet_transactions', 'patient_id') && $patientId) {
+                $insert['patient_id'] = $patientId;
+            }
+            if (Schema::hasColumn('wallet_transactions', 'patient_code') && $patientCode) {
+                $insert['patient_code'] = $patientCode;
+            }
+            if (Schema::hasColumn('wallet_transactions', 'clinic_id') && $clinicId) {
+                $insert['clinic_id'] = $clinicId;
+            }
+            if (Schema::hasColumn('wallet_transactions', 'user_id') && in_array($entry['owner_type'], ['doctor', 'pipe'], true) && is_numeric($entry['owner_id'])) {
+                $insert['user_id'] = (int) $entry['owner_id'];
+            }
+            if (Schema::hasColumn('wallet_transactions', 'payment_transaction_id')) {
+                $insert['payment_transaction_id'] = $paymentReference;
+            }
+
+            DB::table('wallet_transactions')->insert($insert);
+        }
+    }
+
     // -----------------------------------------------------------------------
     // GET /api/v1/get_payment
     // Query params: start, end, search, clinic_id
@@ -122,7 +289,14 @@ class PaymentController extends Controller
             'invoice_id'             => 'nullable|integer|exists:invoices,id',
             'clinic_id'              => 'nullable|integer',
             'patient_id'             => 'nullable|integer',
+            'patient_code'           => 'nullable|string|max:64',
             'doctor_id'              => 'nullable|integer',
+            'doctor_fee'             => 'nullable|numeric|min:0',
+            'clinic_fee'             => 'nullable|numeric|min:0',
+            'pipe_fee'               => 'nullable|numeric|min:0',
+            'doctor_wallet_owner_id' => 'nullable',
+            'clinic_wallet_owner_id' => 'nullable',
+            'pipe_wallet_owner_id'   => 'nullable',
             'service_charge'         => 'nullable|numeric|min:0',
             'payment_method'         => 'nullable|string|max:80',
             'payment_status'         => 'nullable|string|in:Paid,Pending,Failed,Cancelled',
@@ -188,6 +362,11 @@ class PaymentController extends Controller
                 $request->appointment_id,
                 'Appointment payment — ' . ($request->invoice_description ?? '')
             );
+        }
+
+        if ($this->isPaidStatus($request->payment_status)) {
+            $paymentReference = trim((string) ($request->payment_transaction_id ?? ('payment_' . $paymentId)));
+            $this->applySplitCreditsFromRequest($request, $paymentReference);
         }
 
         return response()->json([
@@ -357,6 +536,9 @@ class PaymentController extends Controller
                         'updated_at'     => Carbon::now(),
                     ]);
                 }
+
+                $splitReference = trim((string) ($request->payment_transaction_id ?? ('wallet_confirm_' . $appointmentId)));
+                $this->applySplitCreditsFromRequest($request, $splitReference);
 
                 $invoiceNumber = $this->generateInvoiceNumber();
                 $invoiceId = DB::table('invoices')->insertGetId([

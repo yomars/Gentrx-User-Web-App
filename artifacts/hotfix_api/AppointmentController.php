@@ -25,6 +25,11 @@ use App\Models\PatientClinicModel;
 
 class AppointmentController extends Controller
 {
+    private function isPaidStatus($status)
+    {
+        return strtolower(trim((string) $status)) === 'paid';
+    }
+
     private function isOpdOrVideoType($type)
     {
         $normalizedType = strtolower(trim((string) $type));
@@ -54,6 +59,269 @@ class AppointmentController extends Controller
         }
 
         return (float) ($doctorPricing->opd_fee ?? 0);
+    }
+
+    private function getPipeOwnerId()
+    {
+        $config = DB::table('configurations')
+            ->select('id_name', 'value')
+            ->whereIn('id_name', ['pipe_user_id', 'pipe_wallet_user_id', 'pipe_owner_user_id', 'pipe_owner_id'])
+            ->first();
+
+        if (!$config) {
+            return null;
+        }
+
+        $value = trim((string) ($config->value ?? ''));
+        return $value !== '' ? $value : null;
+    }
+
+    private function normalizeOwnerId($ownerId)
+    {
+        $value = trim((string) ($ownerId ?? ''));
+        return $value !== '' ? $value : null;
+    }
+
+    private function ensureOwnerWallet(string $ownerId, string $ownerType, string $timeStamp)
+    {
+        if (!Schema::hasColumn('wallets', 'owner_id')) {
+            throw new \RuntimeException('wallets.owner_id is required for split wallet credits');
+        }
+
+        $hasOwnerType = Schema::hasColumn('wallets', 'owner_type');
+
+        $query = DB::table('wallets')->where('owner_id', $ownerId);
+        if ($hasOwnerType) {
+            $query->where('owner_type', $ownerType);
+        }
+
+        $wallet = $query->orderByDesc('id')->first();
+        if ($wallet) {
+            return (int) $wallet->id;
+        }
+
+        $insert = [
+            'owner_id' => $ownerId,
+            'balance' => 0,
+            'currency' => 'PHP',
+            'created_at' => $timeStamp,
+            'updated_at' => $timeStamp,
+        ];
+
+        if ($hasOwnerType) {
+            $insert['owner_type'] = $ownerType;
+        }
+
+        return (int) DB::table('wallets')->insertGetId($insert);
+    }
+
+    private function insertSplitWalletTransaction(
+        int $walletId,
+        string $ownerType,
+        string $ownerId,
+        int $appointmentId,
+        ?int $patientId,
+        ?string $patientCode,
+        ?int $clinicId,
+        float $amount,
+        string $description,
+        string $paymentReference,
+        string $timeStamp
+    ) {
+        $hasAppointmentId = Schema::hasColumn('wallet_transactions', 'appointment_id');
+        $hasPatientId = Schema::hasColumn('wallet_transactions', 'patient_id');
+        $hasPatientCode = Schema::hasColumn('wallet_transactions', 'patient_code');
+        $hasClinicId = Schema::hasColumn('wallet_transactions', 'clinic_id');
+        $hasUserId = Schema::hasColumn('wallet_transactions', 'user_id');
+        $hasPaymentReference = Schema::hasColumn('wallet_transactions', 'payment_transaction_id');
+
+        $existsQuery = DB::table('wallet_transactions')
+            ->where('wallet_id', $walletId)
+            ->where('type', 'credit')
+            ->where('description', $description);
+
+        if ($hasAppointmentId) {
+            $existsQuery->where('appointment_id', $appointmentId);
+        } elseif ($hasPaymentReference) {
+            $existsQuery->where('payment_transaction_id', $paymentReference);
+        }
+
+        if ($existsQuery->exists()) {
+            return;
+        }
+
+        $insert = [
+            'wallet_id' => $walletId,
+            'amount' => $amount,
+            'type' => 'credit',
+            'description' => $description,
+            'created_at' => $timeStamp,
+            'updated_at' => $timeStamp,
+        ];
+
+        if ($hasAppointmentId) {
+            $insert['appointment_id'] = $appointmentId;
+        }
+        if ($hasPatientId && $patientId) {
+            $insert['patient_id'] = $patientId;
+        }
+        if ($hasPatientCode && $patientCode) {
+            $insert['patient_code'] = $patientCode;
+        }
+        if ($hasClinicId && $clinicId) {
+            $insert['clinic_id'] = $clinicId;
+        }
+        if ($hasUserId && in_array($ownerType, ['doctor', 'pipe'], true) && is_numeric($ownerId)) {
+            $insert['user_id'] = (int) $ownerId;
+        }
+        if ($hasPaymentReference) {
+            $insert['payment_transaction_id'] = $paymentReference;
+        }
+
+        DB::table('wallet_transactions')->insert($insert);
+    }
+
+    private function insertSplitAllTransaction(
+        string $ownerType,
+        string $ownerId,
+        int $appointmentId,
+        ?int $patientId,
+        ?string $patientCode,
+        ?int $clinicId,
+        float $amount,
+        string $description,
+        string $paymentReference,
+        string $timeStamp
+    ) {
+        if (!Schema::hasTable('all_transaction')) {
+            return;
+        }
+
+        $insert = [];
+        if (Schema::hasColumn('all_transaction', 'payment_transaction_id')) {
+            $insert['payment_transaction_id'] = $paymentReference . ':split:' . $ownerType;
+        }
+        if (Schema::hasColumn('all_transaction', 'amount')) {
+            $insert['amount'] = $amount;
+        }
+        if (Schema::hasColumn('all_transaction', 'transaction_type')) {
+            $insert['transaction_type'] = 'Credited';
+        }
+        if (Schema::hasColumn('all_transaction', 'appointment_id')) {
+            $insert['appointment_id'] = $appointmentId;
+        }
+        if (Schema::hasColumn('all_transaction', 'patient_id') && $patientId) {
+            $insert['patient_id'] = $patientId;
+        }
+        if (Schema::hasColumn('all_transaction', 'patient_code') && $patientCode) {
+            $insert['patient_code'] = $patientCode;
+        }
+        if (Schema::hasColumn('all_transaction', 'clinic_id') && $clinicId) {
+            $insert['clinic_id'] = $clinicId;
+        }
+        if (Schema::hasColumn('all_transaction', 'user_id') && in_array($ownerType, ['doctor', 'pipe'], true) && is_numeric($ownerId)) {
+            $insert['user_id'] = (int) $ownerId;
+        }
+        if (Schema::hasColumn('all_transaction', 'is_wallet_txn')) {
+            $insert['is_wallet_txn'] = 1;
+        }
+        if (Schema::hasColumn('all_transaction', 'notes')) {
+            $insert['notes'] = $description;
+        }
+        if (Schema::hasColumn('all_transaction', 'created_at')) {
+            $insert['created_at'] = $timeStamp;
+        }
+        if (Schema::hasColumn('all_transaction', 'updated_at')) {
+            $insert['updated_at'] = $timeStamp;
+        }
+
+        if (empty($insert)) {
+            return;
+        }
+
+        DB::table('all_transaction')->insert($insert);
+    }
+
+    private function applySplitCreditsForAppointment(
+        int $appointmentId,
+        ?int $patientId,
+        ?string $patientCode,
+        ?int $clinicId,
+        string $paymentReference,
+        array $distribution,
+        string $timeStamp
+    ) {
+        $doctorAmount = (float) ($distribution['doctor_amount'] ?? 0);
+        $clinicAmount = (float) ($distribution['clinic_amount'] ?? 0);
+        $pipeAmount = (float) ($distribution['pipe_amount'] ?? 0);
+
+        $doctorOwnerId = $this->normalizeOwnerId($distribution['doctor_owner_id'] ?? null);
+        $clinicOwnerId = $this->normalizeOwnerId($distribution['clinic_owner_id'] ?? null);
+        $pipeOwnerId = $this->normalizeOwnerId($distribution['pipe_owner_id'] ?? null);
+
+        $entries = [
+            [
+                'owner_type' => 'doctor',
+                'owner_id' => $doctorOwnerId,
+                'amount' => $doctorAmount,
+                'description' => 'Split: Doctor fee credit',
+            ],
+            [
+                'owner_type' => 'clinic',
+                'owner_id' => $clinicOwnerId,
+                'amount' => $clinicAmount,
+                'description' => 'Split: Clinic fee credit',
+            ],
+            [
+                'owner_type' => 'pipe',
+                'owner_id' => $pipeOwnerId,
+                'amount' => $pipeAmount,
+                'description' => 'Split: Pipe fee credit',
+            ],
+        ];
+
+        foreach ($entries as $entry) {
+            if ($entry['amount'] <= 0) {
+                continue;
+            }
+
+            if (!$entry['owner_id']) {
+                throw new \RuntimeException($entry['owner_type'] . '_wallet_owner_id is required when split amount is greater than zero');
+            }
+
+            $walletId = $this->ensureOwnerWallet($entry['owner_id'], $entry['owner_type'], $timeStamp);
+
+            DB::table('wallets')
+                ->where('id', $walletId)
+                ->increment('balance', $entry['amount'], ['updated_at' => $timeStamp]);
+
+            $this->insertSplitWalletTransaction(
+                $walletId,
+                $entry['owner_type'],
+                $entry['owner_id'],
+                $appointmentId,
+                $patientId,
+                $patientCode,
+                $clinicId,
+                $entry['amount'],
+                $entry['description'],
+                $paymentReference,
+                $timeStamp
+            );
+
+            $this->insertSplitAllTransaction(
+                $entry['owner_type'],
+                $entry['owner_id'],
+                $appointmentId,
+                $patientId,
+                $patientCode,
+                $clinicId,
+                $entry['amount'],
+                $entry['description'],
+                $paymentReference,
+                $timeStamp
+            );
+        }
     }
 
     //update status to paid
@@ -123,6 +391,41 @@ class AppointmentController extends Controller
             if (!$resAppModel) {
                 DB::rollBack();
                 return Helpers::errorResponse("error");
+            }
+
+            $doctorPricing = DB::table('doctors')
+                ->leftJoin('clinics', 'clinics.id', '=', 'doctors.clinic_id')
+                ->select('doctors.opd_fee', 'doctors.emg_fee', 'clinics.clinic_fee')
+                ->where('doctors.user_id', '=', $appModel->doct_id)
+                ->first();
+
+            if ($doctorPricing) {
+                $doctorFee = $this->getDoctorFeeForType($appModel->type, $doctorPricing);
+                $clinicFee = $this->isOpdOrVideoType($appModel->type)
+                    ? (float) ($doctorPricing->clinic_fee ?? 0)
+                    : 0;
+                $pipeFee = $this->isOpdOrVideoType($appModel->type)
+                    ? $this->getPipeFee()
+                    : 0;
+
+                $paymentReference = trim((string) ($request->payment_transaction_id ?? 'status_paid_' . $appointment_id));
+
+                $this->applySplitCreditsForAppointment(
+                    (int) $appointment_id,
+                    (int) ($dataInvoiceModel->patient_id ?? 0),
+                    $appModel->patient_code,
+                    (int) ($dataInvoiceModel->clinic_id ?? $appModel->clinic_id),
+                    $paymentReference,
+                    [
+                        'doctor_amount' => $doctorFee,
+                        'clinic_amount' => $clinicFee,
+                        'pipe_amount' => $pipeFee,
+                        'doctor_owner_id' => $request->doctor_wallet_owner_id ?? $appModel->doct_id,
+                        'clinic_owner_id' => $request->clinic_wallet_owner_id ?? $appModel->clinic_id,
+                        'pipe_owner_id' => $request->pipe_wallet_owner_id ?? $this->getPipeOwnerId(),
+                    ],
+                    $timeStamp
+                );
             }
 
             DB::commit();
@@ -439,6 +742,26 @@ class AppointmentController extends Controller
                         if (isset($request->payment_transaction_id)) {
                             $dataTXNModel->appointment_id = $dataModel->id;
                             $dataTXNModel->save();
+                        }
+
+                        if ($this->isPaidStatus($request->payment_status)) {
+                            $paymentReference = trim((string) ($request->payment_transaction_id ?? 'appointment_paid_' . $dataModel->id));
+                            $this->applySplitCreditsForAppointment(
+                                (int) $dataModel->id,
+                                (int) $patientId,
+                                $patientCode,
+                                (int) $clinicId,
+                                $paymentReference,
+                                [
+                                    'doctor_amount' => $doctorFee,
+                                    'clinic_amount' => $clinicFee,
+                                    'pipe_amount' => $pipeFee,
+                                    'doctor_owner_id' => $request->doctor_wallet_owner_id ?? $request->doct_id,
+                                    'clinic_owner_id' => $request->clinic_wallet_owner_id ?? $clinicId,
+                                    'pipe_owner_id' => $request->pipe_wallet_owner_id ?? $this->getPipeOwnerId(),
+                                ],
+                                $timeStamp
+                            );
                         }
 
 
