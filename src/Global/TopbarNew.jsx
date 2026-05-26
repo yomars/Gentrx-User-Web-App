@@ -226,12 +226,14 @@ export default function TopbarNew() {
               display={{ base: "none", lg: "flex" }}
               align="center"
               bg="#123A74"
-              borderRadius="md"
+              borderRadius="xl"
               overflow="hidden"
               mr={1}
-              h="38px"
+              h="40px"
               flexShrink={0}
-              maxW={{ lg: "360px", xl: "460px" }}
+              maxW={{ lg: "320px", xl: "420px" }}
+              boxShadow="0 10px 24px rgba(18, 58, 116, 0.14)"
+              border="1px solid rgba(255, 255, 255, 0.10)"
             >
               <Box flexShrink={0}>
                 <LocationSeletor type={"header"} />
@@ -252,11 +254,11 @@ export default function TopbarNew() {
                   if (e.key === "Enter") doHeaderSearch();
                 }}
                 px={3}
-                w={{ lg: "120px", xl: "170px" }}
+                w={{ lg: "92px", xl: "150px" }}
                 fontSize="sm"
-                h="38px"
+                h="40px"
                 minW={0}
-                _placeholder={{ color: "rgba(255,255,255,0.6)" }}
+                _placeholder={{ color: "rgba(255,255,255,0.62)" }}
               />
               <IconButton
                 icon={<SearchIcon />}
@@ -265,13 +267,13 @@ export default function TopbarNew() {
                 _hover={{ bg: "rgba(0,0,0,0.35)" }}
                 _active={{ bg: "rgba(0,0,0,0.45)" }}
                 borderLeftRadius={0}
-                borderRightRadius="md"
+                borderRightRadius="xl"
                 aria-label="Search specialists"
                 onClick={doHeaderSearch}
-                h="38px"
-                w="38px"
+                h="40px"
+                w="40px"
                 flexShrink={0}
-                minW="38px"
+                minW="40px"
               />
             </Flex>
             {/* ── Search icon only (base → md) ── */}
