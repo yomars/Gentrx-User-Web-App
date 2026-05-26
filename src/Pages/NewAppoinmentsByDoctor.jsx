@@ -1064,6 +1064,11 @@ const Step4 = ({
     Doctordetails?.clinic_id ||
     clinicDetails?.id ||
     null;
+  const canonicalDepartmentId =
+    Doctordetails?.department ||
+    Doctordetails?.department_id ||
+    Doctordetails?.dept_id ||
+    null;
   const canonicalPatientCode =
     patientDetails?.patient_code ||
     userData?.patient_code ||
@@ -1134,9 +1139,11 @@ const Step4 = ({
       doctor_fee: doctorFeeAmount,
       clinic_fee: clinicFeeAmount,
       pipe_fee: pipeFeeAmount,
-      doctor_wallet_owner_id: Doctordetails?.user_id || null,
-      clinic_wallet_owner_id: canonicalClinicId,
-      pipe_wallet_owner_id: pipeWalletOwnerId,
+      ...(Doctordetails?.user_id
+        ? { doctor_wallet_owner_id: Doctordetails.user_id }
+        : {}),
+      ...(canonicalClinicId ? { clinic_wallet_owner_id: canonicalClinicId } : {}),
+      ...(pipeWalletOwnerId ? { pipe_wallet_owner_id: pipeWalletOwnerId } : {}),
       status:
         appointmentStatusOverride ||
         (selectedMethod === 2 ? "Pending" : "Confirmed"),
@@ -1145,7 +1152,7 @@ const Step4 = ({
         ? selectedSlot.time_start
         : moment().format("hh:mm"),
       doct_id: Doctordetails.user_id,
-      dept_id: Doctordetails.department,
+      dept_id: canonicalDepartmentId,
       type: appoinmentType.title,
       payment_status:
         paymentStatusOverride || (selectedMethod === 2 ? "Unpaid" : "Paid"),
@@ -1283,18 +1290,22 @@ const Step4 = ({
     doctor_fee: String(doctorFeeAmount.toFixed(2)),
     clinic_fee: String(clinicFeeAmount.toFixed(2)),
     pipe_fee: String(pipeFeeAmount.toFixed(2)),
-    doctor_wallet_owner_id: Doctordetails?.user_id
-      ? String(Doctordetails.user_id)
-      : "",
-    clinic_wallet_owner_id: canonicalClinicId ? String(canonicalClinicId) : "",
-    pipe_wallet_owner_id: pipeWalletOwnerId ? String(pipeWalletOwnerId) : "",
+    ...(Doctordetails?.user_id
+      ? { doctor_wallet_owner_id: String(Doctordetails.user_id) }
+      : {}),
+    ...(canonicalClinicId
+      ? { clinic_wallet_owner_id: String(canonicalClinicId) }
+      : {}),
+    ...(pipeWalletOwnerId
+      ? { pipe_wallet_owner_id: String(pipeWalletOwnerId) }
+      : {}),
     status: "Confirmed",
     date: selectedDate ? selectedDate : moment().format("YYYY-MM-DD"),
     time_slots: selectedSlot
       ? selectedSlot.time_start
       : moment().format("hh:mm"),
     doct_id: String(Doctordetails.user_id), // Convert to string
-    dept_id: String(Doctordetails.department), // Convert to string
+    dept_id: canonicalDepartmentId ? String(canonicalDepartmentId) : "", // Convert to string
     type: appoinmentType.title,
     payment_status: "Paid",
     fee: String(feeAmount.toFixed(2)), // Convert to string

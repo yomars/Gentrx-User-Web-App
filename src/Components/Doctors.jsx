@@ -1,5 +1,4 @@
 ﻿import { useQuery } from "@tanstack/react-query";
-import { GET } from "../Controllers/ApiControllers";
 import {
   Box,
   Button,
@@ -21,15 +20,13 @@ import { useCity } from "../Context/SelectedCity";
 import { BsHospitalFill } from "react-icons/bs";
 import { ImLocation } from "react-icons/im";
 import NotAvailable from "./NotAvailable";
-import { buildDoctorEndpoint } from "../lib/doctorQuery";
+import { fetchDoctorsWithFallback } from "../lib/doctorQuery";
 
 export default function Doctors() {
   const { selectedCity } = useCity();
 
   const getData = async () => {
-    const url = await buildDoctorEndpoint({ selectedCity });
-    const res = await GET(url);
-    return res.data.length > 6 ? res.data.slice(0, 6) : res.data;
+    return fetchDoctorsWithFallback({ selectedCity, limit: 6 });
   };
   const { isLoading, data, error } = useQuery({
     queryKey: ["doctors", selectedCity],

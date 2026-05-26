@@ -1,6 +1,5 @@
 ﻿/* eslint-disable react/no-children-prop */
 import { useQuery } from "@tanstack/react-query";
-import { GET } from "../Controllers/ApiControllers";
 import {
   Box,
   Button,
@@ -32,7 +31,7 @@ import NotAvailable from "../Components/NotAvailable";
 import LocationSeletor from "../Components/LocationSeletor";
 import useSearchFilter from "../Hooks/UseSearchFilter";
 import "../Components/DoctorsSection.css";
-import { buildDoctorEndpoint } from "../lib/doctorQuery";
+import { fetchDoctorsWithFallback } from "../lib/doctorQuery";
 
 export default function Doctors() {
   const { selectedCity } = useCity();
@@ -54,13 +53,11 @@ export default function Doctors() {
   };
 
   const getData = async () => {
-    const endpoint = await buildDoctorEndpoint({
+    return fetchDoctorsWithFallback({
       selectedCity,
       department: departmentId || undefined,
       search: searchQuery,
     });
-    const res = await GET(endpoint);
-    return res.data;
   };
   const { isLoading, data, error } = useQuery({
     queryKey: ["Doctors", selectedCity, departmentId, searchQuery],

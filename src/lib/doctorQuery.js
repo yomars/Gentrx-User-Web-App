@@ -3,6 +3,19 @@ import { getStorageJSON, setStorageItem } from "./storage";
 
 const RESOLVED_CLINIC_STORAGE_KEY = "resolvedClinic";
 
+const isTimeoutError = (error) => {
+  if (!error) return false;
+
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+
+  return (
+    code === "ECONNABORTED" ||
+    message.includes("timeout") ||
+    message.includes("timed out")
+  );
+};
+
 const toFiniteNumber = (value) => {
   if (value === null || value === undefined || value === "") {
     return null;
@@ -43,7 +56,9 @@ export const resolveClinic = async ({ selectedCity } = {}) => {
       return resolved;
     }
   } catch (error) {
-    console.error("resolve_clinic failed", error);
+    if (!isTimeoutError(error)) {
+      console.error("resolve_clinic failed", error);
+    }
   }
 
   const cached = getStorageJSON(RESOLVED_CLINIC_STORAGE_KEY);
@@ -75,4 +90,100 @@ export const buildDoctorEndpoint = async ({
   }
 
   return `get_doctor?${params.toString()}`;
+};
+
+const buildDoctorEndpointFromParams = ({ clinicId, cityId, department, search }) => {
+  const params = new URLSearchParams();
+  params.set("active", "1");
+
+  if (clinicId !== undefined && clinicId !== null && clinicId !== "") {
+    params.set("clinic_id", String(clinicId));
+  } else if (cityId !== undefined && cityId !== null && cityId !== "") {
+    params.set("city_id", String(cityId));
+  }
+
+  if (department !== undefined && department !== null && department !== "") {
+    params.set("department", String(department));
+  }
+
+  if (search !== undefined) {
+    params.set("search", String(search ?? ""));
+  }
+
+  return `get_doctor?${params.toString()}`;
+};
+
+export const buildDoctorEndpointCandidates = async ({
+  selectedCity,
+  department,
+  search,
+} = {}) => {
+  const resolved = await resolveClinic({ selectedCity });
+  const clinicId = resolved?.clinic_id;
+  const cityId = selectedCity?.id;
+
+  const candidates = [
+    buildDoctorEndpointFromParams({ clinicId, cityId, department, search }),
+  ];
+
+  if (clinicId && cityId) {
+    candidates.push(
+      buildDoctorEndpointFromParams({
+        clinicId: null,
+        cityId,
+        department,
+        search,
+      })
+    );
+  }
+
+  candidates.push(
+    buildDoctorEndpointFromParams({
+      clinicId: null,
+      cityId: null,
+      department,
+      search,
+    })
+  );
+
+  return Array.from(new Set(candidates));
+};
+
+export const fetchDoctorsWithFallback = async ({
+  selectedCity,
+  department,
+  search,
+  limit,
+} = {}) => {
+  const endpoints = await buildDoctorEndpointCandidates({
+    selectedCity,
+    department,
+    search,
+  });
+
+  let lastError;
+
+  for (let index = 0; index < endpoints.length; index += 1) {
+    const endpoint = endpoints[index];
+    const hasNextFallback = index < endpoints.length - 1;
+
+    try {
+      const response = await GET(endpoint);
+      const rows = Array.isArray(response?.data) ? response.data : [];
+
+      if (limit && rows.length > limit) {
+        return rows.slice(0, limit);
+      }
+
+      return rows;
+    } catch (error) {
+      lastError = error;
+
+      if (!hasNextFallback || !isTimeoutError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError || new Error("Failed to fetch doctors");
 };
