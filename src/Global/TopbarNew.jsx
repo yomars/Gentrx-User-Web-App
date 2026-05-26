@@ -22,6 +22,7 @@ import {
   Text,
   IconButton,
   Button,
+  Input,
   useColorModeValue,
   useDisclosure,
   Image,
@@ -124,6 +125,16 @@ export default function TopbarNew() {
   const location = useLocation();
   const toast = useToast();
   const [activeTab, setactiveTab] = useState("Home");
+  const [headerSearchTerm, setHeaderSearchTerm] = useState("");
+  const doHeaderSearch = () => {
+    navigate(
+      `/search${
+        headerSearchTerm
+          ? `?search=${encodeURIComponent(headerSearchTerm)}`
+          : ""
+      }`
+    );
+  };
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isWalletOpen,
@@ -210,20 +221,67 @@ export default function TopbarNew() {
           </Flex>
 
           <Flex alignItems={"center"} gap={1}>
-            <Box display={{ base: "none", lg: "block" }}>
-              {" "}
-              <LocationSeletor type={"header"} />
-            </Box>
+            {/* ── Inline search bar (lg+) ── */}
+            <Flex
+              display={{ base: "none", lg: "flex" }}
+              align="center"
+              bg="#123A74"
+              borderRadius="md"
+              overflow="hidden"
+              mr={1}
+              h="38px"
+              flexShrink={0}
+              maxW={{ lg: "360px", xl: "460px" }}
+            >
+              <Box flexShrink={0}>
+                <LocationSeletor type={"header"} />
+              </Box>
+              <Box
+                w="1px"
+                h="20px"
+                bg="rgba(255,255,255,0.3)"
+                flexShrink={0}
+              />
+              <Input
+                variant="unstyled"
+                color="white"
+                placeholder="Search specialists…"
+                value={headerSearchTerm}
+                onChange={(e) => setHeaderSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") doHeaderSearch();
+                }}
+                px={3}
+                w={{ lg: "120px", xl: "170px" }}
+                fontSize="sm"
+                h="38px"
+                minW={0}
+                _placeholder={{ color: "rgba(255,255,255,0.6)" }}
+              />
+              <IconButton
+                icon={<SearchIcon />}
+                color="white"
+                bg="rgba(0,0,0,0.22)"
+                _hover={{ bg: "rgba(0,0,0,0.35)" }}
+                _active={{ bg: "rgba(0,0,0,0.45)" }}
+                borderLeftRadius={0}
+                borderRightRadius="md"
+                aria-label="Search specialists"
+                onClick={doHeaderSearch}
+                h="38px"
+                w="38px"
+                flexShrink={0}
+                minW="38px"
+              />
+            </Flex>
+            {/* ── Search icon only (base → md) ── */}
             <IconButton
+              display={{ base: "flex", lg: "none" }}
               variant={"ghost"}
-              _hover={{
-                bg: "none",
-              }}
+              _hover={{ bg: "none" }}
               icon={<SearchIcon color={"#111827"} />}
               aria-label={"Search doctors and services"}
-              onClick={() => {
-                navigate("/search");
-              }}
+              onClick={() => navigate("/search")}
               px={0}
             />
             <NotificationIcon />
