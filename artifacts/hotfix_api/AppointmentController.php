@@ -68,12 +68,36 @@ class AppointmentController extends Controller
             ->whereIn('id_name', ['pipe_user_id', 'pipe_wallet_user_id', 'pipe_owner_user_id', 'pipe_owner_id'])
             ->first();
 
-        if (!$config) {
+        $configuredValue = trim((string) ($config->value ?? ''));
+        if ($configuredValue !== '') {
+            return $configuredValue;
+        }
+
+        if (!Schema::hasColumn('wallets', 'owner_type')) {
             return null;
         }
 
-        $value = trim((string) ($config->value ?? ''));
-        return $value !== '' ? $value : null;
+        $pipeOwnerFromSplitTxn = DB::table('wallet_transactions as wt')
+            ->join('wallets as w', 'w.id', '=', 'wt.wallet_id')
+            ->where('wt.description', 'Split: Pipe fee credit')
+            ->whereIn('w.owner_type', ['pipe', 'user'])
+            ->orderByDesc('wt.id')
+            ->value('w.owner_id');
+
+        $txnValue = trim((string) ($pipeOwnerFromSplitTxn ?? ''));
+        if ($txnValue !== '') {
+            return $txnValue;
+        }
+
+        $pipeOwnerFromWallet = DB::table('wallets')
+            ->whereIn('owner_type', ['pipe', 'user'])
+            ->whereNotNull('owner_id')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->value('owner_id');
+
+        $walletValue = trim((string) ($pipeOwnerFromWallet ?? ''));
+        return $walletValue !== '' ? $walletValue : null;
     }
 
     private function normalizeOwnerId($ownerId)
@@ -171,7 +195,7 @@ class AppointmentController extends Controller
         if ($hasClinicId && $clinicId) {
             $insert['clinic_id'] = $clinicId;
         }
-        if ($hasUserId && in_array($ownerType, ['doctor', 'pipe'], true) && is_numeric($ownerId)) {
+        if ($hasUserId && in_array($ownerType, ['doctor', 'user'], true) && is_numeric($ownerId)) {
             $insert['user_id'] = (int) $ownerId;
         }
         if ($hasPaymentReference) {
@@ -219,7 +243,7 @@ class AppointmentController extends Controller
         if (Schema::hasColumn('all_transaction', 'clinic_id') && $clinicId) {
             $insert['clinic_id'] = $clinicId;
         }
-        if (Schema::hasColumn('all_transaction', 'user_id') && in_array($ownerType, ['doctor', 'pipe'], true) && is_numeric($ownerId)) {
+        if (Schema::hasColumn('all_transaction', 'user_id') && in_array($ownerType, ['doctor', 'user'], true) && is_numeric($ownerId)) {
             $insert['user_id'] = (int) $ownerId;
         }
         if (Schema::hasColumn('all_transaction', 'is_wallet_txn')) {
@@ -273,7 +297,7 @@ class AppointmentController extends Controller
                 'description' => 'Split: Clinic fee credit',
             ],
             [
-                'owner_type' => 'pipe',
+                'owner_type' => 'user',
                 'owner_id' => $pipeOwnerId,
                 'amount' => $pipeAmount,
                 'description' => 'Split: Pipe fee credit',

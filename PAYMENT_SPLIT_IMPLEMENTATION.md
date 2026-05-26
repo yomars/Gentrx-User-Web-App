@@ -63,6 +63,14 @@ Fallback owner resolution used:
 - Clinic owner: `clinic_wallet_owner_id` then clinic id field
 - Pipe owner: `pipe_wallet_owner_id` then configuration lookup (`pipe_user_id`, `pipe_wallet_user_id`, `pipe_owner_user_id`, `pipe_owner_id`)
 
+If Pipe owner config keys are missing, split logic now falls back to the most recent Pipe wallet owner discovered from historical Pipe split transactions/wallet rows.
+
+Wallet owner_type mapping used by split credits:
+
+- Doctor split -> `owner_type=doctor` with `owner_id=doctors.user_id`
+- Clinic split -> `owner_type=clinic` with `owner_id=clinics.id`
+- Pipe split -> `owner_type=user` with `owner_id=users.id` (resolved from pipe_* configuration)
+
 ## Database Prerequisites
 
 `wallets` should support owner wallets:

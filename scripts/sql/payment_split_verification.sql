@@ -23,6 +23,12 @@ WHERE table_schema = 'public'
   AND table_name = 'wallets'
 ORDER BY ordinal_position;
 
+-- 2b) owner_type distribution (doctor/clinic/user are expected for split owners)
+SELECT owner_type, COUNT(*) AS wallets_count
+FROM wallets
+GROUP BY owner_type
+ORDER BY owner_type;
+
 -- 3) wallet_transactions columns
 SELECT column_name, data_type
 FROM information_schema.columns

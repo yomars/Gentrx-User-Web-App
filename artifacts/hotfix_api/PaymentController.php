@@ -39,12 +39,36 @@ class PaymentController extends Controller
             ->whereIn('id_name', ['pipe_user_id', 'pipe_wallet_user_id', 'pipe_owner_user_id', 'pipe_owner_id'])
             ->first();
 
-        if (!$config) {
+        $configuredValue = trim((string) ($config->value ?? ''));
+        if ($configuredValue !== '') {
+            return $configuredValue;
+        }
+
+        if (!Schema::hasColumn('wallets', 'owner_type')) {
             return null;
         }
 
-        $value = trim((string) ($config->value ?? ''));
-        return $value !== '' ? $value : null;
+        $pipeOwnerFromSplitTxn = DB::table('wallet_transactions as wt')
+            ->join('wallets as w', 'w.id', '=', 'wt.wallet_id')
+            ->where('wt.description', 'Split: Pipe fee credit')
+            ->whereIn('w.owner_type', ['pipe', 'user'])
+            ->orderByDesc('wt.id')
+            ->value('w.owner_id');
+
+        $txnValue = trim((string) ($pipeOwnerFromSplitTxn ?? ''));
+        if ($txnValue !== '') {
+            return $txnValue;
+        }
+
+        $pipeOwnerFromWallet = DB::table('wallets')
+            ->whereIn('owner_type', ['pipe', 'user'])
+            ->whereNotNull('owner_id')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->value('owner_id');
+
+        $walletValue = trim((string) ($pipeOwnerFromWallet ?? ''));
+        return $walletValue !== '' ? $walletValue : null;
     }
 
     private function resolvePatientCodeFromIds(?int $patientId, ?string $fallback = null): ?string
@@ -122,7 +146,7 @@ class PaymentController extends Controller
                 'description' => 'Split: Clinic fee credit',
             ],
             [
-                'owner_type' => 'pipe',
+                'owner_type' => 'user',
                 'owner_id' => $this->normalizeOwnerId($request->pipe_wallet_owner_id ?? $this->getPipeOwnerIdSetting()),
                 'amount' => (float) ($request->pipe_fee ?? 0),
                 'description' => 'Split: Pipe fee credit',
@@ -177,7 +201,7 @@ class PaymentController extends Controller
             if (Schema::hasColumn('wallet_transactions', 'clinic_id') && $clinicId) {
                 $insert['clinic_id'] = $clinicId;
             }
-            if (Schema::hasColumn('wallet_transactions', 'user_id') && in_array($entry['owner_type'], ['doctor', 'pipe'], true) && is_numeric($entry['owner_id'])) {
+            if (Schema::hasColumn('wallet_transactions', 'user_id') && in_array($entry['owner_type'], ['doctor', 'user'], true) && is_numeric($entry['owner_id'])) {
                 $insert['user_id'] = (int) $entry['owner_id'];
             }
             if (Schema::hasColumn('wallet_transactions', 'payment_transaction_id')) {
