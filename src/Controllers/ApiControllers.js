@@ -127,6 +127,31 @@ const handleMutationError = (error) => {
       message: "Session expired. Please log-in again.",
     };
   }
+
+  const responseData = error?.response?.data;
+  if (typeof responseData === "string" && responseData.trim()) {
+    throw new Error(responseData);
+  }
+
+  if (responseData && typeof responseData === "object") {
+    const messageCandidates = [
+      responseData.message,
+      responseData.msg,
+      responseData.error,
+      responseData.details,
+      responseData.data?.message,
+      responseData.data?.msg,
+    ];
+
+    const firstMessage = messageCandidates.find(
+      (value) => typeof value === "string" && value.trim()
+    );
+
+    if (firstMessage) {
+      throw new Error(firstMessage);
+    }
+  }
+
   throw handleSessionExpiration(error);
 };
 

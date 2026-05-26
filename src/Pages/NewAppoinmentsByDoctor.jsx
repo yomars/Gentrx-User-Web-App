@@ -946,7 +946,7 @@ const Step4 = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [method, setMethod] = useState("2");
+  const [method, setMethod] = useState("3");
   const [coupon, setcoupon] = useState();
   const [SelectedCoupon, setSelectedCoupon] = useState();
   const [bookingError, setBookingError] = useState(null);
@@ -1186,6 +1186,8 @@ const Step4 = ({
     });
 
   const addAppointment = async (options = {}) => {
+    const effectiveMethod = Number(options.selectedMethod ?? method);
+
     if (!patientDetails?.id || !Doctordetails?.user_id || !selectedSlot?.time_start) {
       showToast(
         toast,
@@ -1197,6 +1199,15 @@ const Step4 = ({
 
     if (!user?.token) {
       showToast(toast, "error", "Session expired. Please log in and try again.");
+      return null;
+    }
+
+    if (effectiveMethod === 3 && !canonicalPatientCode) {
+      showToast(
+        toast,
+        "error",
+        "Wallet booking requires a valid patient code. Please re-login and try again."
+      );
       return null;
     }
 
@@ -1257,7 +1268,12 @@ const Step4 = ({
           setTimeout(() => logoutFn(), 1500);
           return null;
         }
-        const errMsg = res?.message || "Unable to save appointment. Please try again.";
+        const errMsg =
+          res?.message ||
+          res?.msg ||
+          res?.error ||
+          res?.data?.message ||
+          "Unable to save appointment. Please try again.";
         setBookingError(errMsg);
         showToast(toast, "error", errMsg);
         queryClient.invalidateQueries({ queryKey: ["timeslotes"] });
@@ -1599,19 +1615,6 @@ if (isLoading || isUserLoading || bookedSlotesLoading) {
                   Pay Now
                 </Radio>
               )}
-              {appoinmentType.id !== 2 && (
-                <Radio
-                  value={"2"}
-                  fontWeight={700}
-                  onChange={(e) => {
-                    setcoupon(null);
-                    setSelectedCoupon(null);
-                    setMethod(e.target.value);
-                  }}
-                >
-                  Pay At Hospital
-                </Radio>
-              )}
               <Radio
                 value={"3"}
                 fontWeight={700}
@@ -1668,7 +1671,7 @@ if (isLoading || isUserLoading || bookedSlotesLoading) {
                 showToast(
                   toast,
                   "error",
-                  "Online payment is currently unavailable. Please select 'Pay At Hospital' to proceed."
+                  "Online payment is currently unavailable. Please select 'Pay From Wallet' to proceed."
                 );
                 return;
               }
