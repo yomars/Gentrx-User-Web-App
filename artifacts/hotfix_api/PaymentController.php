@@ -21,6 +21,11 @@ use Carbon\Carbon;
 
 class PaymentController extends Controller
 {
+    private function getPaymentKeyColumn(): string
+    {
+        return Schema::hasColumn('payments', 'id') ? 'id' : 'patient_code';
+    }
+
     private function isPaidStatus($status): bool
     {
         return strtolower(trim((string) $status)) === 'paid';
@@ -224,6 +229,8 @@ class PaymentController extends Controller
         $search   = trim($request->query('search', ''));
         $clinicId = $request->query('clinic_id');
 
+        $paymentKeyColumn = $this->getPaymentKeyColumn();
+
         $query = DB::table('payments as py')
             ->leftJoin('patients as p', 'p.id', '=', 'py.patient_id')
             ->leftJoin('doctors as d',  'd.id', '=', 'py.doctor_id')
@@ -231,7 +238,7 @@ class PaymentController extends Controller
             ->leftJoin('clinics as c',  'c.id', '=', 'py.clinic_id')
             ->leftJoin('invoices as i', 'i.id', '=', 'py.invoice_id')
             ->select([
-                'py.id',
+            DB::raw("py.{$paymentKeyColumn} AS id"),
                 'py.appointment_id',
                 'py.invoice_id',
                 'py.service_charge',
@@ -281,6 +288,8 @@ class PaymentController extends Controller
     // -----------------------------------------------------------------------
     public function show($id)
     {
+        $paymentKeyColumn = $this->getPaymentKeyColumn();
+
         $payment = DB::table('payments as py')
             ->leftJoin('patients as p', 'p.id', '=', 'py.patient_id')
             ->leftJoin('doctors as d',  'd.id', '=', 'py.doctor_id')
@@ -292,7 +301,7 @@ class PaymentController extends Controller
                 DB::raw("u.name AS doctor_name"),
                 'c.title AS clinic_name',
             ])
-            ->where('py.id', $id)
+            ->where("py.{$paymentKeyColumn}", $id)
             ->first();
 
         if (!$payment) {
@@ -337,6 +346,8 @@ class PaymentController extends Controller
             ], 422);
         }
 
+        $paymentKeyColumn = $this->getPaymentKeyColumn();
+
         $paymentId = DB::table('payments')->insertGetId([
             'appointment_id'         => $request->appointment_id,
             'invoice_id'             => $request->invoice_id,
@@ -351,7 +362,7 @@ class PaymentController extends Controller
             'is_wallet_txn'          => $request->is_wallet_txn ? 1 : 0,
             'created_at'             => Carbon::now(),
             'updated_at'             => Carbon::now(),
-        ]);
+        ], $paymentKeyColumn);
 
         // Auto-create a transaction ledger entry
         $txnStatus = match (strtolower($request->payment_status ?? 'pending')) {
@@ -407,8 +418,10 @@ class PaymentController extends Controller
     // -----------------------------------------------------------------------
     public function update(Request $request)
     {
+        $paymentKeyColumn = $this->getPaymentKeyColumn();
+
         $validator = Validator::make($request->all(), [
-            'id'             => 'required|integer|exists:payments,id',
+            'id'             => 'required|integer',
             'payment_status' => 'nullable|string|in:Paid,Pending,Failed,Cancelled',
             'payment_method' => 'nullable|string|max:80',
             'payment_transaction_id' => 'nullable|string|max:255',
@@ -422,6 +435,15 @@ class PaymentController extends Controller
             ], 422);
         }
 
+        $exists = DB::table('payments')->where($paymentKeyColumn, $request->id)->exists();
+        if (!$exists) {
+            return response()->json([
+                'response' => 404,
+                'status'   => false,
+                'message'  => 'Payment not found',
+            ], 404);
+        }
+
         $fields = array_filter([
             'payment_status'         => $request->payment_status,
             'payment_method'         => $request->payment_method,
@@ -429,7 +451,7 @@ class PaymentController extends Controller
             'updated_at'             => Carbon::now(),
         ], fn($v) => !is_null($v));
 
-        DB::table('payments')->where('id', $request->id)->update($fields);
+        DB::table('payments')->where($paymentKeyColumn, $request->id)->update($fields);
 
         // Sync transaction status if payment status changed
         if ($request->payment_status) {
