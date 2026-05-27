@@ -268,7 +268,7 @@ export default function TopbarNew() {
                 _active={{ bg: "rgba(0,0,0,0.45)" }}
                 borderLeftRadius={0}
                 borderRightRadius="xl"
-                aria-label="Search specialists"
+                aria-label="Clinic Location Search"
                 onClick={doHeaderSearch}
                 h="40px"
                 w="40px"
