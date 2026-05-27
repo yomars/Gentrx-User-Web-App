@@ -18,10 +18,16 @@ import {
 import { useState } from "react";
 import { ADD } from "../Controllers/ApiControllers";
 import currency from "../Controllers/currency";
-import user from "../Controllers/user";
 import showToast from "../Controllers/ShowToast";
 
-const BalanceTransfer = ({ isOpen, onClose, cancelRef }) => {
+const BalanceTransfer = ({
+  isOpen,
+  onClose,
+  cancelRef,
+  senderUser,
+  walletBalance,
+  onTransferSuccess,
+}) => {
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
@@ -29,38 +35,79 @@ const BalanceTransfer = ({ isOpen, onClose, cancelRef }) => {
   const toast = useToast();
 
   const handleChange = (e) => {
-    const numericValue = e.target.value.replace(/[^0-9]/g, "");
-    setAmount(numericValue.slice(0, 5));
+    const rawValue = e.target.value;
+    const cleaned = rawValue.replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    const normalized =
+      parts.length > 2
+        ? `${parts[0]}.${parts.slice(1).join("")}`
+        : cleaned;
+    const [whole, decimal = ""] = normalized.split(".");
+    const nextValue = decimal !== "" ? `${whole}.${decimal.slice(0, 2)}` : whole;
+    setAmount(nextValue.slice(0, 10));
   };
 
+  const normalizePhone = (value) => value.replace(/[^0-9]/g, "");
+
   const handleTransfer = async () => {
-    if (!amount || !phone) {
+    if (!amount || !phone || !senderUser?.token) {
       showToast(toast, "error", "Please fill all required fields");
       return;
     }
 
-    if (parseFloat(amount) > (user.wallet_amount ?? user.balance ?? 0)) {
+    const amountValue = Number(amount);
+    const normalizedPhone = normalizePhone(phone);
+
+    if (!Number.isFinite(amountValue) || amountValue <= 0) {
+      showToast(toast, "error", "Please enter a valid transfer amount");
+      return;
+    }
+
+    if (normalizedPhone.length !== 10) {
+      showToast(toast, "error", "Recipient phone must be exactly 10 digits");
+      return;
+    }
+
+    if (amountValue > Number(walletBalance || 0)) {
       showToast(toast, "error", "Insufficient balance");
       return;
     }
 
+    if (!senderUser?.id || !senderUser?.patient_code) {
+      showToast(toast, "error", "Session data is incomplete. Please log in again.");
+      return;
+    }
+
     const data = {
-      from_user_id: user.id,
-      to_phone: phone,
-      amount: parseFloat(amount),
+      // Keep both identifiers for temporary backend compatibility during migration.
+      from_user_id: senderUser.id,
+      from_patient_code: senderUser.patient_code,
+      patient_code: senderUser.patient_code,
+      to_phone: normalizedPhone,
+      amount: amountValue,
       description: description || "Balance transfer between users",
+      transaction_reference: `BT-${Date.now()}-${senderUser.id}`,
     };
 
     try {
       setIsLoading(true);
-      const response = await ADD(user.token, "balance_transfer", data);
+      const response = await ADD(senderUser.token, "balance_transfer", data);
 
       if (response.status) {
         showToast(toast, "success", response.message);
         setAmount("");
         setPhone("");
         setDescription("");
+        if (typeof onTransferSuccess === "function") {
+          await onTransferSuccess();
+        }
         onClose();
+      } else {
+        showToast(
+          toast,
+          "error",
+          response?.message || response?.msg || "Transfer failed"
+        );
       }
     } catch (error) {
       showToast(toast, "error", error.message || "Transfer failed");
@@ -88,9 +135,9 @@ const BalanceTransfer = ({ isOpen, onClose, cancelRef }) => {
               <Input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(normalizePhone(e.target.value))}
                 placeholder="Enter recipient's phone number"
-                maxLength={12}
+                maxLength={10}
               />
             </FormControl>
 
@@ -129,6 +176,7 @@ const BalanceTransfer = ({ isOpen, onClose, cancelRef }) => {
               ml={3}
               w={"120px"}
               isLoading={isLoading}
+              isDisabled={isLoading}
             >
               Transfer
             </Button>

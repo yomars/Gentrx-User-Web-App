@@ -25,6 +25,7 @@ import {
   useMediaQuery,
 } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import { ADD, GET, GET_AUTH } from "../Controllers/ApiControllers";
 import currency from "../Controllers/currency";
@@ -86,6 +87,7 @@ const getLiveUserDetails = async () => {
 
 function WalletModel({ isModalOpen, closeModal, openModal }) {
   const token = user?.token;
+  const queryClient = useQueryClient();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { 
     isOpen: isTransferOpen, 
@@ -105,6 +107,15 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
   });
 
   const walletBalance = Number(userData?.wallet_amount ?? userData?.balance ?? 0);
+
+  const handleTransferSuccess = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["wallet-user", user?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["wallet-transactions", user?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["user"] }),
+      queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+    ]);
+  };
 
   const formatAmount = (value) => {
     const numericValue = Number(value || 0);
@@ -265,6 +276,9 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
         isOpen={isTransferOpen}
         onClose={onTransferClose}
         cancelRef={cancelRef}
+        senderUser={userData || user}
+        walletBalance={walletBalance}
+        onTransferSuccess={handleTransferSuccess}
       />
     </>
   );

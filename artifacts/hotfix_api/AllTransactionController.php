@@ -206,8 +206,7 @@ class AllTransactionController extends Controller
     ]);
 
     if ($validator->fails()){
-        dd($validator->errors());
-        return response()->json($validator->errors(), 400);
+      return response()->json($validator->errors(), 400);
     }
     else {
       try {
@@ -228,7 +227,6 @@ class AllTransactionController extends Controller
 
         $qResponce = $dataModel->save();
         if (!$qResponce) {
-            dd("error1");
           DB::rollBack();
           return Helpers::errorResponse("error");
         }
@@ -236,7 +234,6 @@ class AllTransactionController extends Controller
         // Wallet is keyed by patient_code (VARCHAR 15); user_id here is patients.id
         $patientRecord2 = PatientModel::where('id', $request->user_id)->first();
         if (!$patientRecord2 || !$patientRecord2->patient_code) {
-            dd("error2");
           DB::rollBack();
           return Helpers::errorResponse("error");
         }
@@ -249,7 +246,6 @@ class AllTransactionController extends Controller
         $walletUpdateRes = $this->upsertWalletBalance($patientRecord2->patient_code, (float) $newAmount, $timeStamp);
 
         if (!$walletUpdateRes) {
-            dd("error3");
           DB::rollBack();
           return Helpers::errorResponse("error");
         }
@@ -259,7 +255,6 @@ class AllTransactionController extends Controller
         $dataModel->new_wallet_amount = $newAmount;
         $qResponceTrUpdate = $dataModel->save();
         if (!$qResponceTrUpdate) {
-            dd("error4");
           DB::rollBack();
           return Helpers::errorResponse("error");
         }
@@ -270,7 +265,6 @@ class AllTransactionController extends Controller
 
         return Helpers::successWithIdResponse("successfully", $dataModel->id);
       } catch (\Exception $e) {
-            dd($e);
         return Helpers::errorResponse("error $e");
       }
     }
@@ -280,7 +274,9 @@ class AllTransactionController extends Controller
   {
 
     $validator = Validator::make(request()->all(), [
-      'from_user_id' => 'required',
+      'from_user_id' => 'nullable',
+      'from_patient_code' => 'nullable|string',
+      'patient_code' => 'nullable|string',
       'to_phone' => 'required',
       'amount' => 'required',
       'description' => 'required'
@@ -290,43 +286,98 @@ class AllTransactionController extends Controller
     else {
       try {
 
-        $user = User::find($request->from_user_id);
-        $trans_user = User::where("phone",$request->to_phone)->first();
-        if ($trans_user == '') {
-
-            return Helpers::errorResponse("User Not Found");
-        }
-        if ($trans_user->email == $user->email) {
-
-            return Helpers::errorResponse("Balance Transfer Not Possible In Your Own Account");
-        }
-        if ($request->amount == 0) {
+        $amount = (float) $request->amount;
+        if ($amount <= 0) {
             return Helpers::errorResponse("Balance Transfer Amount should not be equal to 0");
         }
 
-        if ($user->wallet_amount >= $request->amount) {
+        $senderPatientCode = trim((string) ($request->from_patient_code ?? $request->patient_code ?? ''));
+        $senderPatient = null;
+
+        if ($senderPatientCode !== '') {
+          $senderPatient = PatientModel::where('patient_code', $senderPatientCode)->first();
+        }
+
+        if (!$senderPatient && !empty($request->from_user_id)) {
+          $senderPatient = PatientModel::where('id', $request->from_user_id)->first();
+        }
+
+        if (!$senderPatient || !$senderPatient->patient_code) {
+          return Helpers::errorResponse("Sender wallet not found");
+        }
+
+        $normalizedPhone = preg_replace('/\D+/', '', (string) $request->to_phone);
+        $recipientPatient = PatientModel::where('phone', $normalizedPhone)->first();
+        if (!$recipientPatient || !$recipientPatient->patient_code) {
+          return Helpers::errorResponse("User Not Found");
+        }
+
+        if ($recipientPatient->patient_code === $senderPatient->patient_code) {
+          return Helpers::errorResponse("Balance Transfer Not Possible In Your Own Account");
+        }
+
+        $senderWallet = $this->getWalletForPatientCode($senderPatient->patient_code);
+        $senderBalance = $senderWallet ? (float) $senderWallet->balance : 0.0;
+
+        if ($senderBalance >= $amount) {
+            $transferReference = trim((string) ($request->transaction_reference ?? $request->payment_transaction_id ?? ''));
+            if ($transferReference === '') {
+              $transferReference = 'BT-' . time();
+            }
+
+            // Idempotency guard: if sender debit with this reference already exists,
+            // treat the call as successful replay and avoid duplicate mutations.
+            $existingDebit = DB::table('all_transaction')
+              ->where('payment_transaction_id', $transferReference)
+              ->where('patient_code', $senderPatient->patient_code)
+              ->where('transaction_type', 'Debited')
+              ->where('is_Wallet_txn', 1)
+              ->exists();
+
+            if ($existingDebit) {
+              return Helpers::successResponse("Balance transferred successfully");
+            }
+
+            DB::beginTransaction();
+
             // Deduct from sender
             $deductRequest = new Request([
-            'user_id' => $request->from_user_id,
-            'amount' => $request->amount,
-            'payment_transaction_id' => 'BT-' . time(),
+            'user_id' => $senderPatient->id,
+            'amount' => $amount,
+            'payment_transaction_id' => $transferReference,
             'payment_method' => 'Balance Transfer',
             'transaction_type' => 'Debited',
             'description' => $request->description,
             ]);
 
-            $this->updateWalletMoneyDataWithoutAppointmentData($deductRequest);
+            $deductResponse = $this->updateWalletMoneyDataWithoutAppointmentData($deductRequest);
+            $deductPayload = method_exists($deductResponse, 'getData')
+              ? $deductResponse->getData(true)
+              : null;
+            if (is_array($deductPayload) && isset($deductPayload['response']) && (int) $deductPayload['response'] !== 200) {
+              DB::rollBack();
+              return Helpers::errorResponse($deductPayload['message'] ?? 'Unable to debit sender wallet');
+            }
 
             // Add to receiver
             $addRequest = new Request([
-            'user_id' => $trans_user->id,
-            'amount' => $request->amount,
-            'payment_transaction_id' => 'BT-' . time(),
+            'user_id' => $recipientPatient->id,
+            'amount' => $amount,
+            'payment_transaction_id' => $transferReference,
             'payment_method' => 'Balance Transfer',
             'transaction_type' => 'Credited',
             'description' => $request->description,
             ]);
-            $this->updateWalletMoneyDataWithoutAppointmentData($addRequest);
+            $creditResponse = $this->updateWalletMoneyDataWithoutAppointmentData($addRequest);
+            $creditPayload = method_exists($creditResponse, 'getData')
+              ? $creditResponse->getData(true)
+              : null;
+            if (is_array($creditPayload) && isset($creditPayload['response']) && (int) $creditPayload['response'] !== 200) {
+              DB::rollBack();
+              return Helpers::errorResponse($creditPayload['message'] ?? 'Unable to credit recipient wallet');
+            }
+
+            DB::commit();
 
 
             return Helpers::successResponse("Balance transferred successfully");
