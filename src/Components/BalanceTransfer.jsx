@@ -95,20 +95,19 @@ const BalanceTransfer = ({
       return;
     }
 
-    if (!senderUser?.id || !senderUser?.patient_code) {
+    if (!senderUser?.patient_code) {
       showToast(toast, "error", "Session data is incomplete. Please log in again.");
       return;
     }
 
     const data = {
-      // Keep both identifiers for temporary backend compatibility during migration.
-      from_user_id: senderUser.id,
+      // Patient-table-only transfer authority.
       from_patient_code: senderUser.patient_code,
       patient_code: senderUser.patient_code,
       to_phone: normalizedPhone,
       amount: amountValue,
       description: description || "Balance transfer between users",
-      transaction_reference: `BT-${Date.now()}-${senderUser.id}`,
+      transaction_reference: `BT-${Date.now()}-${senderUser.patient_code}`,
     };
 
     try {

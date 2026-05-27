@@ -2978,11 +2978,10 @@ function normalizePatientWalletIdentity(source = {}) {
     const userId = String(source.user_id || source.userId || '').trim();
     const patientId = String(source.patient_id || source.patientId || '').trim();
 
-    // Current mobile contract uses owner_id=patient_code for patient wallets.
-    // Keep legacy fallbacks to patient_code/user_id/patient_id during migration.
+    // Patient-table-only authority: transfer identity resolves from owner_id/patient_code.
     const lookupPatientCode = ownerType === 'patient'
-        ? (ownerId || patientCode || userId || patientId)
-        : (patientCode || ownerId || userId || patientId);
+        ? (ownerId || patientCode)
+        : (patientCode || ownerId);
 
     return {
         ownerType,
