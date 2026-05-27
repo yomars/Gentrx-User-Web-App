@@ -16,7 +16,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { ADD } from "../Controllers/ApiControllers";
+import { POST_JSON } from "../Controllers/ApiControllers";
 import currency from "../Controllers/currency";
 import showToast from "../Controllers/ShowToast";
 
@@ -113,7 +113,7 @@ const BalanceTransfer = ({
 
     try {
       setIsLoading(true);
-      const response = await ADD(senderUser.token, "balance_transfer", data);
+      const response = await POST_JSON(senderUser.token, "balance_transfer", data);
 
       if (response.status) {
         showToast(toast, "success", response.message);
