@@ -49,6 +49,24 @@ const BalanceTransfer = ({
 
   const normalizePhone = (value) => value.replace(/[^0-9]/g, "");
 
+  const normalizeRecipientPhoneForSubmit = (value) => {
+    const digits = normalizePhone(value);
+
+    if (digits.length === 10) {
+      return digits;
+    }
+
+    if (digits.length === 11 && digits.startsWith("0")) {
+      return digits.slice(1);
+    }
+
+    if (digits.length === 12 && digits.startsWith("63")) {
+      return digits.slice(2);
+    }
+
+    return null;
+  };
+
   const handleTransfer = async () => {
     if (!amount || !phone || !senderUser?.token) {
       showToast(toast, "error", "Please fill all required fields");
@@ -56,15 +74,19 @@ const BalanceTransfer = ({
     }
 
     const amountValue = Number(amount);
-    const normalizedPhone = normalizePhone(phone);
+    const normalizedPhone = normalizeRecipientPhoneForSubmit(phone);
 
     if (!Number.isFinite(amountValue) || amountValue <= 0) {
       showToast(toast, "error", "Please enter a valid transfer amount");
       return;
     }
 
-    if (normalizedPhone.length !== 10) {
-      showToast(toast, "error", "Recipient phone must be exactly 10 digits");
+    if (!normalizedPhone) {
+      showToast(
+        toast,
+        "error",
+        "Recipient phone must be a valid mobile number"
+      );
       return;
     }
 
@@ -137,7 +159,7 @@ const BalanceTransfer = ({
                 value={phone}
                 onChange={(e) => setPhone(normalizePhone(e.target.value))}
                 placeholder="Enter recipient's phone number"
-                maxLength={10}
+                maxLength={12}
               />
             </FormControl>
 
