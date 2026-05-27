@@ -52,16 +52,17 @@ const BalanceTransfer = ({
   const normalizeRecipientPhoneForSubmit = (value) => {
     const digits = normalizePhone(value);
 
-    if (digits.length === 10) {
-      return digits;
+    // Send canonical PH format (63xxxxxxxxxx) for robust backend matching.
+    if (digits.length === 10 && digits.startsWith("9")) {
+      return `63${digits}`;
     }
 
     if (digits.length === 11 && digits.startsWith("0")) {
-      return digits.slice(1);
+      return `63${digits.slice(1)}`;
     }
 
     if (digits.length === 12 && digits.startsWith("63")) {
-      return digits.slice(2);
+      return digits;
     }
 
     return null;
