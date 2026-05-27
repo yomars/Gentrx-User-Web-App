@@ -247,7 +247,7 @@ export default function TopbarNew() {
               <Input
                 variant="unstyled"
                 color="white"
-                placeholder="Search specialists…"
+                placeholder="Clini Location Search"
                 value={headerSearchTerm}
                 onChange={(e) => setHeaderSearchTerm(e.target.value)}
                 onKeyDown={(e) => {
