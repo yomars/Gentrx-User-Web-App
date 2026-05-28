@@ -17,27 +17,35 @@ import {
   ModalFooter,
   ModalOverlay,
   Skeleton,
+  SkeletonText,
   SimpleGrid,
   Stack,
   Text,
+  Tooltip,
   useColorModeValue,
   useDisclosure,
   useMediaQuery,
+  useToast,
 } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 import { ADD, GET, GET_AUTH } from "../Controllers/ApiControllers";
 import currency from "../Controllers/currency";
 import user from "../Controllers/user";
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import AddMoney from "./AddMoney";
 import BalanceTransfer from "./BalanceTransfer";
-import moment from "moment";
 import { setStorageItem } from "../lib/storage";
+import {
+  mapTransactionRow,
+  getTransactionDescription,
+  formatPesoAmount,
+  formatTransactionDate,
+} from "../lib/walletTransaction";
 
 const getTransaction = async () => {
-  // wallet transactions are now keyed by patient_code in all_transaction.
+  // wallet transactions are keyed by patient_code; is_wallet_txn=1 limits to wallet rows.
   const patientCode = user?.patient_code;
   if (!patientCode) {
     return [];
@@ -48,11 +56,11 @@ const getTransaction = async () => {
     if (trasection.response != 200) {
       throw Error(trasection.messege || "Failed to fetch transactions");
     }
-    return trasection.data || [];
+    const rows = trasection.data || [];
+    return rows.map(mapTransactionRow).filter(Boolean);
   } catch (error) {
     console.error("Transaction fetch error:", error);
-    // Return empty array instead of throwing to prevent infinite loading
-    return [];
+    throw error;
   }
 };
 
@@ -286,39 +294,114 @@ function WalletModel({ isModalOpen, closeModal, openModal }) {
 
 export default WalletModel;
 
+// ─── Copy helper ─────────────────────────────────────────────────────────────
+
+function CopyableId({ label, value }) {
+  const toast = useToast();
+  const displayValue = value ?? "--";
+
+  const handleCopy = useCallback(() => {
+    if (!value) return;
+    try {
+      navigator.clipboard.writeText(String(value));
+      toast({ title: `${label} copied`, status: "success", duration: 1500, isClosable: true, position: "top" });
+    } catch {
+      /* clipboard unavailable – silent fail */
+    }
+  }, [value, label, toast]);
+
+  return (
+    <Flex align="center" gap={1} minW={0}>
+      <Text mb={0} fontSize={12} color={"gray.500"} flexShrink={0}>
+        {label}:
+      </Text>
+      <Tooltip label={value ? `Copy ${label}` : ""} placement="top" isDisabled={!value}>
+        <Text
+          as="span"
+          mb={0}
+          fontSize={12}
+          fontFamily={"mono"}
+          color={"gray.800"}
+          fontWeight={600}
+          cursor={value ? "pointer" : "default"}
+          _hover={value ? { color: "blue.500", textDecoration: "underline" } : {}}
+          onClick={handleCopy}
+          isTruncated
+        >
+          {displayValue}
+        </Text>
+      </Tooltip>
+    </Flex>
+  );
+}
+
+// ─── Transaction list skeleton ────────────────────────────────────────────────
+
+function TransactionSkeleton() {
+  return (
+    <Stack spacing={3} mt={4}>
+      {[1, 2, 3].map((n) => (
+        <Box key={n} border={"1px solid"} borderColor={"gray.100"} borderRadius={12} p={4}>
+          <Flex gap={3} align="center" mb={3}>
+            <Skeleton w={8} h={8} borderRadius="full" flexShrink={0} />
+            <Box flex={1}>
+              <Skeleton h={6} w="40%" mb={2} />
+              <SkeletonText noOfLines={1} w="70%" />
+            </Box>
+            <Skeleton h={6} w={16} borderRadius="full" />
+          </Flex>
+          <Skeleton h={"1px"} mb={3} />
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={2}>
+            <Skeleton h={4} />
+            <Skeleton h={4} />
+            <Skeleton h={4} />
+          </SimpleGrid>
+        </Box>
+      ))}
+    </Stack>
+  );
+}
+
+// ─── Transection ─────────────────────────────────────────────────────────────
+
 const Transection = () => {
-  const { isLoading, data, error } = useQuery({
+  const { isLoading, data, error, refetch, isFetching } = useQuery({
     queryKey: ["wallet-transactions", user?.id],
     queryFn: getTransaction,
-    refetchOnWindowFocus: false, // Disable auto-refetch to prevent constant loading
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
-    staleTime: 60000, // Cache for 1 minute to reduce API calls
-    retry: 1, // Only retry once to prevent infinite loading
-    retryDelay: 1000, // Wait 1 second before retry
+    staleTime: 60000,
+    retry: 1,
+    retryDelay: 1000,
   });
-  
+
   if (isLoading) {
     return (
-      <Box py={5} px={1}>
-        <Skeleton h={5}></Skeleton>
-
-        <Box mt={5}>
-          <Skeleton h={2}></Skeleton>
-          <Skeleton h={2}></Skeleton>
-          <Skeleton h={2}></Skeleton>
-          <Skeleton h={2}></Skeleton>
-          <Skeleton h={2}></Skeleton>
-        </Box>
+      <Box px={{ base: 3, md: 4 }} pb={2}>
+        <Skeleton h={7} w="55%" mt={4} mb={4} borderRadius={6} />
+        <TransactionSkeleton />
       </Box>
     );
   }
-  
+
   if (error) {
     return (
-      <Box px={1} mt={5}>
-        <Alert status="warning">
-          <AlertIcon />
-          Failed to load transactions. Please refresh the page.
+      <Box px={{ base: 3, md: 4 }} pb={4} mt={4}>
+        <Alert status="error" borderRadius={10} flexDirection="column" alignItems="flex-start" gap={2}>
+          <Flex align="center" gap={2}>
+            <AlertIcon m={0} />
+            <Text mb={0} fontWeight={600}>Failed to load transactions</Text>
+          </Flex>
+          <Button
+            size="sm"
+            colorScheme="red"
+            variant="outline"
+            onClick={() => refetch()}
+            isLoading={isFetching}
+            loadingText="Retrying…"
+          >
+            Retry
+          </Button>
         </Alert>
       </Box>
     );
@@ -326,77 +409,104 @@ const Transection = () => {
 
   return (
     <Box px={{ base: 3, md: 4 }} pb={2} maxH={{ base: "95vh", md: "420px" }} overflowY={"auto"}>
-      <Flex justify={"space-between"} align={"center"} mt={4}>
-        <Heading fontSize={{ base: 26, md: 28 }} mb={0} color={"gray.800"}>
+      <Flex justify={"space-between"} align={"center"} mt={4} mb={1}>
+        <Heading fontSize={{ base: 20, md: 22 }} mb={0} color={"gray.800"}>
           Transaction History
         </Heading>
-        <Badge colorScheme={data?.length ? "green" : "gray"} borderRadius={"full"} px={2}>
+        <Badge
+          colorScheme={data?.length ? "green" : "gray"}
+          borderRadius={"full"}
+          px={2}
+          py={0.5}
+          fontSize={12}
+        >
           {data?.length || 0}
         </Badge>
       </Flex>
 
-      <Box mt={4}>
+      <Box mt={3}>
         {!data?.length ? (
-          <Alert status="warning" borderRadius={10}>
+          <Alert status="info" borderRadius={10}>
             <AlertIcon />
-            No transaction found
+            No transactions found
           </Alert>
         ) : (
           <Stack spacing={3}>
-            {data?.map((tran) => {
-              const isCredit = tran.transaction_type === "Credited";
-              const amountColor = isCredit ? "green.500" : "red.500";
-              const statusLabel = isCredit ? "Credited" : "Debited";
-              const description =
-                tran?.notes ||
-                (isCredit
-                  ? "Amount credited to your wallet"
-                  : "Amount debited from your wallet");
+            {data.map((tx) => {
+              const isCredit = tx.type === "Credited";
+              const amountColor = isCredit ? "green.600" : "red.500";
+              const badgeColorScheme = isCredit ? "green" : "red";
+              const description = getTransactionDescription(tx);
 
               return (
                 <Box
-                  key={tran.id}
+                  key={tx.id ?? Math.random()}
                   border={"1px solid"}
                   borderColor={"gray.200"}
                   borderRadius={12}
-                  p={3}
+                  p={{ base: 3, md: 4 }}
                   bg={"white"}
+                  _hover={{ borderColor: "gray.300", boxShadow: "sm" }}
+                  transition="border-color 0.15s, box-shadow 0.15s"
                 >
+                  {/* ─ Top row: amount + badge ─ */}
                   <Flex gap={3} align={"flex-start"} justify={"space-between"}>
                     <Flex gap={3} align={"flex-start"} minW={0}>
                       <IconButton
                         icon={isCredit ? <AddIcon /> : <MinusIcon />}
                         size={"sm"}
                         borderRadius={"full"}
-                        colorScheme={isCredit ? "green" : "red"}
-                        aria-label={statusLabel}
+                        colorScheme={badgeColorScheme}
+                        aria-label={tx.type}
+                        flexShrink={0}
                       />
                       <Box minW={0}>
-                        <Text mb={0} fontSize={{ base: 28, md: 32 }} lineHeight={1} fontWeight={700} color={amountColor}>
-                          {currency} {Number(tran?.amount || 0).toLocaleString()}
+                        <Text
+                          mb={0}
+                          fontSize={{ base: "2xl", md: "3xl" }}
+                          lineHeight={1}
+                          fontWeight={800}
+                          color={amountColor}
+                          letterSpacing="-0.5px"
+                        >
+                          {formatPesoAmount(tx.amount)}
                         </Text>
-                        <Text mt={1} mb={0} color={"gray.800"} fontSize={{ base: 16, md: 32 }} fontWeight={500} noOfLines={2}>
+                        <Text
+                          mt={1}
+                          mb={0}
+                          color={"gray.700"}
+                          fontSize={{ base: 13, md: 14 }}
+                          fontWeight={500}
+                          noOfLines={2}
+                        >
                           {description}
                         </Text>
                       </Box>
                     </Flex>
 
-                    <Badge colorScheme={isCredit ? "green" : "red"} borderRadius={"full"} px={3} py={1} whiteSpace={"nowrap"}>
-                      {statusLabel}
+                    <Badge
+                      colorScheme={badgeColorScheme}
+                      variant="solid"
+                      borderRadius={"full"}
+                      px={3}
+                      py={1}
+                      fontSize={11}
+                      fontWeight={700}
+                      whiteSpace={"nowrap"}
+                      flexShrink={0}
+                    >
+                      {tx.type}
                     </Badge>
                   </Flex>
 
-                  <Divider my={3} borderColor={"gray.200"} />
+                  <Divider my={3} borderColor={"gray.100"} />
 
-                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={2}>
-                    <Text mb={0} fontSize={13} color={"gray.600"}>
-                      Transaction ID: <Text as={"span"} color={"gray.800"} fontWeight={600}>{tran.id}</Text>
-                    </Text>
-                    <Text mb={0} fontSize={13} color={"gray.600"}>
-                      Payment ID: <Text as={"span"} color={"gray.800"} fontWeight={600}>{tran.payment_transaction_id || "N/A"}</Text>
-                    </Text>
-                    <Text mb={0} fontSize={13} color={"gray.600"}>
-                      {moment(tran.created_at).format("DD MMM YY hh:mm a")}
+                  {/* ─ Meta row: IDs + date ─ */}
+                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={{ base: 1, md: 2 }}>
+                    <CopyableId label="Txn ID" value={tx.id != null ? String(tx.id) : null} />
+                    <CopyableId label="Payment ID" value={tx.paymentTransactionId} />
+                    <Text mb={0} fontSize={12} color={"gray.500"} fontFamily={"mono"}>
+                      {formatTransactionDate(tx.createdAt)}
                     </Text>
                   </SimpleGrid>
                 </Box>
