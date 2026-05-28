@@ -761,11 +761,16 @@ class PatientAuthController extends Controller
             $lName = $lName !== '' ? $lName : (count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : '');
         }
 
-        // Fetch wallet balance keyed by patient_code (wallets.patient_id = VARCHAR patient_code).
+        // Fetch wallet balance using whichever patient key exists in the live schema.
         $patientCode = $patient->patient_code ?? null;
         $walletAmount = 0;
         if ($patientCode) {
-            $wallet = DB::table('wallets')->where('patient_code', $patientCode)->first();
+            $walletKeyColumn = Schema::hasColumn('wallets', 'patient_code') ? 'patient_code' : 'patient_id';
+            if (Schema::hasColumn('wallets', 'owner_id') && !Schema::hasColumn('wallets', 'patient_id') && !Schema::hasColumn('wallets', 'patient_code')) {
+                $walletKeyColumn = 'owner_id';
+            }
+
+            $wallet = DB::table('wallets')->where($walletKeyColumn, $patientCode)->first();
             $walletAmount = $wallet ? (float) $wallet->balance : 0;
         }
 
@@ -789,7 +794,7 @@ class PatientAuthController extends Controller
             'image_checksum' => $patient->image_checksum ?? null,
             'token'          => $token,
             'auth_status'    => $patient->auth_status,
-            'created_at'     => $patient->created_at ? $patient->created_at->toISOString() : null,
+            'created_at'     => $patient->created_at ? (is_string($patient->created_at) ? $patient->created_at : $patient->created_at->toISOString()) : null,
             'clinic_code'    => $patient->clinic_code ?? null,
             'patient_code'   => $patientCode,
             'wallet_amount'  => $walletAmount,

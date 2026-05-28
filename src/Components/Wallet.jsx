@@ -9,7 +9,6 @@ import {
   Divider,
   Flex,
   Heading,
-  IconButton,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -449,66 +448,78 @@ const Transection = () => {
                   _hover={{ borderColor: "gray.300", boxShadow: "sm" }}
                   transition="border-color 0.15s, box-shadow 0.15s"
                 >
-                  {/* ─ Top row: amount + badge ─ */}
-                  <Flex gap={3} align={"flex-start"} justify={"space-between"}>
-                    <Flex gap={3} align={"flex-start"} minW={0}>
-                      <IconButton
-                        icon={isCredit ? <AddIcon /> : <MinusIcon />}
-                        size={"sm"}
+                  {/* ─ Top row: icon + amount + badge ─ */}
+                  <Flex gap={3} align={"center"} justify={"space-between"}>
+                    <Flex gap={2} align={"center"} minW={0} flex={1}>
+                      <Box
+                        w={8}
+                        h={8}
                         borderRadius={"full"}
-                        colorScheme={badgeColorScheme}
-                        aria-label={tx.type}
+                        bg={isCredit ? "green.50" : "red.50"}
+                        border={"2px solid"}
+                        borderColor={isCredit ? "green.200" : "red.200"}
+                        display={"flex"}
+                        alignItems={"center"}
+                        justifyContent={"center"}
                         flexShrink={0}
-                      />
-                      <Box minW={0}>
-                        <Text
-                          mb={0}
-                          fontSize={{ base: "2xl", md: "3xl" }}
-                          lineHeight={1}
-                          fontWeight={800}
-                          color={amountColor}
-                          letterSpacing="-0.5px"
-                        >
-                          {formatPesoAmount(tx.amount)}
-                        </Text>
-                        <Text
-                          mt={1}
-                          mb={0}
-                          color={"gray.700"}
-                          fontSize={{ base: 13, md: 14 }}
-                          fontWeight={500}
-                          noOfLines={2}
-                        >
-                          {description}
-                        </Text>
+                      >
+                        {isCredit
+                          ? <AddIcon color={"green.600"} boxSize={3} />
+                          : <MinusIcon color={"red.500"} boxSize={3} />}
                       </Box>
+                      <Text
+                        mb={0}
+                        fontSize={{ base: "lg", md: "xl" }}
+                        lineHeight={1}
+                        fontWeight={800}
+                        color={isCredit ? "green.700" : "red.500"}
+                        letterSpacing="-0.3px"
+                      >
+                        {formatPesoAmount(tx.amount)}
+                      </Text>
                     </Flex>
 
                     <Badge
                       colorScheme={badgeColorScheme}
-                      variant="solid"
+                      variant="outline"
                       borderRadius={"full"}
                       px={3}
                       py={1}
                       fontSize={11}
-                      fontWeight={700}
+                      fontWeight={600}
                       whiteSpace={"nowrap"}
                       flexShrink={0}
                     >
-                      {tx.type}
+                      {tx.type === "Unknown" ? "Pending" : tx.type}
                     </Badge>
                   </Flex>
 
-                  <Divider my={3} borderColor={"gray.100"} />
+                  {/* ─ Description ─ */}
+                  <Text
+                    mt={2}
+                    mb={0}
+                    color={"gray.600"}
+                    fontSize={13}
+                    fontWeight={400}
+                    noOfLines={3}
+                    lineHeight={1.5}
+                  >
+                    {description}
+                  </Text>
+
+                  <Divider my={2} borderColor={"gray.100"} />
 
                   {/* ─ Meta row: IDs + date ─ */}
-                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={{ base: 1, md: 2 }}>
-                    <CopyableId label="Txn ID" value={tx.id != null ? String(tx.id) : null} />
-                    <CopyableId label="Payment ID" value={tx.paymentTransactionId} />
-                    <Text mb={0} fontSize={12} color={"gray.500"} fontFamily={"mono"}>
-                      {formatTransactionDate(tx.createdAt)}
-                    </Text>
-                  </SimpleGrid>
+                  <Stack spacing={1}>
+                    <CopyableId label="Transaction ID" value={tx.id != null ? String(tx.id) : null} />
+                    <CopyableId label="Payment Transaction ID" value={tx.paymentTransactionId} />
+                    <Flex align="center" gap={1}>
+                      <Text mb={0} fontSize={12} color={"gray.500"} flexShrink={0}>Date:</Text>
+                      <Text mb={0} fontSize={12} fontFamily={"mono"} color={"gray.700"}>
+                        {formatTransactionDate(tx.createdAt)}
+                      </Text>
+                    </Flex>
+                  </Stack>
                 </Box>
               );
             })}

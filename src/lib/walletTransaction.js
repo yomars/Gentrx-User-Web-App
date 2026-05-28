@@ -41,6 +41,28 @@ export function normalizeType(raw) {
   return "Unknown";
 }
 
+// ─── Received balance-transfer override ────────────────────────────────────
+
+/**
+ * Returns true when a `balance_transfer` row is an *incoming* transfer to this
+ * patient (should be Credited). The backend emits `type=balance_transfer` for
+ * BOTH sender and receiver, so we detect direction from the notes text:
+ * the backend prefixes received-transfer notes with "Transfer from …".
+ */
+export function isReceivedBalanceTransfer(rawTypeStr, raw) {
+  if (rawTypeStr !== "balance_transfer") return false;
+  const text = [
+    raw.notes,
+    raw.description,
+    raw.reason,
+    raw.invoice_description,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return text.startsWith("transfer from") || /\breceived\b/.test(text);
+}
+
 // ─── Fee-row override ────────────────────────────────────────────────────────
 
 const FEE_PRINCIPALS = ["doctor", "clinic", "pipe"];
@@ -88,7 +110,13 @@ export function mapTransactionRow(raw) {
   const appointmentId = parseInt(raw.appointment_id, 10) || 0;
 
   const rawType = raw.transaction_type || raw.type || "";
+  const rawTypeStr = rawType.toLowerCase().trim();
   let type = normalizeType(rawType);
+
+  // Received balance transfers arrive as type=balance_transfer but are credits
+  if (type === "Debited" && isReceivedBalanceTransfer(rawTypeStr, raw)) {
+    type = "Credited";
+  }
 
   if (isMislabelledFeeRow(type, appointmentId, raw)) {
     type = "Debited";
@@ -97,6 +125,8 @@ export function mapTransactionRow(raw) {
   const notes =
     raw.notes ||
     raw.description ||
+    raw.reason ||
+    raw.invoice_description ||
     null;
 
   const paymentTransactionId =
@@ -159,7 +189,7 @@ export function formatTransactionDate(value) {
   const year = String(d.getFullYear()).slice(-2);
   const hour = d.getHours() % 12 || 12;
   const minute = String(d.getMinutes()).padStart(2, "0");
-  const ampm = d.getHours() < 12 ? "am" : "pm";
+  const ampm = d.getHours() < 12 ? "AM" : "PM";
 
   return `${day} ${month} ${year} ${String(hour).padStart(2, "0")}:${minute} ${ampm}`;
 }

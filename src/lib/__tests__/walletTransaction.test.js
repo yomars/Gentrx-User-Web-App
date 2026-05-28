@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeType,
   isMislabelledFeeRow,
+  isReceivedBalanceTransfer,
   mapTransactionRow,
   getTransactionDescription,
   formatPesoAmount,
@@ -92,6 +93,44 @@ describe("isMislabelledFeeRow", () => {
   });
 });
 
+// ─── isReceivedBalanceTransfer ────────────────────────────────────────────────
+
+describe("isReceivedBalanceTransfer", () => {
+  it("detects 'Transfer from ...' in notes as a received transfer", () => {
+    expect(
+      isReceivedBalanceTransfer("balance_transfer", {
+        notes: "Transfer from GCP-00000004 [BT-xxx]: Balance transfer between users",
+      })
+    ).toBe(true);
+  });
+
+  it("detects 'received' keyword in description", () => {
+    expect(
+      isReceivedBalanceTransfer("balance_transfer", {
+        description: "Amount received via balance transfer",
+      })
+    ).toBe(true);
+  });
+
+  it("returns false for a sent balance transfer (no incoming indicator)", () => {
+    expect(
+      isReceivedBalanceTransfer("balance_transfer", {
+        notes: "Transfer to GCP-00000005: Balance transfer between users",
+      })
+    ).toBe(false);
+  });
+
+  it("returns false when rawTypeStr is not balance_transfer", () => {
+    expect(
+      isReceivedBalanceTransfer("debit", { notes: "Transfer from GCP-00000004" })
+    ).toBe(false);
+  });
+
+  it("returns false when no text is present", () => {
+    expect(isReceivedBalanceTransfer("balance_transfer", {})).toBe(false);
+  });
+});
+
 // ─── mapTransactionRow ────────────────────────────────────────────────────────
 
 describe("mapTransactionRow", () => {
@@ -129,6 +168,14 @@ describe("mapTransactionRow", () => {
     expect(tx.notes).toBe("via desc");
   });
 
+  it("falls back notes to reason then invoice_description", () => {
+    const txA = mapTransactionRow({ reason: "via reason", transaction_type: "credit" });
+    expect(txA.notes).toBe("via reason");
+
+    const txB = mapTransactionRow({ invoice_description: "via invoice", transaction_type: "credit" });
+    expect(txB.notes).toBe("via invoice");
+  });
+
   it("falls back paymentTransactionId to transaction_id then reference", () => {
     const txA = mapTransactionRow({ transaction_id: "TXN-1", transaction_type: "debit" });
     expect(txA.paymentTransactionId).toBe("TXN-1");
@@ -159,6 +206,28 @@ describe("mapTransactionRow", () => {
     };
     const tx = mapTransactionRow(raw);
     expect(tx.type).toBe("Credited");
+  });
+
+  it("classifies received balance_transfer as Credited", () => {
+    const raw = {
+      id: 81,
+      amount: "300",
+      transaction_type: "balance_transfer",
+      notes: "Transfer from GCP-00000004 [BT-1779900634764-GCP-00000004]: Balance transfer between users",
+    };
+    const tx = mapTransactionRow(raw);
+    expect(tx.type).toBe("Credited");
+  });
+
+  it("classifies sent balance_transfer as Debited", () => {
+    const raw = {
+      id: 80,
+      amount: "300",
+      transaction_type: "balance_transfer",
+      notes: "Transfer to GCP-00000005 [BT-xxx]: Balance transfer between users",
+    };
+    const tx = mapTransactionRow(raw);
+    expect(tx.type).toBe("Debited");
   });
 
   it("returns null for non-object input", () => {
@@ -244,9 +313,8 @@ describe("formatTransactionDate", () => {
   });
 
   it("formats a UTC ISO string into the expected pattern", () => {
-    // Use a fixed UTC date so locale hour arithmetic is predictable
+    // Should match dd MMM yy hh:mm AM/PM pattern (uppercase)
     const result = formatTransactionDate("2026-04-14T00:00:00Z");
-    // Should match dd MMM yy hh:mm am/pm pattern
-    expect(result).toMatch(/^\d{2} [A-Z][a-z]{2} \d{2} \d{2}:\d{2} (am|pm)$/);
+    expect(result).toMatch(/^\d{2} [A-Z][a-z]{2} \d{2} \d{2}:\d{2} (AM|PM)$/);
   });
 });
