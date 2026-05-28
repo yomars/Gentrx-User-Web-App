@@ -633,10 +633,21 @@ class PatientAuthController extends Controller
         $requestId = $sms->sendVerify($phone);
 
         if (!$requestId) {
+            $failureBody = $sms->lastSendFailure() ?? [];
+            $failureCode = $failureBody['error']['code'] ?? null;
+            $failureText = $failureBody['error']['description'] ?? 'Failed to send OTP. Please try again.';
+            $failureStatus = 502;
+
+            if ((int) $failureCode === 441 || (int) $failureCode === 411) {
+                $failureStatus = 422;
+            } elseif ((int) $failureCode === 401) {
+                $failureStatus = 502;
+            }
+
             return response()->json([
                 'success' => false,
-                'error'   => 'Failed to send OTP. Please try again.',
-            ], 500);
+                'error'   => $failureText,
+            ], $failureStatus);
         }
 
         // Store the Movider request_id in otp_hash column for verification later

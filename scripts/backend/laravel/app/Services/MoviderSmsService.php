@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -24,6 +25,17 @@ class MoviderSmsService
     private string $verifyUrl      = 'https://api.movider.co/v1/verify';
     private string $acknowledgeUrl = 'https://api.movider.co/v1/verify/acknowledge';
     private string $cancelUrl      = 'https://api.movider.co/v1/verify/cancel';
+    private ?array $lastSendFailure = null;
+
+    private function apiKey(): ?string
+    {
+        return Config::get('services.movider.api_key');
+    }
+
+    private function apiSecret(): ?string
+    {
+        return Config::get('services.movider.api_secret');
+    }
 
     /**
      * Send OTP via Movider Verify API.
@@ -34,17 +46,19 @@ class MoviderSmsService
     public function sendVerify(string $phone): ?string
     {
         $normalized = $this->normalizePhone($phone);
+        $this->lastSendFailure = null;
 
         try {
             $response = Http::timeout(10)->asForm()->post($this->verifyUrl, [
-                'api_key'    => env('MOVIDER_API_KEY'),
-                'api_secret' => env('MOVIDER_API_SECRET'),
+                'api_key'    => $this->apiKey(),
+                'api_secret' => $this->apiSecret(),
                 'to'         => $normalized,
             ]);
 
             $body = $response->json();
 
             if (!$response->successful() || isset($body['error'])) {
+                $this->lastSendFailure = is_array($body) ? $body : ['error' => ['description' => 'Movider rejected the OTP request.']];
                 Log::warning('MoviderSmsService: sendVerify failed', [
                     'phone'  => $normalized,
                     'status' => $response->status(),
@@ -56,12 +70,22 @@ class MoviderSmsService
             return $body['request_id'] ?? null;
 
         } catch (\Throwable $e) {
+            $this->lastSendFailure = [
+                'error' => [
+                    'description' => $e->getMessage(),
+                ],
+            ];
             Log::error('MoviderSmsService: sendVerify exception', [
                 'phone'   => $normalized,
                 'message' => $e->getMessage(),
             ]);
             return null;
         }
+    }
+
+    public function lastSendFailure(): ?array
+    {
+        return $this->lastSendFailure;
     }
 
     /**
@@ -75,8 +99,8 @@ class MoviderSmsService
     {
         try {
             $response = Http::timeout(10)->asForm()->post($this->acknowledgeUrl, [
-                'api_key'    => env('MOVIDER_API_KEY'),
-                'api_secret' => env('MOVIDER_API_SECRET'),
+                'api_key'    => $this->apiKey(),
+                'api_secret' => $this->apiSecret(),
                 'request_id' => $requestId,
                 'code'       => $code,
             ]);
@@ -109,8 +133,8 @@ class MoviderSmsService
     {
         try {
             Http::timeout(5)->asForm()->post($this->cancelUrl, [
-                'api_key'    => env('MOVIDER_API_KEY'),
-                'api_secret' => env('MOVIDER_API_SECRET'),
+                'api_key'    => $this->apiKey(),
+                'api_secret' => $this->apiSecret(),
                 'request_id' => $requestId,
             ]);
         } catch (\Throwable $e) {
