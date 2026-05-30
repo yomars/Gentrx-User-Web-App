@@ -61,22 +61,29 @@ export default function Doctor() {
   if (isLoading) return <Loading />;
   return (
     <Box>
-      <Box bg={"primary.main"} p={0} py={{ base: "5", md: "10" }}>
-        <Box className="container">
+      <Box
+        bg="#eafaf7"
+        py={{ base: 8, md: 12 }}
+        position="relative"
+        overflow="hidden"
+        borderBottomRadius="xl"
+        border="1px solid"
+        borderColor="#d6f1eb"
+      >
+        <Box className="container" position="relative" zIndex={1}>
           <Text
             fontFamily={"Quicksand, sans-serif"}
             fontSize={{ base: 32, md: 48 }}
             fontWeight={700}
             textAlign={"center"}
             mt={0}
-            color={"#fff"}
+            color="#1d8f7a"
           >
             Clinic
           </Text>
         </Box>
-      </Box>{" "}
+      </Box>
       <Box className="container" mt={0} pb={10}>
-        {" "}
         <Flex gap={10} flexDir={{ base: "column", md: "row" }}>
           <Box
             p={[2, 4, 5]}
