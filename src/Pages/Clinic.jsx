@@ -33,10 +33,25 @@ export default function Doctor() {
     const res = await GET(`get_clinic/${id}`);
     return res.data;
   };
+  const getClinicImages = async () => {
+    const res = await GET(`get_clinic_images?clinic_id=${id}`);
+    return Array.isArray(res?.data) ? res.data : [];
+  };
   const { isLoading, data } = useQuery({
     queryKey: ["Doctor", id],
     queryFn: getData,
   });
+  const { data: galleryImages = [] } = useQuery({
+    queryKey: ["ClinicImages", id],
+    queryFn: getClinicImages,
+    enabled: Boolean(id),
+  });
+
+  const clinicImages = Array.isArray(galleryImages) && galleryImages.length
+    ? galleryImages
+    : Array.isArray(data?.clinic_images)
+      ? data.clinic_images
+      : [];
 
   const openNavigation = () => {
     const url = `https://www.google.com/maps?q=${data?.latitude},${data?.longitude}`;
@@ -176,8 +191,8 @@ export default function Doctor() {
               <Text fontSize="lg" fontWeight="bold" mb={3}>
                 Clinic Images -
               </Text>
-              {data?.clinic_images && data?.clinic_images.length ? (
-                <GlightBoxSwiper clinic_images={data?.clinic_images} />
+              {clinicImages.length ? (
+                <GlightBoxSwiper clinic_images={clinicImages} />
               ) : (
                 <NotAvailable text={"Clinic images not available"} />
               )}

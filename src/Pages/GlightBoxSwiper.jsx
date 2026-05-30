@@ -9,13 +9,23 @@ import {
   Modal,
   useDisclosure,
 } from "@chakra-ui/react";
-import imageBaseURL from "../Controllers/image";
 import { useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import { resolveMediaUrl } from "../lib/media";
+
+const getClinicImageSrc = (image) => {
+  if (typeof image === "string") {
+    return resolveMediaUrl(image);
+  }
+
+  return resolveMediaUrl(
+    image?.image || image?.image_path || image?.url || image?.file || ""
+  );
+};
 
 export default function GlightBoxSwiper({ clinic_images }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -44,7 +54,7 @@ export default function GlightBoxSwiper({ clinic_images }) {
         {clinic_images?.map((image, index) => (
           <SwiperSlide key={index}>
             <Image
-              src={`${imageBaseURL}/${image.image}`}
+              src={getClinicImageSrc(image)}
               alt={`Thumbnail ${index + 1}`}
               cursor="pointer"
               onClick={() => openLightbox(index)}
@@ -87,7 +97,7 @@ export default function GlightBoxSwiper({ clinic_images }) {
                 {clinic_images?.map((image, index) => (
                   <SwiperSlide key={index}>
                     <Image
-                      src={`${imageBaseURL}/${image.image}`}
+                      src={getClinicImageSrc(image)}
                       alt={`Full View ${index + 1}`}
                       maxH="80vh"
                       w="full"
