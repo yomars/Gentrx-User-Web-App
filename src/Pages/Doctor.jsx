@@ -99,12 +99,30 @@ export default function Doctor() {
     return res.data;
   };
 
+  const getClinicImages = async () => {
+    const res = await GET(`get_clinic_images?clinic_id=${data?.clinic_id}`);
+    return Array.isArray(res?.data) ? res.data : [];
+  };
+
   const { data: clinicDetails } = useQuery({
     queryKey: ["ClinicPricing", data?.clinic_id],
     queryFn: getClinicData,
     enabled: Boolean(data?.clinic_id),
     staleTime: 5 * 60 * 1000,
   });
+
+  const { data: galleryImages = [] } = useQuery({
+    queryKey: ["ClinicImages", data?.clinic_id],
+    queryFn: getClinicImages,
+    enabled: Boolean(data?.clinic_id),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const clinicImages = Array.isArray(galleryImages) && galleryImages.length
+    ? galleryImages
+    : Array.isArray(data?.clinic_images)
+      ? data.clinic_images
+      : [];
 
   //
 
@@ -497,9 +515,9 @@ export default function Doctor() {
               </Box>
 
               {/* Clinic Images */}
-              {data?.clinic_images && (
+              {clinicImages.length > 0 && (
                 <Box>
-                  <GlightBoxSwiper clinic_images={data.clinic_images} />
+                  <GlightBoxSwiper clinic_images={clinicImages} />
                 </Box>
               )}
 
