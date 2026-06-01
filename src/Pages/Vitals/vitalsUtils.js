@@ -8,6 +8,40 @@ export const VITAL_TYPES = {
   SPO2: "SpO2",
 };
 
+const normalizePositiveInteger = (value) => {
+  const normalizedValue = normalizeValue(value);
+  if (!normalizedValue) {
+    return "";
+  }
+
+  const parsedValue = Number(normalizedValue);
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    return "";
+  }
+
+  return String(parsedValue);
+};
+
+const resolveFamilyMemberIdCandidate = (candidate) => {
+  if (!candidate || typeof candidate !== "object") {
+    return "";
+  }
+
+  return normalizePositiveInteger(
+    candidate.family_member_id ||
+      candidate.familyMemberId ||
+      candidate.member_id ||
+      candidate.memberId ||
+      candidate.id ||
+      candidate.data?.family_member_id ||
+      candidate.data?.familyMemberId ||
+      candidate.data?.member_id ||
+      candidate.data?.memberId ||
+      candidate.data?.id ||
+      ""
+  );
+};
+
 export const buildVitalsByMemberTypeEndpoint = (
   familyMemberId,
   type,
@@ -18,9 +52,7 @@ export const buildVitalsByMemberTypeEndpoint = (
   const params = new URLSearchParams({ type, start_date: startDate, end_date: endDate });
 
   const normalizedFamilyMemberId =
-    familyMemberId === undefined || familyMemberId === null
-      ? ""
-      : String(familyMemberId).trim();
+    normalizePositiveInteger(familyMemberId) || resolveFamilyMemberIdCandidate(currentUser);
 
   if (normalizedFamilyMemberId) {
     params.set("family_member_id", normalizedFamilyMemberId);
@@ -44,11 +76,11 @@ export const invalidateVitalsQueries = (queryClient) =>
   queryClient.invalidateQueries({ queryKey: VITALS_QUERY_KEY });
 
 export const resolveVitalsMemberId = (selectedMember, currentUser) => {
-  if (!selectedMember) return null;
-  if (selectedMember.isSelf) {
-    return selectedMember?.id || selectedMember?.family_member_id || null;
-  }
-  return selectedMember?.id || null;
+  return (
+    resolveFamilyMemberIdCandidate(selectedMember) ||
+    resolveFamilyMemberIdCandidate(currentUser) ||
+    null
+  );
 };
 
 const normalizeValue = (value) => {

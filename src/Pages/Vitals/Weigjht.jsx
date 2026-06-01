@@ -115,7 +115,7 @@ function Weight({ selectedMember, startDate, endDate }) {
   const { data, isLoading } = useQuery({
     queryKey: [...VITALS_QUERY_KEY, "weight", selectedMember?.id || selectedMember?.patient_code || "self", startDate, endDate],
     queryFn: getData,
-    enabled: !!(resolveVitalsMemberId(selectedMember, user) || user?.patient_code),
+    enabled: !!resolveVitalsMemberId(selectedMember, user),
   });
 
   const chartData = data?.map((item) => ({
