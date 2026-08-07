@@ -1,10 +1,10 @@
 module.exports = {
   apps: [
     {
-      name: "gentrx-user-web",
-      cwd: "/var/www/gentrx-user-web",
+      name: "gentrx-main",
+      cwd: "/var/www/gentrx-user-web-app",
       script: "serve",
-      args: "-s dist -l 4000",
+      args: "-s dist -l 3000",
       interpreter: "none",
       env: {
         NODE_ENV: "production",

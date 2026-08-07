@@ -22,7 +22,7 @@ if 'location ^~ /assets/' in cfg:
 else:
     assets_block = '''    # Serve hashed assets directly - bypass PM2, immutable cache
     location ^~ /assets/ {
-        root /var/www/gentrx-user-web/dist;
+        root /var/www/gentrx-user-web-app/dist;
         expires 1y;
         add_header Cache-Control "public, max-age=31536000, immutable";
         add_header Vary Accept-Encoding;
@@ -52,7 +52,7 @@ echo "=== Reloading nginx ==="
 nginx -s reload
 
 echo "=== Verifying Cache-Control on an asset ==="
-ASSET=$(ls /var/www/gentrx-user-web/dist/assets/*.js 2>/dev/null | head -1 | xargs basename)
+ASSET=$(ls /var/www/gentrx-user-web-app/dist/assets/*.js 2>/dev/null | head -1 | xargs basename)
 if [ -n "$ASSET" ]; then
     curl -sI "https://gentrx.ph/assets/$ASSET" | grep -i "cache-control\|content-encoding\|content-type"
 fi

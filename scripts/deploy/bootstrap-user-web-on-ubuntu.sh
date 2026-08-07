@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_DIR="${1:-/var/www/gentrx-user-web}"
+REPO_DIR="${1:-/var/www/gentrx-user-web-app}"
 SITE_NAME="gentrx-user"
 NGINX_SOURCE="$REPO_DIR/scripts/deploy/gentrx-user-web.nginx.conf"
 NGINX_TARGET="/etc/nginx/sites-available/${SITE_NAME}.conf"
@@ -9,7 +9,7 @@ NGINX_ENABLED="/etc/nginx/sites-enabled/${SITE_NAME}.conf"
 
 if [[ ! -f "$REPO_DIR/package.json" ]]; then
   echo "Error: package.json not found in $REPO_DIR"
-  echo "Usage: sudo bash scripts/deploy/bootstrap-user-web-on-ubuntu.sh /var/www/gentrx-user-web"
+  echo "Usage: sudo bash scripts/deploy/bootstrap-user-web-on-ubuntu.sh /var/www/gentrx-user-web-app"
   exit 1
 fi
 
